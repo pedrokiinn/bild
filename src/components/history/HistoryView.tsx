@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Printer, Calendar, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { Search, Printer, Calendar, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth, parseISO, isWithinInterval, getHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ArrivalDialog } from './ArrivalDialog';
@@ -197,6 +197,7 @@ export default function HistoryView({ initialChecklists, vehicles, isLoading }: 
                 <TableHead>Veículo</TableHead>
                 <TableHead className="hidden sm:table-cell">Motorista</TableHead>
                 <TableHead className="hidden md:table-cell">Data</TableHead>
+                <TableHead className="hidden lg:table-cell">Horários</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -205,7 +206,7 @@ export default function HistoryView({ initialChecklists, vehicles, isLoading }: 
             {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                        <TableCell colSpan={5}>
+                        <TableCell colSpan={6}>
                             <Skeleton className="h-8 w-full"/>
                         </TableCell>
                     </TableRow>
@@ -219,6 +220,15 @@ export default function HistoryView({ initialChecklists, vehicles, isLoading }: 
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">{c.driverName}</TableCell>
                         <TableCell className="hidden md:table-cell">{format(parseISO(c.date), 'dd/MM/yyyy')}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span>
+                              {format(new Date(c.departureTimestamp), 'HH:mm')}
+                              {c.arrivalTimestamp ? ` - ${format(new Date(c.arrivalTimestamp), 'HH:mm')}` : ''}
+                            </span>
+                          </div>
+                        </TableCell>
                         <TableCell>
                             <Badge variant={statusMap[c.status]?.variant || 'default'}>
                                 {statusMap[c.status]?.text || 'N/A'}
@@ -239,7 +249,7 @@ export default function HistoryView({ initialChecklists, vehicles, isLoading }: 
                 ))
             ) : (
                 <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                         Nenhum checklist encontrado para os filtros selecionados.
                     </TableCell>
                 </TableRow>
