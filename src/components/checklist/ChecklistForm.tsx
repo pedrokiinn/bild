@@ -29,14 +29,14 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   const router = useRouter();
   const { toast } = useToast();
   const [driverName, setDriverName] = useState('');
-  const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage.toString() || '');
+  const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage?.toString() || '');
   const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
   const [itemValues, setItemValues] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setDepartureMileage(selectedVehicle?.mileage.toString() || '');
+    setDepartureMileage(selectedVehicle?.mileage?.toString() || '');
     // Set initial values for checklist items
     const initialItemValues: Record<string, string> = {};
     const initialItemStates: Record<string, 'ok' | 'problem'> = {};

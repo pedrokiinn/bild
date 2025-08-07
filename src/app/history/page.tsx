@@ -5,7 +5,7 @@ import { getChecklists, getVehicles } from '@/lib/data';
 import { getCurrentUser } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, User as UserIcon, AlertTriangle, Trash2, Eye, Search } from 'lucide-react';
+import { Calendar, Car, User as UserIcon, AlertTriangle, Trash2, Eye, Search, Clock } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import PdfGeneratorButton from '@/components/history/PdfGeneratorButton';
 import { useToast } from '@/hooks/use-toast';
 import { saveChecklist, deleteChecklist as deleteChecklistAction } from '@/lib/data';
+import { ArrivalDialog } from '@/components/history/ArrivalDialog';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -28,6 +29,8 @@ function HistoryContent() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedVehicle, setSelectedVehicle] = useState('all');
+    const [isArrivalDialogOpen, setIsArrivalDialogOpen] = useState(false);
+    const [selectedChecklist, setSelectedChecklist] = useState<DailyChecklist & { vehicle?: Vehicle } | null>(null);
     const { toast } = useToast();
 
     const loadData = useCallback(async () => {
@@ -83,6 +86,36 @@ function HistoryContent() {
             }
         }
     };
+
+    const handleArrivalSave = async (arrivalMileage: number) => {
+        if (!selectedChecklist) return;
+
+        try {
+            const updatedChecklist = {
+                ...selectedChecklist,
+                arrivalTimestamp: new Date().getTime(),
+                arrivalMileage: arrivalMileage,
+                status: selectedChecklist.status === 'problem' ? 'problem' : 'completed' as const,
+            };
+
+            await saveChecklist(updatedChecklist);
+
+            toast({
+                title: "Chegada registrada!",
+                description: "A chegada do veículo foi salva com sucesso."
+            });
+            setIsArrivalDialogOpen(false);
+            setSelectedChecklist(null);
+            loadData();
+        } catch (error) {
+            console.error("Erro ao salvar chegada:", error);
+            toast({
+                title: "Erro ao salvar",
+                description: "Não foi possível registrar a chegada.",
+                variant: 'destructive',
+            });
+        }
+    };
     
     const filteredChecklists = checklists.filter(c => {
         const searchMatch = searchTerm === '' ||
@@ -121,12 +154,13 @@ function HistoryContent() {
     );
 
     return (
+        <>
         <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-7xl mx-auto">
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl mb-8">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 text-2xl text-slate-900">
-                            <Calendar className="w-7 h-7 text-emerald-600" />
+                            <Calendar className="w-7 h-7 text-primary" />
                             Histórico de Checklists
                         </CardTitle>
                         <p className="text-slate-600">
@@ -166,7 +200,7 @@ function HistoryContent() {
                                 <Card key={checklist.id} className={`bg-white/80 backdrop-blur-sm shadow-lg border-0 transition-all hover:shadow-2xl ${hasProblems(checklist.checklistItems) ? 'border-l-4 border-amber-500' : ''}`}>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-lg">
-                                            <Car className="w-5 h-5 text-emerald-600" />
+                                            <Car className="w-5 h-5 text-primary" />
                                             {vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.license_plate})` : "Veículo não encontrado"}
                                         </CardTitle>
                                         <p className="text-sm text-slate-500 flex items-center gap-2">
@@ -203,6 +237,12 @@ function HistoryContent() {
                                             </Dialog>
 
                                             <div className="flex items-center gap-2">
+                                                 {checklist.status === 'pending_arrival' && (
+                                                    <Button size="sm" onClick={() => { setSelectedChecklist(checklist); setIsArrivalDialogOpen(true); }}>
+                                                        <Clock className="w-4 h-4 mr-2" />
+                                                        Registrar Chegada
+                                                    </Button>
+                                                )}
                                                 <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
                                                 {currentUser?.role === 'admin' && (
                                                     <Button variant="destructive" size="icon" onClick={() => handleDelete(checklist.id)}>
@@ -230,6 +270,15 @@ function HistoryContent() {
                 )}
             </div>
         </div>
+        {selectedChecklist && (
+            <ArrivalDialog
+                isOpen={isArrivalDialogOpen}
+                onClose={() => setIsArrivalDialogOpen(false)}
+                onSave={handleArrivalSave}
+                checklist={selectedChecklist}
+            />
+        )}
+        </>
     );
 }
 

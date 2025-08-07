@@ -5,8 +5,8 @@ export interface Vehicle {
   model: string;
   year: number;
   license_plate: string;
-  color: string;
-  mileage: number;
+  color?: string;
+  mileage?: number;
 }
 
 export type ChecklistStatus = 'completed' | 'pending_arrival' | 'problem';

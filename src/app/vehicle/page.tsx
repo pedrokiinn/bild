@@ -48,8 +48,13 @@ function VehicleContent() {
         setIsSaving(true);
         
         try {
-            const vehicleToSave = editingVehicle ? { ...formData, id: editingVehicle.id } : formData;
-            await saveVehicle(vehicleToSave);
+            const vehicleToSave: Partial<Vehicle> = editingVehicle ? { ...formData, id: editingVehicle.id } : formData;
+            
+            // Remove optional fields if they are empty
+            if (vehicleToSave.color === "") delete vehicleToSave.color;
+            if (vehicleToSave.mileage === 0) delete vehicleToSave.mileage;
+            
+            await saveVehicle(vehicleToSave as any);
             toast({ title: "Sucesso", description: `Veículo ${formData.brand} ${formData.model} salvo.` });
             
             resetForm();
