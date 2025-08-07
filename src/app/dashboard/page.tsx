@@ -10,6 +10,7 @@ import VehicleStatus from '@/components/dashboard/VehicleStatus';
 import { subDays, format } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 function DashboardContent() {
     const [data, setData] = useState<{ checklists: (DailyChecklist & { vehicle?: Vehicle })[], vehicles: Vehicle[] }>({ checklists: [], vehicles: [] });
@@ -193,5 +194,9 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
-    return <DashboardContent />;
+    return (
+        <ProtectedRoute>
+            <DashboardContent />
+        </ProtectedRoute>
+    );
 }
