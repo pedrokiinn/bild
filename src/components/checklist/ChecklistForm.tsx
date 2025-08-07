@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Vehicle, DailyChecklist } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -7,8 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Car, Check, Loader2, X } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertCircle, Car, Check, Loader2, X, ArrowLeft } from 'lucide-react';
 import { format, getHours } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { saveChecklist } from '@/lib/data';
@@ -18,20 +17,24 @@ import { diagnoseVehicleProblems } from '@/ai/flows/diagnose-vehicle-problems';
 
 interface ChecklistFormProps {
   vehicles: Vehicle[];
+  selectedVehicle: Vehicle;
   checklistItems: string[];
+  onBack: () => void;
 }
 
-export default function ChecklistForm({ vehicles, checklistItems }: ChecklistFormProps) {
+export default function ChecklistForm({ vehicles, selectedVehicle, checklistItems, onBack }: ChecklistFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [driverName, setDriverName] = useState('');
-  const [departureMileage, setDepartureMileage] = useState<string>('');
+  const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage.toString() || '');
   const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
+  useEffect(() => {
+    setDepartureMileage(selectedVehicle?.mileage.toString() || '');
+  }, [selectedVehicle]);
+
   const isAfterCutoff = getHours(new Date()) >= 22;
 
   const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,7 +46,7 @@ export default function ChecklistForm({ vehicles, checklistItems }: ChecklistFor
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedVehicleId || !driverName || !departureMileage) {
+    if (!selectedVehicle?.id || !driverName || !departureMileage) {
       toast({
         title: 'Campos obrigatórios',
         description: 'Por favor, preencha o veículo, nome do motorista e quilometragem.',
@@ -89,7 +92,7 @@ export default function ChecklistForm({ vehicles, checklistItems }: ChecklistFor
 
 
         const newChecklist: Omit<DailyChecklist, 'id'> = {
-            vehicleId: selectedVehicleId,
+            vehicleId: selectedVehicle.id,
             driverName,
             departureTimestamp: new Date().getTime(),
             departureMileage: Number(departureMileage),
@@ -140,40 +143,18 @@ export default function ChecklistForm({ vehicles, checklistItems }: ChecklistFor
     <form onSubmit={handleSubmit}>
       <Card>
         <CardHeader>
-          <CardTitle>Registro de Saída</CardTitle>
-          <CardDescription>Preencha os detalhes do veículo e motorista antes de iniciar a rota.</CardDescription>
+          <div className="flex justify-between items-center">
+            <CardTitle>Registro de Saída</CardTitle>
+            <Button variant="ghost" size="sm" onClick={onBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Trocar Veículo
+            </Button>
+          </div>
+          <CardDescription>
+            Veículo: <span className="font-semibold text-primary">{selectedVehicle.brand} {selectedVehicle.model} ({selectedVehicle.license_plate})</span>
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="vehicle">Veículo</Label>
-              <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId} disabled={isSaving}>
-                <SelectTrigger id="vehicle">
-                  <SelectValue placeholder="Selecione um veículo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vehicles.map(vehicle => (
-                    <SelectItem key={vehicle.id} value={vehicle.id}>
-                      {vehicle.brand} {vehicle.model} - {vehicle.license_plate}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedVehicle && (
-              <div className="flex items-center space-x-4 rounded-md border p-4">
-                <Car className="h-6 w-6 text-muted-foreground" />
-                <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                        Quilometragem Atual
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                        {selectedVehicle.mileage.toLocaleString('pt-BR')} km
-                    </p>
-                </div>
-            </div>
-            )}
-          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="driverName">Nome do Motorista</Label>
