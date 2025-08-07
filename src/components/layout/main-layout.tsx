@@ -6,7 +6,6 @@ import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
-    SidebarGroup,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -16,7 +15,7 @@ import {
     SidebarInset
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, Users, BarChart2, LogOut, Menu, Settings, CheckSquare } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { User, getCurrentUser, login, logout } from '@/lib/auth';
 import { Logo } from '../Logo';
@@ -91,10 +90,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
              <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
                 <div className="text-center space-y-6">
                      <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg mx-auto">
-                        <CheckSquare className="w-10 h-10 text-primary-foreground" />
+                        <ClipboardCheck className="w-10 h-10 text-primary-foreground" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Bem-vindo ao FleetCheck Pro</h1>
+                        <h1 className="text-2xl font-bold text-slate-900">Bem-vindo ao CarCheck</h1>
                         <p className="text-slate-600">Faça login para continuar.</p>
                     </div>
                     <Button 
@@ -113,7 +112,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <SidebarProvider>
             <div className="min-h-screen flex w-full">
                 <Sidebar>
-                    <SidebarHeader>
+                    <SidebarHeader className="group-data-[state=collapsed]:hidden">
                         <Logo />
                     </SidebarHeader>
                     
@@ -140,7 +139,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                         </SidebarMenu>
                     </SidebarContent>
 
-                    <SidebarFooter>
+                    <SidebarFooter className="group-data-[state=collapsed]:hidden">
                         {user && (
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3">
@@ -175,7 +174,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </Sidebar>
 
                 <SidebarInset>
-                    <header className="bg-background/80 backdrop-blur-xl border-b px-6 py-4 flex items-center justify-end lg:hidden">
+                    <header className="bg-background/80 backdrop-blur-xl border-b px-6 py-4 flex items-center justify-between lg:hidden">
+                        <Logo />
                         <SidebarTrigger>
                             <Menu className="w-5 h-5" />
                         </SidebarTrigger>
