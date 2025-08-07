@@ -16,10 +16,12 @@ import {
     SidebarInset
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Settings, Users } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Settings, Users, QrCode } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { User, getCurrentUser, login, logout } from '@/lib/auth';
 import { Logo } from '../Logo';
+import QRCodeModal from '../auth/QRCodeModal';
+
 
 const navigationItems = [
     {
@@ -56,6 +58,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [user, setUser] = React.useState<User | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [isQrModalOpen, setIsQrModalOpen] = React.useState(false);
 
     React.useEffect(() => {
         checkUser();
@@ -102,24 +105,42 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
     if (!user) {
         return (
-             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
-                <div className="text-center space-y-6">
-                     <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg mx-auto">
-                        <ClipboardCheck className="w-10 h-10 text-primary-foreground" />
+             <>
+                <QRCodeModal 
+                    isOpen={isQrModalOpen}
+                    onClose={() => setIsQrModalOpen(false)}
+                    loginUrl="https://example.com/login" // Placeholder URL
+                />
+                <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
+                    <div className="text-center space-y-6">
+                        <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg mx-auto">
+                            <ClipboardCheck className="w-10 h-10 text-primary-foreground" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900">Bem-vindo ao CarCheck</h1>
+                            <p className="text-slate-600">Faça login para continuar.</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
+                            <Button 
+                                size="lg"
+                                onClick={handleLogin}
+                                className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/90 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                            >
+                                Fazer Login
+                            </Button>
+                             <Button 
+                                size="lg"
+                                variant="outline"
+                                onClick={() => setIsQrModalOpen(true)}
+                                className="w-full sm:w-auto"
+                            >
+                                <QrCode className="w-5 h-5 mr-2" />
+                                Login com QR Code
+                            </Button>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Bem-vindo ao CarCheck</h1>
-                        <p className="text-slate-600">Faça login para continuar.</p>
-                    </div>
-                    <Button 
-                        size="lg"
-                        onClick={handleLogin}
-                        className="bg-gradient-to-r from-primary to-primary/90 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                    >
-                        Fazer Login
-                    </Button>
                 </div>
-            </div>
+            </>
         );
     }
 
