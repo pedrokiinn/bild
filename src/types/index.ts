@@ -1,3 +1,4 @@
+
 export interface Vehicle {
   id: string;
   brand: string;
@@ -28,5 +29,6 @@ export interface DailyChecklist {
 export interface User {
   id: string;
   name?: string | null;
+  email?: string | null;
   role: 'admin' | 'collaborator';
 }

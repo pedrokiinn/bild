@@ -1,3 +1,4 @@
+
 'use client';
 import React from 'react';
 import Link from 'next/link';
@@ -15,7 +16,7 @@ import {
     SidebarInset
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Settings, Users } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { User, getCurrentUser, login, logout } from '@/lib/auth';
 import { Logo } from '../Logo';
@@ -40,7 +41,14 @@ const navigationItems = [
         title: "Meus Veículos",
         url: "/vehicle",
         icon: Car,
+        adminOnly: true,
     },
+    {
+        title: "Usuários",
+        url: "/users",
+        icon: Users,
+        adminOnly: true,
+    }
 ];
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
@@ -64,6 +72,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             setIsLoading(false);
         }
     };
+    
+    const getFilteredNavigation = () => {
+        if (!user) return [];
+        if (user.role === 'admin') return navigationItems;
+        return navigationItems.filter(item => !item.adminOnly);
+    };
 
     const handleLogin = async () => {
         await login();
@@ -74,6 +88,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     const handleLogout = async () => {
         await logout();
         setUser(null);
+        router.push('/');
         router.refresh();
     };
 
@@ -112,13 +127,13 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <SidebarProvider>
             <div className="min-h-screen flex w-full">
                 <Sidebar>
-                    <SidebarHeader className="group-data-[state=collapsed]:hidden">
+                    <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
                         <Logo />
                     </SidebarHeader>
                     
-                    <SidebarContent>
+                    <SidebarContent className='p-3'>
                         <SidebarMenu>
-                            {navigationItems.map((item) => (
+                            {getFilteredNavigation().map((item) => (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton 
                                         asChild 
@@ -139,7 +154,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                         </SidebarMenu>
                     </SidebarContent>
 
-                    <SidebarFooter className="group-data-[state=collapsed]:hidden">
+                    <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
                         {user && (
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3">
@@ -174,14 +189,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </Sidebar>
 
                 <SidebarInset>
-                    <header className="bg-background/80 backdrop-blur-xl border-b px-6 py-4 flex items-center justify-between lg:hidden">
+                     <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-6 py-4 flex items-center justify-between lg:hidden">
                         <Logo />
                         <SidebarTrigger>
                             <Menu className="w-5 h-5" />
                         </SidebarTrigger>
                     </header>
                     
-                    <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
+                    <main className="flex-1 overflow-auto">
                         {children}
                     </main>
                 </SidebarInset>

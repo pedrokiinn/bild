@@ -1,7 +1,14 @@
-import type { DailyChecklist, Vehicle } from "@/types";
+
+import type { DailyChecklist, Vehicle, User } from "@/types";
 import { format } from "date-fns";
 
 // Mock data
+let users: User[] = [
+    { id: '1', name: 'Admin User', role: 'admin', email: 'admin@example.com' },
+    { id: '2', name: 'Collaborator User', role: 'collaborator', email: 'collaborator@example.com' }
+];
+
+
 let vehicles: Vehicle[] = [
   { id: '1', brand: 'Fiat', model: 'Toro', year: 2023, license_plate: 'BRA2E19', color: 'Branco', mileage: 15000 },
   { id: '2', brand: 'Chevrolet', model: 'S10', year: 2022, license_plate: 'MER1C0S', color: 'Prata', mileage: 45000 },
@@ -50,6 +57,28 @@ let checklists: DailyChecklist[] = [
 
 // Simulate API latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+// User Functions
+export const getUsers = async (): Promise<User[]> => {
+    await delay(500);
+    return [...users];
+};
+
+export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<User> => {
+    await delay(500);
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+        users[userIndex].role = newRole;
+        return users[userIndex];
+    }
+    throw new Error("User not found");
+};
+
+export const deleteUser = async (userId: string): Promise<void> => {
+    await delay(500);
+    users = users.filter(u => u.id !== userId);
+};
+
 
 // Vehicle Functions
 export const getVehicles = async (): Promise<Vehicle[]> => {
