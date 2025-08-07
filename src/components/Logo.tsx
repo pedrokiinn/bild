@@ -7,7 +7,7 @@ export function Logo() {
       <div className="p-1">
         <CheckSquare className="h-8 w-8 text-primary" />
       </div>
-      <span className="font-headline">Car Checklist</span>
+      <span className="font-headline">FleetCheck Pro</span>
     </div>
   );
 }
