@@ -82,6 +82,8 @@ function DashboardContent() {
         
         return consecutive;
     };
+    
+    const todayChecklistsDone = checklists.filter(c => c.date === format(new Date(), 'yyyy-MM-dd')).length === vehicles.length;
 
     return (
         <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
@@ -93,14 +95,14 @@ function DashboardContent() {
                             Olá! 👋
                         </h1>
                         <p className="text-slate-600 text-lg">
-                            {todayChecklist 
-                                ? "Checklist de hoje já realizado" 
-                                : "Que tal fazer o checklist de hoje?"
+                            {todayChecklistsDone
+                                ? "Todos os checklists de hoje foram realizados!" 
+                                : "Ainda há checklists pendentes para hoje."
                             }
                         </p>
                     </div>
                     
-                    {!todayChecklist && (
+                    {!todayChecklistsDone && (
                         <Link href="/checklist" className="w-full md:w-auto">
                             <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
                                 <Plus className="w-5 h-5 mr-2" />
