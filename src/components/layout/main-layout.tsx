@@ -59,10 +59,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center justify-between">
             <Logo />
-            <SidebarTrigger />
-          </div>
         </SidebarHeader>
 
         <SidebarContent>
@@ -108,7 +105,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
 
       <SidebarInset>
-        <main className="p-4 md:p-6 lg:p-8 min-h-screen">
+        <header className="flex items-center justify-between p-4 md:p-6 lg:p-8 md:hidden">
+            <Logo />
+            <SidebarTrigger />
+        </header>
+        <main className="p-4 md:p-6 lg:p-8">
+            <div className="hidden md:flex items-center justify-between mb-6">
+                <SidebarTrigger />
+            </div>
             {children}
         </main>
       </SidebarInset>
