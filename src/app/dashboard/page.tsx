@@ -153,6 +153,7 @@ function DashboardContent() {
                     <div className="lg:col-span-2 space-y-6">
                         <RecentChecklists 
                             checklists={checklists}
+                            vehicles={vehicles}
                             isLoading={isLoading}
                         />
                     </div>

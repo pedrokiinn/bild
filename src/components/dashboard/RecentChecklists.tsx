@@ -1,91 +1,125 @@
 'use client';
 import { DailyChecklist, Vehicle } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
-import { ArrowRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus, ClipboardCheck } from 'lucide-react';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface RecentChecklistsProps {
   checklists: (DailyChecklist & { vehicle?: Vehicle })[];
+  vehicles: Vehicle[];
   isLoading: boolean;
 }
 
-const statusMap: Record<DailyChecklist['status'], { text: string; variant: 'default' | 'destructive' | 'secondary', icon: React.ElementType }> = {
-  completed: { text: 'Concluído', variant: 'default', icon: CheckCircle2 },
-  problem: { text: 'Problema', variant: 'destructive', icon: AlertTriangle },
-  pending_arrival: { text: 'Pendente', variant: 'secondary', icon: ArrowRight },
+const getScore = (checklist: DailyChecklist) => {
+    const totalItems = Object.keys(checklist.checklistItems).length;
+    if (totalItems === 0) return 100;
+    const okItems = Object.values(checklist.checklistItems).filter(status => status === 'ok').length;
+    return Math.round((okItems / totalItems) * 100);
+}
+
+const getScoreColor = (score: number) => {
+    if (score >= 90) return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    if (score >= 70) return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    return "bg-red-100 text-red-800 border-red-200";
 };
 
-export default function RecentChecklists({ checklists, isLoading }: RecentChecklistsProps) {
+const getScoreIcon = (current: number, previous?: number) => {
+    if (previous === undefined) return <Minus className="w-3 h-3" />;
+    if (current > previous) return <TrendingUp className="w-3 h-3 text-emerald-600" />;
+    if (current < previous) return <TrendingDown className="w-3 h-3 text-red-600" />;
+    return <Minus className="w-3 h-3" />;
+};
+
+
+export default function RecentChecklists({ checklists, vehicles, isLoading }: RecentChecklistsProps) {
+  
+    const getVehicleInfo = (vehicleId?: string) => {
+        if (!vehicleId) return "Veículo não encontrado";
+        const vehicle = vehicles.find(v => v.id === vehicleId);
+        return vehicle ? `${vehicle.brand} ${vehicle.model}` : "Veículo não encontrado";
+    };
+
+    const getPreviousChecklistScore = (currentChecklist: DailyChecklist) => {
+        const vehicleChecklists = checklists
+            .filter(c => c.vehicleId === currentChecklist.vehicleId)
+            .sort((a,b) => b.departureTimestamp - a.departureTimestamp);
+        
+        const currentIndex = vehicleChecklists.findIndex(c => c.id === currentChecklist.id);
+        const previousChecklist = vehicleChecklists[currentIndex + 1];
+        
+        return previousChecklist ? getScore(previousChecklist) : undefined;
+    }
+
+    if (isLoading) {
+        return (
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                        <ClipboardCheck className="w-6 h-6 text-emerald-600" />
+                        Inspeções Recentes
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {Array(3).fill(0).map((_, i) => (
+                         <div key={i} className="flex items-center justify-between p-4 rounded-lg bg-slate-50">
+                            <div className="space-y-1">
+                                <Skeleton className="h-5 w-32" />
+                                <Skeleton className="h-4 w-48" />
+                            </div>
+                            <Skeleton className="h-8 w-20 rounded-full" />
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        );
+    }
+  
   return (
     <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
       <CardHeader>
         <CardTitle className="text-2xl font-bold text-slate-900">Atividade Recente</CardTitle>
-        <CardDescription>Últimos 5 checklists realizados.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Veículo</TableHead>
-              <TableHead className="hidden sm:table-cell">Motorista</TableHead>
-              <TableHead className="hidden md:table-cell">Data</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                </TableRow>
-              ))
-            ) : checklists.length > 0 ? (
-              checklists.slice(0, 5).map((checklist) => {
-                const statusInfo = statusMap[checklist.status] || statusMap.pending_arrival;
+        <div className="space-y-4">
+            {checklists.slice(0, 5).map(checklist => {
+                const currentScore = getScore(checklist);
+                const previousScore = getPreviousChecklistScore(checklist);
+
                 return (
-                  <TableRow key={checklist.id}>
-                    <TableCell>
-                      <div className="font-medium">{checklist.vehicle?.brand} {checklist.vehicle?.model}</div>
-                      <div className="text-sm text-muted-foreground">{checklist.vehicle?.license_plate}</div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">{checklist.driverName}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {formatDistanceToNow(new Date(checklist.departureTimestamp), { addSuffix: true, locale: ptBR })}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusInfo.variant} className="flex items-center gap-1.5">
-                        <statusInfo.icon className="h-3 w-3"/>
-                        {statusInfo.text}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
+                    <div key={checklist.id} className="flex items-center justify-between p-4 rounded-lg hover:bg-slate-50 transition-colors duration-200">
+                        <div>
+                            <p className="font-semibold text-slate-800">{getVehicleInfo(checklist.vehicleId)}</p>
+                            <p className="text-sm text-slate-500">
+                                {checklist.driverName} • {format(new Date(checklist.departureTimestamp), "dd/MM/yyyy", { locale: ptBR })}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                             <Badge className={`border text-xs font-semibold ${getScoreColor(currentScore)}`}>
+                                {currentScore}%
+                            </Badge>
+                            {getScoreIcon(currentScore, previousScore)}
+                        </div>
+                    </div>
                 )
-              })
-            ) : (
-                <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">
-                        Nenhum checklist encontrado.
-                    </TableCell>
-                </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            })}
+        </div>
         {!isLoading && checklists.length > 0 && (
-          <div className="mt-4 text-right">
+          <div className="mt-6 text-right">
              <Link href="/history" className="text-sm font-medium text-emerald-600 hover:underline flex items-center justify-end gap-1">
                 Ver Histórico Completo
                 <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         )}
+         {!isLoading && checklists.length === 0 && (
+            <div className="text-center py-10 text-slate-500">
+                <p>Nenhuma inspeção recente encontrada.</p>
+            </div>
+         )}
       </CardContent>
     </Card>
   );
