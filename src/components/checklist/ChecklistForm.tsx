@@ -14,11 +14,12 @@ import { saveChecklist } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { diagnoseVehicleProblems } from '@/ai/flows/diagnose-vehicle-problems';
+import type { ChecklistItemOption } from '@/types';
 
 interface ChecklistFormProps {
   vehicles: Vehicle[];
   selectedVehicle: Vehicle;
-  checklistItems: string[];
+  checklistItems: ChecklistItemOption[];
   onBack: () => void;
 }
 
@@ -28,6 +29,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   const [driverName, setDriverName] = useState('');
   const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage.toString() || '');
   const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
+  const [itemValues, setItemValues] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -43,6 +45,14 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
       setDepartureMileage(value);
     }
   };
+
+  const handleItemChange = (itemKey: string, value: string) => {
+    const itemConfig = checklistItems.find(item => item.key === itemKey);
+    if(itemConfig) {
+        setItemStates(prev => ({...prev, [itemConfig.title]: itemConfig.isProblem(value) ? 'problem' : 'ok'}));
+        setItemValues(prev => ({...prev, [itemConfig.title]: value}));
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,8 +95,8 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             aiDiagnosisResult = diagnosis.potentialProblems;
         }
 
-        const checklistItemsWithDefaults = checklistItems.reduce((acc, item) => {
-            acc[item] = itemStates[item] || 'ok';
+        const checklistItemsToSave = checklistItems.reduce((acc, item) => {
+            acc[item.title] = itemStates[item.title] || 'ok';
             return acc;
         }, {} as Record<string, 'ok' | 'problem'>);
 
@@ -96,7 +106,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             driverName,
             departureTimestamp: new Date().getTime(),
             departureMileage: Number(departureMileage),
-            checklistItems: checklistItemsWithDefaults,
+            checklistItems: checklistItemsToSave,
             notes: notes,
             status: hasProblem ? 'problem' : 'pending_arrival',
             date: format(new Date(), 'yyyy-MM-dd'),
@@ -169,23 +179,24 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             <Label>Itens do Checklist</Label>
             <div className="space-y-4 rounded-md border p-4">
               {checklistItems.map(item => (
-                <div key={item} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <Label htmlFor={item} className="mb-2 sm:mb-0">{item}</Label>
+                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div className='mb-2 sm:mb-0'>
+                    <Label htmlFor={item.key} >{item.title}</Label>
+                    <p className='text-xs text-muted-foreground'>{item.description}</p>
+                  </div>
                   <RadioGroup
-                    id={item}
-                    defaultValue="ok"
-                    onValueChange={(value: 'ok' | 'problem') => setItemStates(prev => ({...prev, [item]: value}))}
-                    className="flex items-center space-x-4"
+                    id={item.key}
+                    defaultValue={item.options[0].value}
+                    onValueChange={(value) => handleItemChange(item.key, value)}
+                    className="flex items-center space-x-2"
                     disabled={isSaving}
                   >
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="ok" id={`${item}-ok`} className="text-green-500 border-green-500"/>
-                        <Label htmlFor={`${item}-ok`} className="text-green-700">OK</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="problem" id={`${item}-problem`} className="text-destructive border-destructive" />
-                        <Label htmlFor={`${item}-problem`} className="text-destructive">Problema</Label>
-                    </div>
+                    {item.options.map(option => (
+                        <div key={option.value} className="flex items-center space-x-1">
+                            <RadioGroupItem value={option.value} id={`${item.key}-${option.value}`}/>
+                            <Label htmlFor={`${item.key}-${option.value}`} className="text-xs">{option.label}</Label>
+                        </div>
+                    ))}
                   </RadioGroup>
                 </div>
               ))}

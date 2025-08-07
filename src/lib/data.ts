@@ -159,17 +159,72 @@ export const saveChecklist = async (checklist: Omit<DailyChecklist, 'id'> & { id
 }
 
 export const checklistItemsOptions = [
-    "Nível do Óleo",
-    "Nível da Água",
-    "Condições dos Pneus",
-    "Estepe",
-    "Sistema de Freios",
-    "Farol Alto",
-    "Farol Baixo",
-    "Setas",
-    "Luz de Freio",
-    "Luz de Ré",
-    "Buzina",
-    "Limpeza",
-    "Documentação",
+    {
+        key: "fuel_level",
+        title: "Nível de Combustível",
+        description: "Verifique o indicador no painel",
+        options: [
+            { value: "empty", label: "Vazio" },
+            { value: "quarter", label: "1/4" },
+            { value: "half", label: "1/2" },
+            { value: "three_quarter", label: "3/4" },
+            { value: "full", label: "Cheio" }
+        ],
+        isProblem: (value: string) => ['empty', 'quarter'].includes(value),
+    },
+    {
+        key: "tire_pressure",
+        title: "Pressão dos Pneus",
+        description: "Verifique visualmente se algum pneu está murcho",
+        options: [
+            { value: "ok", label: "OK" },
+            { value: "low", label: "Baixa" },
+            { value: "needs_check", label: "Verificar" }
+        ],
+        isProblem: (value: string) => ['low', 'needs_check'].includes(value),
+    },
+    {
+        key: "tire_condition",
+        title: "Condição dos Pneus",
+        description: "Estado geral dos pneus",
+        options: [
+            { value: "excellent", label: "Excelente" },
+            { value: "good", label: "Bom" },
+            { value: "worn", label: "Desgastado" },
+            { value: "needs_replacement", label: "Trocar" }
+        ],
+        isProblem: (value: string) => ['worn', 'needs_replacement'].includes(value),
+    },
+    {
+        key: "lights_status",
+        title: "Luzes e Sinalização",
+        description: "Faróis, lanternas, setas e freio",
+        options: [
+            { value: "all_working", label: "Todas OK" },
+            { value: "some_issues", label: "Com Problemas" },
+            { value: "major_issues", label: "Problemas Graves" }
+        ],
+        isProblem: (value: string) => ['some_issues', 'major_issues'].includes(value),
+    },
+    {
+        key: "fluid_levels",
+        title: "Níveis de Fluidos",
+        description: "Óleo, água, freio (quando possível verificar)",
+        options: [
+            { value: "ok", label: "OK" },
+            { value: "low", label: "Baixo" },
+            { value: "needs_refill", label: "Repor" }
+        ],
+        isProblem: (value: string) => ['low', 'needs_refill'].includes(value),
+    },
+    {
+        key: "documentation",
+        title: "Documentação",
+        description: "Documento do veículo e CNH",
+        options: [
+            { value: "ok", label: "OK" },
+            { value: "missing", label: "Faltando" }
+        ],
+        isProblem: (value: string) => value === 'missing',
+    },
 ];

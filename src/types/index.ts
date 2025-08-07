@@ -32,3 +32,14 @@ export interface User {
   email?: string | null;
   role: 'admin' | 'collaborator';
 }
+
+export interface ChecklistItemOption {
+    key: string;
+    title: string;
+    description: string;
+    options: {
+        value: string;
+        label: string;
+    }[];
+    isProblem: (value: string) => boolean;
+}
