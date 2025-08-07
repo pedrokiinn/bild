@@ -24,3 +24,9 @@ export interface DailyChecklist {
   date: string; // YYYY-MM-DD
   aiDiagnosis?: string;
 }
+
+export interface User {
+  id: string;
+  name?: string | null;
+  role: 'admin' | 'collaborator';
+}

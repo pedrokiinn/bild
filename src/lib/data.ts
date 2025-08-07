@@ -92,6 +92,11 @@ export const getChecklistById = async (id:string): Promise<DailyChecklist | unde
     return checklists.find(c => c.id === id);
 }
 
+export const deleteChecklist = async (id: string): Promise<void> => {
+    await delay(500);
+    checklists = checklists.filter(c => c.id !== id);
+}
+
 export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<DailyChecklist | undefined> => {
   await delay(300);
   const today = format(new Date(), 'yyyy-MM-dd');
