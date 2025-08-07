@@ -13,7 +13,8 @@ import {
     SidebarMenuItem,
     SidebarProvider,
     SidebarTrigger,
-    SidebarInset
+    SidebarInset,
+    useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Settings, Users, QrCode } from 'lucide-react';
@@ -53,8 +54,55 @@ const navigationItems = [
     }
 ];
 
-export function MainLayout({ children }: { children: React.ReactNode }) {
+function NavigationMenu() {
     const pathname = usePathname();
+    const [user, setUser] = React.useState<User | null>(null);
+    const { setOpenMobile } = useSidebar();
+
+     React.useEffect(() => {
+        const checkUser = async () => {
+            const currentUser = await getCurrentUser();
+            setUser(currentUser);
+        };
+        checkUser();
+    }, []);
+
+    const getFilteredNavigation = () => {
+        if (!user) return [];
+        if (user.role === 'admin') return navigationItems;
+        return navigationItems.filter(item => !item.adminOnly);
+    };
+
+    const handleLinkClick = () => {
+        setOpenMobile(false);
+    }
+
+    return (
+        <SidebarMenu>
+            {getFilteredNavigation().map((item) => (
+                <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                        asChild
+                        isActive={pathname.startsWith(item.url)}
+                        className={`hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-xl mb-1 ${
+                            pathname.startsWith(item.url)
+                                ? 'bg-primary/10 text-primary font-semibold'
+                                : 'text-slate-600'
+                        }`}
+                        onClick={handleLinkClick}
+                    >
+                        <Link href={item.url} className="flex items-center gap-3 px-4 py-3">
+                            <item.icon className="w-5 h-5" />
+                            <span className="font-medium text-sm">{item.title}</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            ))}
+        </SidebarMenu>
+    );
+}
+
+function LayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [user, setUser] = React.useState<User | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
@@ -74,12 +122,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    };
-    
-    const getFilteredNavigation = () => {
-        if (!user) return [];
-        if (user.role === 'admin') return navigationItems;
-        return navigationItems.filter(item => !item.adminOnly);
     };
 
     const handleLogin = async () => {
@@ -106,7 +148,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     if (!user) {
         return (
              <>
-                <QRCodeModal 
+                <QRCodeModal
                     isOpen={isQrModalOpen}
                     onClose={() => setIsQrModalOpen(false)}
                     loginUrl="https://example.com/login" // Placeholder URL
@@ -121,14 +163,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                             <p className="text-slate-600">Faça login para continuar.</p>
                         </div>
                         <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
-                            <Button 
+                            <Button
                                 size="lg"
                                 onClick={handleLogin}
                                 className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/90 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                             >
                                 Fazer Login
                             </Button>
-                             <Button 
+                             <Button
                                 size="lg"
                                 variant="outline"
                                 onClick={() => setIsQrModalOpen(true)}
@@ -143,85 +185,71 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </>
         );
     }
-
     return (
-        <SidebarProvider>
-            <div className="min-h-screen flex w-full">
-                <Sidebar>
-                    <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
-                        <Logo />
-                    </SidebarHeader>
-                    
-                    <SidebarContent className='p-3'>
-                        <SidebarMenu>
-                            {getFilteredNavigation().map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton 
-                                        asChild 
-                                        isActive={pathname.startsWith(item.url)}
-                                        className={`hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-xl mb-1 ${
-                                            pathname.startsWith(item.url)
-                                                ? 'bg-primary/10 text-primary font-semibold' 
-                                                : 'text-slate-600'
-                                        }`}
-                                    >
-                                        <Link href={item.url} className="flex items-center gap-3 px-4 py-3">
-                                            <item.icon className="w-5 h-5" />
-                                            <span className="font-medium text-sm">{item.title}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
-                        </SidebarMenu>
-                    </SidebarContent>
+        <div className="min-h-screen flex w-full">
+            <Sidebar>
+                <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
+                    <Logo />
+                </SidebarHeader>
 
-                    <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
-                        {user && (
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
-                                        <span className="text-white font-semibold text-sm">
-                                            {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                                        </span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-slate-900 text-sm truncate">
-                                            {user.name || 'Usuário'}
-                                        </p>
-                                        <div className="flex items-center gap-2">
-                                            <Badge className={'bg-emerald-100 text-emerald-800'}>
-                                                {user.role}
-                                            </Badge>
-                                        </div>
+                <SidebarContent className='p-3'>
+                    <NavigationMenu />
+                </SidebarContent>
+
+                <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
+                    {user && (
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white font-semibold text-sm">
+                                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                    </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-slate-900 text-sm truncate">
+                                        {user.name || 'Usuário'}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <Badge className={'bg-emerald-100 text-emerald-800'}>
+                                            {user.role}
+                                        </Badge>
                                     </div>
                                 </div>
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={handleLogout}
-                                    className="w-full"
-                                >
-                                    <LogOut className="w-4 h-4 mr-2" />
-                                    Sair
-                                </Button>
                             </div>
-                        )}
-                    </SidebarFooter>
-                </Sidebar>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleLogout}
+                                className="w-full"
+                            >
+                                <LogOut className="w-4 h-4 mr-2" />
+                                Sair
+                            </Button>
+                        </div>
+                    )}
+                </SidebarFooter>
+            </Sidebar>
 
-                <SidebarInset>
-                     <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-6 py-4 flex items-center justify-between lg:hidden">
-                        <Logo />
-                        <SidebarTrigger>
-                            <Menu className="w-5 h-5" />
-                        </SidebarTrigger>
-                    </header>
-                    
-                    <main className="flex-1 overflow-auto">
-                        {children}
-                    </main>
-                </SidebarInset>
-            </div>
-        </SidebarProvider>
+            <SidebarInset>
+                 <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-6 py-4 flex items-center justify-between lg:hidden">
+                    <Logo />
+                    <SidebarTrigger>
+                        <Menu className="w-5 h-5" />
+                    </SidebarTrigger>
+                </header>
+
+                <main className="flex-1 overflow-auto">
+                    {children}
+                </main>
+            </SidebarInset>
+        </div>
     );
+}
+
+export function MainLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <SidebarProvider>
+            <LayoutContent>{children}</LayoutContent>
+        </SidebarProvider>
+    )
 }
