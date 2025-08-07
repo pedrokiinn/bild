@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   BarChart3,
   ClipboardCheck,
-  Settings,
+  Car,
   Calendar,
   LogOut,
 } from 'lucide-react';
@@ -48,7 +48,7 @@ const navigationItems = [
   {
     title: 'Meus Veículos',
     url: '/vehicle',
-    icon: Settings,
+    icon: Car,
   },
 ];
 
