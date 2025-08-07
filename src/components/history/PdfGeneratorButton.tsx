@@ -45,7 +45,7 @@ export default function PdfGeneratorButton({ checklist, vehicle }: PdfGeneratorB
                         
                         <div class="grid">
                             <div class="grid-item">
-                                <strong>Data:</strong> ${format(new Date(checklist.date), 'dd/MM/yyyy')}
+                                <strong>Data:</strong> ${format(new Date(checklist.departureTimestamp), 'dd/MM/yyyy')}
                             </div>
                             <div class="grid-item">
                                 <strong>Motorista:</strong> ${checklist.driverName}
