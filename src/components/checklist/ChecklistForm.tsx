@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import type { Vehicle, DailyChecklist } from '@/types';
@@ -15,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { diagnoseVehicleProblems } from '@/ai/flows/diagnose-vehicle-problems';
 import type { ChecklistItemOption } from '@/types';
+import ChecklistItem from './ChecklistItem';
 
 interface ChecklistFormProps {
   vehicles: Vehicle[];
@@ -35,7 +37,17 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
 
   useEffect(() => {
     setDepartureMileage(selectedVehicle?.mileage.toString() || '');
-  }, [selectedVehicle]);
+    // Set initial values for checklist items
+    const initialItemValues: Record<string, string> = {};
+    const initialItemStates: Record<string, 'ok' | 'problem'> = {};
+    checklistItems.forEach(item => {
+        const defaultValue = item.options[0].value;
+        initialItemValues[item.key] = defaultValue;
+        initialItemStates[item.title] = item.isProblem(defaultValue) ? 'problem' : 'ok';
+    });
+    setItemValues(initialItemValues);
+    setItemStates(initialItemStates);
+  }, [selectedVehicle, checklistItems]);
 
   const isAfterCutoff = getHours(new Date()) >= 22;
 
@@ -50,7 +62,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     const itemConfig = checklistItems.find(item => item.key === itemKey);
     if(itemConfig) {
         setItemStates(prev => ({...prev, [itemConfig.title]: itemConfig.isProblem(value) ? 'problem' : 'ok'}));
-        setItemValues(prev => ({...prev, [itemConfig.title]: value}));
+        setItemValues(prev => ({...prev, [itemKey]: value}));
     }
   }
 
@@ -177,28 +189,15 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
           </div>
           <div>
             <Label>Itens do Checklist</Label>
-            <div className="space-y-4 rounded-md border p-4">
+            <div className="space-y-8 rounded-md border p-6">
               {checklistItems.map(item => (
-                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div className='mb-2 sm:mb-0'>
-                    <Label htmlFor={item.key} >{item.title}</Label>
-                    <p className='text-xs text-muted-foreground'>{item.description}</p>
-                  </div>
-                  <RadioGroup
-                    id={item.key}
-                    defaultValue={item.options[0].value}
-                    onValueChange={(value) => handleItemChange(item.key, value)}
-                    className="flex items-center space-x-2"
-                    disabled={isSaving}
-                  >
-                    {item.options.map(option => (
-                        <div key={option.value} className="flex items-center space-x-1">
-                            <RadioGroupItem value={option.value} id={`${item.key}-${option.value}`}/>
-                            <Label htmlFor={`${item.key}-${option.value}`} className="text-xs">{option.label}</Label>
-                        </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+                <ChecklistItem
+                  key={item.key}
+                  item={item}
+                  value={itemValues[item.key]}
+                  onChange={(value) => handleItemChange(item.key, value)}
+                  disabled={isSaving}
+                />
               ))}
             </div>
           </div>

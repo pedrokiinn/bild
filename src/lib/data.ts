@@ -1,5 +1,5 @@
 
-import type { DailyChecklist, Vehicle, User } from "@/types";
+import type { DailyChecklist, Vehicle, User, ChecklistItemOption } from "@/types";
 import { format } from "date-fns";
 
 // Mock data
@@ -158,17 +158,17 @@ export const saveChecklist = async (checklist: Omit<DailyChecklist, 'id'> & { id
   return newChecklist;
 }
 
-export const checklistItemsOptions = [
+export const checklistItemsOptions: ChecklistItemOption[] = [
     {
         key: "fuel_level",
         title: "Nível de Combustível",
         description: "Verifique o indicador no painel",
         options: [
-            { value: "empty", label: "Vazio" },
-            { value: "quarter", label: "1/4" },
-            { value: "half", label: "1/2" },
-            { value: "three_quarter", label: "3/4" },
-            { value: "full", label: "Cheio" }
+            { value: "full", label: "Cheio", color: "green" },
+            { value: "three_quarter", label: "3/4", color: "blue" },
+            { value: "half", label: "1/2", color: "yellow" },
+            { value: "quarter", label: "1/4", color: "orange" },
+            { value: "empty", label: "Vazio", color: "red" },
         ],
         isProblem: (value: string) => ['empty', 'quarter'].includes(value),
     },
@@ -177,9 +177,9 @@ export const checklistItemsOptions = [
         title: "Pressão dos Pneus",
         description: "Verifique visualmente se algum pneu está murcho",
         options: [
-            { value: "ok", label: "OK" },
-            { value: "low", label: "Baixa" },
-            { value: "needs_check", label: "Verificar" }
+            { value: "ok", label: "OK", color: "green" },
+            { value: "low", label: "Baixa", color: "orange" },
+            { value: "needs_check", label: "Verificar", color: "red" }
         ],
         isProblem: (value: string) => ['low', 'needs_check'].includes(value),
     },
@@ -188,10 +188,10 @@ export const checklistItemsOptions = [
         title: "Condição dos Pneus",
         description: "Estado geral dos pneus",
         options: [
-            { value: "excellent", label: "Excelente" },
-            { value: "good", label: "Bom" },
-            { value: "worn", label: "Desgastado" },
-            { value: "needs_replacement", label: "Trocar" }
+            { value: "excellent", label: "Excelente", color: "green" },
+            { value: "good", label: "Bom", color: "blue" },
+            { value: "worn", label: "Desgastado", color: "orange" },
+            { value: "needs_replacement", label: "Trocar", color: "red" }
         ],
         isProblem: (value: string) => ['worn', 'needs_replacement'].includes(value),
     },
@@ -200,9 +200,9 @@ export const checklistItemsOptions = [
         title: "Luzes e Sinalização",
         description: "Faróis, lanternas, setas e freio",
         options: [
-            { value: "all_working", label: "Todas OK" },
-            { value: "some_issues", label: "Com Problemas" },
-            { value: "major_issues", label: "Problemas Graves" }
+            { value: "all_working", label: "Todas OK", color: "green" },
+            { value: "some_issues", label: "Com Problemas", color: "orange" },
+            { value: "major_issues", label: "Problemas Graves", color: "red" }
         ],
         isProblem: (value: string) => ['some_issues', 'major_issues'].includes(value),
     },
@@ -211,9 +211,9 @@ export const checklistItemsOptions = [
         title: "Níveis de Fluidos",
         description: "Óleo, água, freio (quando possível verificar)",
         options: [
-            { value: "ok", label: "OK" },
-            { value: "low", label: "Baixo" },
-            { value: "needs_refill", label: "Repor" }
+            { value: "ok", label: "OK", color: "green" },
+            { value: "low", label: "Baixo", color: "orange" },
+            { value: "needs_refill", label: "Repor", color: "red" }
         ],
         isProblem: (value: string) => ['low', 'needs_refill'].includes(value),
     },
@@ -222,8 +222,8 @@ export const checklistItemsOptions = [
         title: "Documentação",
         description: "Documento do veículo e CNH",
         options: [
-            { value: "ok", label: "OK" },
-            { value: "missing", label: "Faltando" }
+            { value: "ok", label: "OK", color: "green" },
+            { value: "missing", label: "Faltando", color: "red" }
         ],
         isProblem: (value: string) => value === 'missing',
     },

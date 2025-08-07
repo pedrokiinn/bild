@@ -40,6 +40,7 @@ export interface ChecklistItemOption {
     options: {
         value: string;
         label: string;
+        color: string;
     }[];
     isProblem: (value: string) => boolean;
 }
