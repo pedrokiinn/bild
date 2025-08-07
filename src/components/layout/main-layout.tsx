@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -89,7 +90,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <SidebarGroup>
             <div className="flex items-center gap-3">
               <Avatar>
-                <AvatarImage src="https://placehold.co/100x100" />
+                <AvatarImage src="https://placehold.co/100x100" data-ai-hint="male avatar" />
                 <AvatarFallback>JD</AvatarFallback>
               </Avatar>
               <div className="flex flex-col overflow-hidden">
@@ -105,7 +106,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
 
       <SidebarInset>
-        <header className="flex items-center justify-between p-4 bg-background md:hidden sticky top-0 z-10">
+        <header className="md:hidden flex items-center justify-between p-4 bg-background border-b sticky top-0 z-10">
           <Logo />
           <SidebarTrigger />
         </header>
