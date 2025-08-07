@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { DailyChecklist, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,10 @@ export default function HistoryView({ initialChecklists, vehicles, isLoading }: 
   const [selectedChecklist, setSelectedChecklist] = useState<DailyChecklist & { vehicle?: Vehicle } | null>(null);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    setChecklists(initialChecklists);
+  }, [initialChecklists]);
 
   const handleArrivalSave = async (arrivalMileage: number) => {
     if (!selectedChecklist) return;
