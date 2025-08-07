@@ -1,14 +1,42 @@
+
 'use client';
-import { DailyChecklist, Vehicle } from '@/types';
+import { DailyChecklist, Vehicle, ChecklistItemOption } from '@/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CheckCircle2, AlertCircle, Sparkles, User, Car as CarIcon, Calendar, Gauge } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Sparkles, User, Car as CarIcon, Calendar, Gauge, FileText } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { checklistItemsOptions } from '@/lib/data';
 
 interface ChecklistViewerProps {
     checklist?: DailyChecklist & { vehicle?: Vehicle };
     vehicle?: Vehicle;
 }
+
+const getOptionLabel = (itemKey: string, value: string) => {
+    const item = checklistItemsOptions.find(i => i.key === itemKey);
+    if (!item) return value;
+    const option = item.options.find(o => o.value === value);
+    return option ? option.label : value;
+};
+
+const getOptionColor = (itemKey: string, value: string) => {
+    const item = checklistItemsOptions.find(i => i.key === itemKey);
+    if (!item) return "bg-gray-100 text-gray-800";
+    const option = item.options.find(o => o.value === value);
+    if (!option) return "bg-gray-100 text-gray-800";
+
+    const colorClasses = {
+        green: "bg-emerald-100 text-emerald-800",
+        blue: "bg-blue-100 text-blue-800",
+        yellow: "bg-yellow-100 text-yellow-800",
+        orange: "bg-orange-100 text-orange-800",
+        red: "bg-red-100 text-red-800"
+    };
+
+    return colorClasses[option.color as keyof typeof colorClasses] || "bg-gray-100 text-gray-800";
+};
+
 
 export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerProps) {
     if (!checklist) {
@@ -23,7 +51,7 @@ export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerP
             <Card>
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-primary" />
+                        <FileText className="w-5 h-5 text-primary" />
                         Informações Gerais
                     </CardTitle>
                 </CardHeader>
@@ -52,33 +80,57 @@ export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerP
                     )}
                     <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium text-muted-foreground">Data:</span>
+                        <span className="font-medium text-muted-foreground">Data Saída:</span>
                         <span className="font-semibold">{format(new Date(checklist.departureTimestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                    </div>
+                     {checklist.arrivalTimestamp && (
+                        <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium text-muted-foreground">Data Chegada:</span>
+                            <span className="font-semibold">{format(new Date(checklist.arrivalTimestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2 text-primary">
+                        <CheckCircle2 className="w-5 h-5" />
+                        Itens Verificados
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        {checklist.checklistValues && Object.entries(checklist.checklistValues).map(([key, value]) => {
+                            const itemConfig = checklistItemsOptions.find(i => i.key === key);
+                            return (
+                                <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                    <span className="text-sm font-medium text-slate-700">
+                                        {itemConfig?.title || key}
+                                    </span>
+                                    <Badge className={getOptionColor(key, value)}>
+                                        {getOptionLabel(key, value)}
+                                    </Badge>
+                                </div>
+                            )
+                        })}
                     </div>
                 </CardContent>
             </Card>
 
-
-            {problemItems.length > 0 && (
-                <Card>
+            {(checklist.notes || checklist.aiDiagnosis) && (
+                 <Card>
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2 text-amber-600">
                              <AlertCircle className="w-5 h-5" />
-                             Itens com Problema
+                             Anotações e Diagnósticos
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-md space-y-2">
-                            {problemItems.map(([item]) => (
-                                <div key={item} className="flex items-center gap-2 text-amber-800">
-                                    <AlertCircle className="w-5 h-5" />
-                                    <span>{item}</span>
-                                </div>
-                            ))}
-                        </div>
+                    <CardContent className="space-y-4">
                          {checklist.notes && (
                             <div>
-                               <h4 className="font-semibold text-slate-700 mb-2">Observações:</h4>
+                               <h4 className="font-semibold text-slate-700 mb-2">Observações do Motorista:</h4>
                                <p className="text-sm text-slate-600 bg-slate-100 p-3 rounded-md border border-slate-200">{checklist.notes}</p>
                             </div>
                         )}
@@ -94,25 +146,6 @@ export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerP
                     </CardContent>
                 </Card>
             )}
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2 text-emerald-600">
-                        <CheckCircle2 className="w-5 h-5" />
-                        Itens Verificados (OK)
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                     <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3 text-sm">
-                        {okItems.map(([item]) => (
-                            <div key={item} className="flex items-center gap-2 text-slate-700">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                                <span>{item}</span>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }

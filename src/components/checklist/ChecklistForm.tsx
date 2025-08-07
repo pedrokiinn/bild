@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Car, Check, Loader2, X, ArrowLeft } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { format, getHours } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { saveChecklist } from '@/lib/data';
@@ -119,6 +118,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             departureTimestamp: new Date().getTime(),
             departureMileage: Number(departureMileage),
             checklistItems: checklistItemsToSave,
+            checklistValues: itemValues,
             notes: notes,
             status: hasProblem ? 'problem' : 'pending_arrival',
             date: format(new Date(), 'yyyy-MM-dd'),
@@ -133,6 +133,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         });
         router.push('/history');
     } catch (error) {
+        console.error("Erro ao salvar o checklist:", error)
         toast({
             title: 'Erro ao salvar',
             description: 'Não foi possível salvar o checklist. Tente novamente.',

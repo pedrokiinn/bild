@@ -20,6 +20,7 @@ export interface DailyChecklist {
   departureMileage: number;
   arrivalMileage?: number;
   checklistItems: Record<string, 'ok' | 'problem'>;
+  checklistValues?: Record<string, string>; // To store specific values like "full", "low", etc.
   notes?: string;
   status: ChecklistStatus;
   date: string; // YYYY-MM-DD
