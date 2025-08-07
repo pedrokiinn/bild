@@ -5,7 +5,15 @@ import { getChecklists, getVehicles } from '@/lib/data';
 import { getCurrentUser } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, User as UserIcon, AlertTriangle, Trash2, Eye, Search, Clock } from 'lucide-react';
+import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, Clock, CheckCircle2 } from 'lucide-react';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import {
     Dialog,
     DialogContent,
@@ -21,6 +29,7 @@ import PdfGeneratorButton from '@/components/history/PdfGeneratorButton';
 import { useToast } from '@/hooks/use-toast';
 import { saveChecklist, deleteChecklist as deleteChecklistAction } from '@/lib/data';
 import { ArrivalDialog } from '@/components/history/ArrivalDialog';
+import { Badge } from '@/components/ui/badge';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -128,30 +137,47 @@ function HistoryContent() {
         return searchMatch && vehicleMatch;
     });
 
-    const hasProblems = (items: Record<string, 'ok' | 'problem'>) => {
-        return Object.values(items).some(status => status === 'problem');
-    };
-
     const renderSkeleton = () => (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array(6).fill(0).map((_, i) => (
-                <Card key={i} className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
-                    <CardHeader>
-                        <Skeleton className="h-6 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-full" />
-                        <div className="flex justify-between items-center pt-4">
-                            <Skeleton className="h-10 w-24" />
-                            <Skeleton className="h-10 w-24" />
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
+         <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
+            <CardContent className="p-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Veículo</TableHead>
+                            <TableHead>Motorista</TableHead>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Ações</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {Array(5).fill(0).map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                                <TableCell><Skeleton className="h-8 w-28" /></TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
     );
+
+    const getStatusBadge = (status: DailyChecklist['status']) => {
+        switch (status) {
+            case 'completed':
+                return <Badge variant="outline" className="text-emerald-600 border-emerald-300"><CheckCircle2 className="w-4 h-4 mr-2" />Finalizado</Badge>;
+            case 'problem':
+                return <Badge variant="destructive"><AlertTriangle className="w-4 h-4 mr-2" />Com Problemas</Badge>;
+            case 'pending_arrival':
+                return <Badge variant="outline" className="text-amber-600 border-amber-300"><Clock className="w-4 h-4 mr-2" />Em Rota</Badge>;
+            default:
+                return <Badge variant="secondary">Pendente</Badge>;
+        }
+    };
 
     return (
         <>
@@ -193,69 +219,66 @@ function HistoryContent() {
                 </div>
 
                 {isLoading ? renderSkeleton() : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredChecklists.map(checklist => {
-                            const vehicle = checklist.vehicle;
-                            return (
-                                <Card key={checklist.id} className={`bg-white/80 backdrop-blur-sm shadow-lg border-0 transition-all hover:shadow-2xl ${hasProblems(checklist.checklistItems) ? 'border-l-4 border-amber-500' : ''}`}>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2 text-lg">
-                                            <Car className="w-5 h-5 text-primary" />
-                                            {vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.license_plate})` : "Veículo não encontrado"}
-                                        </CardTitle>
-                                        <p className="text-sm text-slate-500 flex items-center gap-2">
-                                            <Calendar className="w-4 h-4" /> {new Date(checklist.date).toLocaleDateString('pt-BR')}
-                                        </p>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-2 text-sm mb-4">
-                                            <p className="flex items-center gap-2">
-                                                <UserIcon className="w-4 h-4 text-slate-500" /> 
-                                                <strong>Motorista:</strong> {checklist.driverName}
-                                            </p>
-                                            {hasProblems(checklist.checklistItems) && (
-                                                <p className="flex items-center gap-2 text-amber-600 font-semibold p-2 bg-amber-50 rounded-md">
-                                                    <AlertTriangle className="w-4 h-4" /> 
-                                                    Atenção: Checklist com problemas!
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className="flex justify-between items-center pt-4 border-t border-slate-200">
-                                            <Dialog>
-                                                <DialogTrigger asChild>
-                                                    <Button variant="outline" size="sm">
-                                                        <Eye className="w-4 h-4 mr-2" />
-                                                        Ver Dados
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent className="sm:max-w-2xl">
-                                                    <DialogHeader>
-                                                        <DialogTitle>Detalhes do Checklist</DialogTitle>
-                                                    </DialogHeader>
-                                                    <ChecklistViewer checklist={checklist} vehicle={vehicle} />
-                                                </DialogContent>
-                                            </Dialog>
-
-                                            <div className="flex items-center gap-2">
-                                                 {checklist.status === 'pending_arrival' && (
-                                                    <Button size="sm" onClick={() => { setSelectedChecklist(checklist); setIsArrivalDialogOpen(true); }}>
-                                                        <Clock className="w-4 h-4 mr-2" />
-                                                        Registrar Chegada
-                                                    </Button>
-                                                )}
-                                                <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
-                                                {currentUser?.role === 'admin' && (
-                                                    <Button variant="destructive" size="icon" onClick={() => handleDelete(checklist.id)}>
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </div>
+                    <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
+                        <CardContent className="p-4">
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Veículo</TableHead>
+                                        <TableHead>Motorista</TableHead>
+                                        <TableHead>Data</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredChecklists.map(checklist => {
+                                        const vehicle = checklist.vehicle;
+                                        return (
+                                            <TableRow key={checklist.id}>
+                                                <TableCell>
+                                                    <div className="font-medium">{vehicle ? `${vehicle.brand} ${vehicle.model}` : 'N/A'}</div>
+                                                    <div className="text-sm text-muted-foreground">{vehicle?.license_plate}</div>
+                                                </TableCell>
+                                                <TableCell>{checklist.driverName}</TableCell>
+                                                <TableCell>{new Date(checklist.date).toLocaleDateString('pt-BR')}</TableCell>
+                                                <TableCell>{getStatusBadge(checklist.status)}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {checklist.status === 'pending_arrival' && (
+                                                            <Button size="sm" onClick={() => { setSelectedChecklist(checklist); setIsArrivalDialogOpen(true); }}>
+                                                                <Clock className="w-4 h-4 mr-2" />
+                                                                Chegada
+                                                            </Button>
+                                                        )}
+                                                         <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <Button variant="outline" size="icon">
+                                                                    <Eye className="w-4 h-4" />
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="sm:max-w-2xl">
+                                                                <DialogHeader>
+                                                                    <DialogTitle>Detalhes do Checklist</DialogTitle>
+                                                                </DialogHeader>
+                                                                <ChecklistViewer checklist={checklist} vehicle={vehicle} />
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                        <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
+                                                        {currentUser?.role === 'admin' && (
+                                                            <Button variant="destructive" size="icon" onClick={() => handleDelete(checklist.id)}>
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 )}
                 {!isLoading && filteredChecklists.length === 0 && (
                      <div className="text-center py-16">
