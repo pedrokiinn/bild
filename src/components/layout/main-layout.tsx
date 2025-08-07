@@ -22,6 +22,7 @@ import { Badge } from '../ui/badge';
 import { User, getCurrentUser, login, logout } from '@/lib/auth';
 import { Logo } from '../Logo';
 import QRCodeModal from '../auth/QRCodeModal';
+import { SheetTitle } from '../ui/sheet';
 
 
 const navigationItems = [
@@ -188,6 +189,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen flex w-full">
             <Sidebar>
+                <SheetTitle className="hidden">Menu de Navegação</SheetTitle>
                 <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
                     <Logo />
                 </SidebarHeader>
@@ -210,7 +212,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                                         {user.name || 'Usuário'}
                                     </p>
                                     <div className="flex items-center gap-2">
-                                        <Badge className={'bg-emerald-100 text-emerald-800'}>
+                                        <Badge className={'bg-emerald-100 text-emerald-800 text-xs'}>
                                             {user.role}
                                         </Badge>
                                     </div>
@@ -231,7 +233,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             </Sidebar>
 
             <SidebarInset>
-                 <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-6 py-4 flex items-center justify-between lg:hidden">
+                 <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between lg:hidden">
                     <Logo />
                     <SidebarTrigger>
                         <Menu className="w-5 h-5" />

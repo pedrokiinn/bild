@@ -20,7 +20,7 @@ export default function VehicleStatus({ vehicles, checklists, isLoading }: Vehic
 
   if (isLoading) {
     return (
-        <Card className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
+        <Card className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
             <CardHeader className="p-0 mb-4">
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
@@ -35,30 +35,30 @@ export default function VehicleStatus({ vehicles, checklists, isLoading }: Vehic
   }
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
+    <Card className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
       <CardHeader className="p-0 mb-4">
-        <CardTitle className="text-xl font-bold text-slate-900">Status do Dia</CardTitle>
-        <CardDescription>{format(new Date(), "eeee, dd 'de' MMMM", { locale: ptBR })}</CardDescription>
+        <CardTitle className="text-lg md:text-xl font-bold text-slate-900">Status do Dia</CardTitle>
+        <CardDescription className="text-sm">{format(new Date(), "eeee, dd 'de' MMMM", { locale: ptBR })}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 p-0">
+      <CardContent className="space-y-3 p-0">
         {vehicles.length > 0 ? vehicles.map(vehicle => {
           const todaysChecklistForVehicle = todayChecklists.find(c => c.vehicleId === vehicle.id);
           const hasProblem = todaysChecklistForVehicle?.status === 'problem';
           const status = todaysChecklistForVehicle?.status;
 
           return (
-            <div key={vehicle.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+            <div key={vehicle.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
               <div className={`p-2 rounded-full ${hasProblem ? 'bg-red-100' : 'bg-emerald-100'}`}>
-                <Car className={`h-5 w-5 ${hasProblem ? 'text-red-600' : 'text-emerald-600'}`} />
+                <Car className={`h-4 w-4 ${hasProblem ? 'text-red-600' : 'text-emerald-600'}`} />
               </div>
               <div className="flex-1">
-                <p className="font-medium">{vehicle.brand} {vehicle.model}</p>
-                <p className="text-sm text-muted-foreground">{vehicle.license_plate}</p>
+                <p className="font-medium text-sm">{vehicle.brand} {vehicle.model}</p>
+                <p className="text-xs text-muted-foreground">{vehicle.license_plate}</p>
               </div>
               <div className="flex items-center gap-1.5 text-xs font-medium">
-                  {status === 'completed' && <CheckCircle className="h-4 w-4 text-emerald-500" />}
-                  {status === 'problem' && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                  {status === 'pending_arrival' && <Clock className="h-4 w-4 text-amber-500" />}
+                  {status === 'completed' && <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />}
+                  {status === 'problem' && <AlertTriangle className="h-3.5 w-3.5 text-red-500" />}
+                  {status === 'pending_arrival' && <Clock className="h-3.5 w-3.5 text-amber-500" />}
                   <span className={
                       status === 'completed' ? 'text-emerald-600' :
                       status === 'problem' ? 'text-red-600' :
@@ -77,10 +77,10 @@ export default function VehicleStatus({ vehicles, checklists, isLoading }: Vehic
           )
         }) : (
             <div className="text-center text-muted-foreground py-8">
-                <p>Nenhum veículo cadastrado.</p>
+                <p className="text-sm">Nenhum veículo cadastrado.</p>
                 <Link href="/vehicle">
-                    <Button size="sm" className="mt-2">
-                        <Plus className="h-4 w-4 mr-2" />
+                    <Button size="sm" className="mt-2 text-xs">
+                        <Plus className="h-3.5 w-3.5 mr-2" />
                         Adicionar Veículo
                     </Button>
                 </Link>

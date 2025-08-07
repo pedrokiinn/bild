@@ -58,8 +58,8 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
         return (
             <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                        <ClipboardCheck className="w-6 h-6 text-emerald-600" />
+                    <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                        <ClipboardCheck className="w-5 h-5 text-emerald-600" />
                         Inspeções Recentes
                     </CardTitle>
                 </CardHeader>
@@ -81,19 +81,19 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
   return (
     <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-slate-900">Atividade Recente</CardTitle>
+        <CardTitle className="text-lg md:text-xl font-bold text-slate-900">Atividade Recente</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-2">
             {checklists.slice(0, 5).map(checklist => {
                 const currentScore = getScore(checklist);
                 const previousScore = getPreviousChecklistScore(checklist);
 
                 return (
-                    <div key={checklist.id} className="flex items-center justify-between p-4 rounded-lg hover:bg-slate-50 transition-colors duration-200">
+                    <div key={checklist.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors duration-200">
                         <div>
-                            <p className="font-semibold text-slate-800">{getVehicleInfo(checklist.vehicleId)}</p>
-                            <p className="text-sm text-slate-500">
+                            <p className="font-semibold text-sm text-slate-800">{getVehicleInfo(checklist.vehicleId)}</p>
+                            <p className="text-xs text-slate-500">
                                 {checklist.driverName} • {format(new Date(checklist.departureTimestamp), "dd/MM/yyyy", { locale: ptBR })}
                             </p>
                         </div>
@@ -108,7 +108,7 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
             })}
         </div>
         {!isLoading && checklists.length > 0 && (
-          <div className="mt-6 text-right">
+          <div className="mt-4 text-right">
              <Link href="/history" className="text-sm font-medium text-emerald-600 hover:underline flex items-center justify-end gap-1">
                 Ver Histórico Completo
                 <ArrowRight className="h-4 w-4" />
@@ -117,7 +117,7 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
         )}
          {!isLoading && checklists.length === 0 && (
             <div className="text-center py-10 text-slate-500">
-                <p>Nenhuma inspeção recente encontrada.</p>
+                <p className="text-sm">Nenhuma inspeção recente encontrada.</p>
             </div>
          )}
       </CardContent>

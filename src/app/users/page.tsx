@@ -83,8 +83,8 @@ function UsersContent() {
     const renderLoadingSkeleton = () => (
         Array(5).fill(0).map((_, index) => (
             <TableRow key={index}>
-                <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-64" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-48" /></TableCell>
                 <TableCell><Skeleton className="h-10 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-10 w-10" /></TableCell>
             </TableRow>
@@ -92,20 +92,20 @@ function UsersContent() {
     );
 
     return (
-        <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
+        <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-6xl mx-auto space-y-6">
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-2xl text-slate-900">
-                            <Users className="w-7 h-7 text-primary" />
+                        <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900">
+                            <Users className="w-6 h-6 text-primary" />
                             Gerenciamento de Usuários
                         </CardTitle>
-                        <p className="text-slate-600">
+                        <p className="text-slate-600 text-sm md:text-base">
                             Adicione, remova e gerencie as permissões dos usuários do sistema.
                         </p>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-slate-700 bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
+                        <p className="text-sm text-slate-700 bg-blue-50 border border-blue-200 p-3 rounded-lg mb-6">
                             <strong>Nota:</strong> Esta é uma simulação. Em um ambiente real, novos usuários seriam convidados através de um sistema de autenticação.
                         </p>
                         <div className="overflow-x-auto">
@@ -113,7 +113,7 @@ function UsersContent() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Nome</TableHead>
-                                        <TableHead>Email</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Email</TableHead>
                                         <TableHead>Função</TableHead>
                                         <TableHead>Ações</TableHead>
                                     </TableRow>
@@ -122,14 +122,14 @@ function UsersContent() {
                                     {isLoading ? renderLoadingSkeleton() : users.map(user => (
                                         <TableRow key={user.id}>
                                             <TableCell className="font-medium">{user.name}</TableCell>
-                                            <TableCell>{user.email}</TableCell>
+                                            <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
                                             <TableCell>
                                                 <Select
                                                     value={user.role}
                                                     onValueChange={(newRole: 'admin' | 'collaborator') => handleRoleChange(user.id, newRole)}
                                                     disabled={currentUser?.id === user.id && users.filter(u => u.role === 'admin').length <= 1}
                                                 >
-                                                    <SelectTrigger className="w-[180px]">
+                                                    <SelectTrigger className="w-[150px] text-xs sm:text-sm">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -163,11 +163,11 @@ function UsersContent() {
                         </div>
                          { !isLoading && users.length === 0 && (
                             <div className="text-center py-12">
-                                <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                                <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                                 <h3 className="text-lg font-semibold text-slate-900 mb-2">
                                     Nenhum outro usuário encontrado
                                 </h3>
-                                <p className="text-slate-600">
+                                <p className="text-slate-600 text-sm">
                                     Novos usuários aparecerão aqui assim que se registrarem.
                                 </p>
                             </div>

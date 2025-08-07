@@ -86,15 +86,15 @@ function DashboardContent() {
     const todayChecklistsDone = checklists.filter(c => c.date === format(new Date(), 'yyyy-MM-dd')).length === vehicles.length;
 
     return (
-        <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
+            <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                             Olá! 👋
                         </h1>
-                        <p className="text-slate-600 text-lg">
+                        <p className="text-slate-600 text-base">
                             {todayChecklistsDone
                                 ? "Todos os checklists de hoje foram realizados!" 
                                 : "Ainda há checklists pendentes para hoje."
@@ -104,8 +104,8 @@ function DashboardContent() {
                     
                     {!todayChecklistsDone && (
                         <Link href="/checklist" className="w-full md:w-auto">
-                            <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                                <Plus className="w-5 h-5 mr-2" />
+                            <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
+                                <Plus className="w-4 h-4 mr-2" />
                                 Fazer Checklist
                             </Button>
                         </Link>
@@ -113,7 +113,7 @@ function DashboardContent() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     <StatsCard
                         title="Total de Inspeções"
                         value={String(checklists.length)}
@@ -149,7 +149,7 @@ function DashboardContent() {
                 </div>
 
                 {/* Main Content Grid */}
-                <div className="grid lg:grid-cols-3 gap-8">
+                <div className="grid lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
                         <RecentChecklists 
                             checklists={checklists}
@@ -166,23 +166,23 @@ function DashboardContent() {
                         />
                         
                         {/* Quick Actions */}
-                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
-                            <h3 className="text-xl font-bold text-slate-900 mb-4">Ações Rápidas</h3>
+                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
+                            <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-4">Ações Rápidas</h3>
                             <div className="space-y-3">
                                 <Link href="/checklist" className="block">
-                                    <Button variant="outline" className="w-full justify-start hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all duration-300">
+                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all duration-300">
                                         <ClipboardCheck className="w-4 h-4 mr-3" />
                                         Novo Checklist
                                     </Button>
                                 </Link>
                                 <Link href="/vehicle" className="block">
-                                    <Button variant="outline" className="w-full justify-start hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all duration-300">
+                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all duration-300">
                                         <Car className="w-4 h-4 mr-3" />
                                         Gerenciar Veículo
                                     </Button>
                                 </Link>
                                 <Link href="/history" className="block">
-                                    <Button variant="outline" className="w-full justify-start hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all duration-300">
+                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all duration-300">
                                         <Calendar className="w-4 h-4 mr-3" />
                                         Ver Histórico
                                     </Button>

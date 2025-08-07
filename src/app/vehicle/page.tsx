@@ -107,24 +107,24 @@ function VehicleContent() {
     };
 
     return (
-        <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
+        <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-4xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                        <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">
                             Meus Veículos
                         </h1>
-                        <p className="text-slate-600">
+                        <p className="text-slate-600 text-sm md:text-base">
                             Gerencie as informações dos seus veículos
                         </p>
                     </div>
                     
                     <Button
                         onClick={() => setShowForm(!showForm)}
-                        className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                        className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-semibold px-4 py-2 text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                     >
-                        <Plus className="w-5 h-5 mr-2" />
+                        <Plus className="w-4 h-4 mr-2" />
                         {showForm ? "Cancelar" : "Novo Veículo"}
                     </Button>
                 </div>
@@ -133,8 +133,8 @@ function VehicleContent() {
                 {showForm && (
                     <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-xl">
-                                <Car className="w-6 h-6 text-primary" />
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Car className="w-5 h-5 text-primary" />
                                 {editingVehicle ? "Editar Veículo" : "Novo Veículo"}
                             </CardTitle>
                         </CardHeader>
@@ -245,7 +245,7 @@ function VehicleContent() {
                 {/* Vehicles List */}
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                     <CardHeader>
-                        <CardTitle className="text-xl text-slate-900">
+                        <CardTitle className="text-lg md:text-xl text-slate-900">
                             Veículos Cadastrados ({vehicles.length})
                         </CardTitle>
                     </CardHeader>
@@ -270,11 +270,11 @@ function VehicleContent() {
                             </div>
                         ) : vehicles.length === 0 ? (
                             <div className="text-center py-12">
-                                <Car className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                                <Car className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                                 <h3 className="text-lg font-semibold text-slate-900 mb-2">
                                     Nenhum veículo cadastrado
                                 </h3>
-                                <p className="text-slate-600 mb-6">
+                                <p className="text-slate-600 text-sm mb-6">
                                     Adicione seu primeiro veículo para começar
                                 </p>
                                 <Button
@@ -288,17 +288,17 @@ function VehicleContent() {
                         ) : (
                             <div className="space-y-4">
                                 {vehicles.map((vehicle) => (
-                                    <Card key={vehicle.id} className="p-6 hover:shadow-lg transition-shadow duration-200">
-                                        <div className="flex justify-between items-start">
+                                    <Card key={vehicle.id} className="p-4 md:p-6 hover:shadow-lg transition-shadow duration-200">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                             <div className="flex items-start gap-4">
-                                                <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
-                                                    <Car className="w-8 h-8 text-white" />
+                                                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shrink-0">
+                                                    <Car className="w-7 h-7 text-white" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-xl font-bold text-slate-900 mb-1">
+                                                    <h3 className="text-lg font-bold text-slate-900 mb-1">
                                                         {vehicle.brand} {vehicle.model}
                                                     </h3>
-                                                    <div className="space-y-1 text-slate-600">
+                                                    <div className="space-y-1 text-sm text-slate-600">
                                                         <p>Ano: <span className="font-medium">{vehicle.year}</span></p>
                                                         <p>Placa: <span className="font-medium">{vehicle.license_plate}</span></p>
                                                         {vehicle.color && (
@@ -309,7 +309,7 @@ function VehicleContent() {
                                                 </div>
                                             </div>
                                             
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 self-start sm:self-center">
                                                 <Button
                                                     variant="outline"
                                                     size="icon"
