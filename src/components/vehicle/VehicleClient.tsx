@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Vehicle } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -36,6 +36,15 @@ export default function VehicleClient({ initialVehicles, isLoading: initialIsLoa
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<Omit<Vehicle, 'id'>>(emptyForm);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setVehicles(initialVehicles);
+  }, [initialVehicles]);
+
+  useEffect(() => {
+    setIsLoading(initialIsLoading);
+  }, [initialIsLoading]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
