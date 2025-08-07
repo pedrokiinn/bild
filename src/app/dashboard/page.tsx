@@ -14,28 +14,36 @@ import { Button } from '@/components/ui/button';
 function DashboardContent() {
     const [data, setData] = useState<{ checklists: (DailyChecklist & { vehicle?: Vehicle })[], vehicles: Vehicle[] }>({ checklists: [], vehicles: [] });
     const [isLoading, setIsLoading] = useState(true);
+    const [todayChecklist, setTodayChecklist] = useState<DailyChecklist | null | undefined>(undefined);
 
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
-            const [checklistsData, vehiclesData] = await Promise.all([getChecklists(), getVehicles()]);
-            
-            const checklistsWithVehicleData = checklistsData.map(checklist => {
-                const vehicle = vehiclesData.find(v => v.id === checklist.vehicleId);
-                return { ...checklist, vehicle };
-            });
+            try {
+                const [checklistsData, vehiclesData] = await Promise.all([getChecklists(), getVehicles()]);
+                
+                const checklistsWithVehicleData = checklistsData.map(checklist => {
+                    const vehicle = vehiclesData.find(v => v.id === checklist.vehicleId);
+                    return { ...checklist, vehicle };
+                });
 
-            setData({ checklists: checklistsWithVehicleData, vehicles: vehiclesData });
-            setIsLoading(false);
+                setData({ checklists: checklistsWithVehicleData, vehicles: vehiclesData });
+
+                const today = format(new Date(), 'yyyy-MM-dd');
+                const todaysCheck = checklistsWithVehicleData.find(checklist => checklist.date === today);
+                setTodayChecklist(todaysCheck);
+
+            } catch (error) {
+                console.error("Erro ao carregar dados:", error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
         fetchData();
     }, []);
 
     const { checklists, vehicles } = data;
-
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const todayChecklist = checklists.find(c => c.date === today);
 
     const getWeeklyAverage = () => {
         const lastWeek = checklists.filter(checklist => {
@@ -75,7 +83,7 @@ function DashboardContent() {
     };
 
     return (
-        <div className="p-4 md:p-8 min-h-screen">
+        <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
