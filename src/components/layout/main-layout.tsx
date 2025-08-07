@@ -105,9 +105,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
 
       <SidebarInset>
-        <header className="flex items-center justify-between p-4 md:hidden">
-            <Logo />
-            <SidebarTrigger />
+        <header className="flex items-center justify-between p-4 bg-background md:hidden sticky top-0 z-10">
+          <Logo />
+          <SidebarTrigger />
         </header>
         <main className="p-4 md:p-6 lg:p-8">
             <div className="hidden md:flex items-center mb-6">
