@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { MainLayout } from '@/components/layout/main-layout';
 
 export const metadata: Metadata = {
-  title: 'FleetCheck Pro',
+  title: 'CarCheck',
   description: 'Gerencie seus veículos com facilidade.',
 };
 
