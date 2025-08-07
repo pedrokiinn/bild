@@ -6,7 +6,7 @@ export function Logo() {
       <div className="bg-primary text-primary-foreground p-2 rounded-lg">
         <Car className="h-6 w-6" />
       </div>
-      <span className="font-headline">FleetCheck Pro</span>
+      <span className="font-headline">CarCheck</span>
     </div>
   );
 }
