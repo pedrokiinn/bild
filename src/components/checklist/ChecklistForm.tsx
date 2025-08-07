@@ -27,7 +27,7 @@ export default function ChecklistForm({ vehicles, checklistItems }: ChecklistFor
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [driverName, setDriverName] = useState('');
   const [departureMileage, setDepartureMileage] = useState<string>('');
-  const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem' | 'na'>>({});
+  const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -82,13 +82,18 @@ export default function ChecklistForm({ vehicles, checklistItems }: ChecklistFor
             aiDiagnosisResult = diagnosis.potentialProblems;
         }
 
+        const checklistItemsWithDefaults = checklistItems.reduce((acc, item) => {
+            acc[item] = itemStates[item] || 'ok';
+            return acc;
+        }, {} as Record<string, 'ok' | 'problem'>);
+
 
         const newChecklist: Omit<DailyChecklist, 'id'> = {
             vehicleId: selectedVehicleId,
             driverName,
             departureTimestamp: new Date().getTime(),
             departureMileage: Number(departureMileage),
-            checklistItems: itemStates,
+            checklistItems: checklistItemsWithDefaults,
             notes: notes,
             status: hasProblem ? 'problem' : 'pending_arrival',
             date: format(new Date(), 'yyyy-MM-dd'),
@@ -187,8 +192,8 @@ export default function ChecklistForm({ vehicles, checklistItems }: ChecklistFor
                   <Label htmlFor={item} className="mb-2 sm:mb-0">{item}</Label>
                   <RadioGroup
                     id={item}
-                    defaultValue="na"
-                    onValueChange={(value: 'ok' | 'problem' | 'na') => setItemStates(prev => ({...prev, [item]: value}))}
+                    defaultValue="ok"
+                    onValueChange={(value: 'ok' | 'problem') => setItemStates(prev => ({...prev, [item]: value}))}
                     className="flex items-center space-x-4"
                     disabled={isSaving}
                   >
@@ -199,10 +204,6 @@ export default function ChecklistForm({ vehicles, checklistItems }: ChecklistFor
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="problem" id={`${item}-problem`} className="text-destructive border-destructive" />
                         <Label htmlFor={`${item}-problem`} className="text-destructive">Problema</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="na" id={`${item}-na`} />
-                        <Label htmlFor={`${item}-na`}>N/A</Label>
                     </div>
                   </RadioGroup>
                 </div>

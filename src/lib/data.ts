@@ -127,10 +127,15 @@ export const saveChecklist = async (checklist: Omit<DailyChecklist, 'id'> & { id
 export const checklistItemsOptions = [
     "Nível do Óleo",
     "Nível da Água",
-    "Calibragem dos Pneus",
+    "Condições dos Pneus",
     "Estepe",
-    "Freios",
-    "Faróis e Lanternas",
+    "Sistema de Freios",
+    "Farol Alto",
+    "Farol Baixo",
+    "Setas",
+    "Luz de Freio",
+    "Luz de Ré",
+    "Buzina",
     "Limpeza",
     "Documentação",
 ];

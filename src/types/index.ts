@@ -18,7 +18,7 @@ export interface DailyChecklist {
   arrivalTimestamp?: number;
   departureMileage: number;
   arrivalMileage?: number;
-  checklistItems: Record<string, 'ok' | 'problem' | 'na'>;
+  checklistItems: Record<string, 'ok' | 'problem'>;
   notes?: string;
   status: ChecklistStatus;
   date: string; // YYYY-MM-DD
