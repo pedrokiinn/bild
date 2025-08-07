@@ -1,0 +1,26 @@
+export interface Vehicle {
+  id: string;
+  brand: string;
+  model: string;
+  year: number;
+  license_plate: string;
+  color: string;
+  mileage: number;
+}
+
+export type ChecklistStatus = 'completed' | 'pending_arrival' | 'problem';
+
+export interface DailyChecklist {
+  id: string;
+  vehicleId: string;
+  driverName: string;
+  departureTimestamp: number;
+  arrivalTimestamp?: number;
+  departureMileage: number;
+  arrivalMileage?: number;
+  checklistItems: Record<string, 'ok' | 'problem' | 'na'>;
+  notes?: string;
+  status: ChecklistStatus;
+  date: string; // YYYY-MM-DD
+  aiDiagnosis?: string;
+}
