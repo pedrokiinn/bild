@@ -3,29 +3,29 @@ import { DailyChecklist, Vehicle } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 import { Skeleton } from '../ui/skeleton';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface RecentChecklistsProps {
   checklists: (DailyChecklist & { vehicle?: Vehicle })[];
   isLoading: boolean;
 }
 
-const statusMap: Record<DailyChecklist['status'], { text: string, variant: 'default' | 'destructive' | 'secondary' }> = {
-  completed: { text: 'Concluído', variant: 'default' },
-  problem: { text: 'Problema', variant: 'destructive' },
-  pending_arrival: { text: 'Pendente', variant: 'secondary' },
+const statusMap: Record<DailyChecklist['status'], { text: string; variant: 'default' | 'destructive' | 'secondary', icon: React.ElementType }> = {
+  completed: { text: 'Concluído', variant: 'default', icon: CheckCircle2 },
+  problem: { text: 'Problema', variant: 'destructive', icon: AlertTriangle },
+  pending_arrival: { text: 'Pendente', variant: 'secondary', icon: ArrowRight },
 };
 
 export default function RecentChecklists({ checklists, isLoading }: RecentChecklistsProps) {
   return (
-    <Card className="col-span-1 md:col-span-2">
+    <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl">
       <CardHeader>
-        <CardTitle>Checklists Recentes</CardTitle>
-        <CardDescription>Veja os últimos 5 checklists realizados.</CardDescription>
+        <CardTitle className="text-2xl font-bold text-slate-900">Atividade Recente</CardTitle>
+        <CardDescription>Últimos 5 checklists realizados.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -48,23 +48,27 @@ export default function RecentChecklists({ checklists, isLoading }: RecentCheckl
                 </TableRow>
               ))
             ) : checklists.length > 0 ? (
-              checklists.slice(0, 5).map((checklist) => (
-                <TableRow key={checklist.id}>
-                  <TableCell>
-                    <div className="font-medium">{checklist.vehicle?.brand} {checklist.vehicle?.model}</div>
-                    <div className="text-sm text-muted-foreground">{checklist.vehicle?.license_plate}</div>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">{checklist.driverName}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {formatDistanceToNow(new Date(checklist.departureTimestamp), { addSuffix: true, locale: ptBR })}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={statusMap[checklist.status].variant}>
-                      {statusMap[checklist.status].text}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))
+              checklists.slice(0, 5).map((checklist) => {
+                const statusInfo = statusMap[checklist.status] || statusMap.pending_arrival;
+                return (
+                  <TableRow key={checklist.id}>
+                    <TableCell>
+                      <div className="font-medium">{checklist.vehicle?.brand} {checklist.vehicle?.model}</div>
+                      <div className="text-sm text-muted-foreground">{checklist.vehicle?.license_plate}</div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">{checklist.driverName}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {formatDistanceToNow(new Date(checklist.departureTimestamp), { addSuffix: true, locale: ptBR })}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusInfo.variant} className="flex items-center gap-1.5">
+                        <statusInfo.icon className="h-3 w-3"/>
+                        {statusInfo.text}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             ) : (
                 <TableRow>
                     <TableCell colSpan={4} className="text-center h-24">
@@ -76,7 +80,7 @@ export default function RecentChecklists({ checklists, isLoading }: RecentCheckl
         </Table>
         {!isLoading && checklists.length > 0 && (
           <div className="mt-4 text-right">
-             <Link href="/history" className="text-sm font-medium text-primary hover:underline flex items-center justify-end gap-1">
+             <Link href="/history" className="text-sm font-medium text-emerald-600 hover:underline flex items-center justify-end gap-1">
                 Ver Histórico Completo
                 <ArrowRight className="h-4 w-4" />
             </Link>
