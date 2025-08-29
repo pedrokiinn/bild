@@ -3,7 +3,7 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import {ChecklistItemOption} from "@/types";
+import type { ChecklistItemOption as ChecklistItemType } from "@/types";
 
 const colorClasses = {
     green: "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200",
@@ -22,7 +22,7 @@ const selectedColorClasses = {
 };
 
 interface ChecklistItemProps {
-    item: ChecklistItemOption;
+    item: ChecklistItemType;
     value: string;
     onChange: (value: string) => void;
     disabled?: boolean;
