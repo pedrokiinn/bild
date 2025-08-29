@@ -83,7 +83,7 @@ function DashboardContent() {
         return consecutive;
     };
     
-    const todayChecklistsDone = checklists.filter(c => c.date === format(new Date(), 'yyyy-MM-dd')).length === vehicles.length;
+    const todayChecklistsDone = checklists.filter(c => c.date === format(new Date(), 'yyyy-MM-dd')).length > 0;
 
     return (
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
@@ -96,7 +96,7 @@ function DashboardContent() {
                         </h1>
                         <p className="text-slate-600 text-base">
                             {todayChecklistsDone
-                                ? "Todos os checklists de hoje foram realizados!" 
+                                ? "Checklist de hoje já realizado!" 
                                 : "Ainda há checklists pendentes para hoje."
                             }
                         </p>

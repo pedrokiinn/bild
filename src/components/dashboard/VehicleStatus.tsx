@@ -79,7 +79,7 @@ export default function VehicleStatus({ vehicles, checklists, isLoading }: Vehic
             <div className="text-center text-muted-foreground py-8">
                 <p className="text-sm">Nenhum veículo cadastrado.</p>
                 <Link href="/vehicle">
-                    <Button size="sm" className="mt-2 text-xs">
+                    <Button size="sm" variant="outline" className="mt-2 text-xs">
                         <Plus className="h-3.5 w-3.5 mr-2" />
                         Adicionar Veículo
                     </Button>

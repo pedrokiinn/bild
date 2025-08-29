@@ -3,7 +3,7 @@ import { DailyChecklist, Vehicle } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
-import { ArrowRight, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus, ClipboardCheck } from 'lucide-react';
+import { ArrowRight, TrendingUp, TrendingDown, Minus, ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
