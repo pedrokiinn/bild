@@ -189,12 +189,12 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen flex w-full">
             <Sidebar>
-                <SheetTitle className="hidden">Menu de Navegação</SheetTitle>
                 <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
                     <Logo />
                 </SidebarHeader>
 
                 <SidebarContent className='p-3'>
+                    <SheetTitle className="hidden">Menu de Navegação</SheetTitle>
                     <NavigationMenu />
                 </SidebarContent>
 

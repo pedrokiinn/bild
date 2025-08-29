@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -206,7 +207,6 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
-            <SheetTitle className="sr-only">Sidebar Navigation</SheetTitle>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
@@ -762,5 +762,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
-    
