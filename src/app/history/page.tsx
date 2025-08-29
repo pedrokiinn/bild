@@ -23,6 +23,7 @@ import { deleteChecklist as deleteChecklistAction } from '@/lib/data';
 import { ArrivalDialog } from '@/components/history/ArrivalDialog';
 import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
