@@ -43,9 +43,6 @@ export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerP
         return <p>Carregando dados do checklist...</p>;
     }
 
-    const problemItems = Object.entries(checklist.checklistItems).filter(([, status]) => status === 'problem');
-    const okItems = Object.entries(checklist.checklistItems).filter(([, status]) => status === 'ok');
-
     return (
         <div className="space-y-6 p-1">
             <Card>
