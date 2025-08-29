@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveChecklist, deleteChecklist as deleteChecklistAction } from '@/lib/data';
 import { ArrivalDialog } from '@/components/history/ArrivalDialog';
 import { Badge } from '@/components/ui/badge';
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -40,6 +41,11 @@ function HistoryContent() {
     const [selectedVehicle, setSelectedVehicle] = useState('all');
     const [isArrivalDialogOpen, setIsArrivalDialogOpen] = useState(false);
     const [selectedChecklist, setSelectedChecklist] = useState<DailyChecklist & { vehicle?: Vehicle } | null>(null);
+    
+    // State for deletion dialog
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
     const { toast } = useToast();
 
     const loadData = useCallback(async () => {
@@ -76,25 +82,33 @@ function HistoryContent() {
         loadData();
     }, [loadData]);
 
-    const handleDelete = async (checklistId: string) => {
-        if (window.confirm("Tem certeza que deseja excluir este checklist? Esta ação não pode ser desfeita.")) {
-            try {
-                await deleteChecklistAction(checklistId);
-                toast({
-                    title: "Checklist excluído!",
-                    description: "O registro foi removido com sucesso."
-                });
-                loadData(); // Recarregar dados
-            } catch (error) {
-                console.error("Erro ao excluir checklist:", error);
-                toast({
-                    title: "Falha ao excluir",
-                    description: "Não foi possível excluir o checklist. Tente novamente.",
-                    variant: 'destructive',
-                });
-            }
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+        try {
+            await deleteChecklistAction(itemToDelete);
+            toast({
+                title: "Checklist excluído!",
+                description: "O registro foi removido com sucesso."
+            });
+            loadData(); // Recarregar dados
+        } catch (error) {
+            console.error("Erro ao excluir checklist:", error);
+            toast({
+                title: "Falha ao excluir",
+                description: "Não foi possível excluir o checklist. Tente novamente.",
+                variant: 'destructive',
+            });
+        } finally {
+            setIsDeleteDialogOpen(false);
+            setItemToDelete(null);
         }
     };
+    
+    const openDeleteDialog = (checklistId: string) => {
+        setItemToDelete(checklistId);
+        setIsDeleteDialogOpen(true);
+    };
+
 
     const handleArrivalSave = async (arrivalMileage: number) => {
         if (!selectedChecklist) return;
@@ -269,7 +283,7 @@ function HistoryContent() {
                                                         </Dialog>
                                                         <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
                                                         {currentUser?.role === 'admin' && (
-                                                            <Button variant="destructive" size="icon" onClick={() => handleDelete(checklist.id)}>
+                                                            <Button variant="destructive" size="icon" onClick={() => openDeleteDialog(checklist.id)}>
                                                                 <Trash2 className="w-4 h-4" />
                                                             </Button>
                                                         )}
@@ -304,6 +318,13 @@ function HistoryContent() {
                 checklist={selectedChecklist}
             />
         )}
+        <ConfirmationDialog
+            isOpen={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            onConfirm={handleDelete}
+            title="Tem certeza que deseja excluir este checklist?"
+            description="Esta ação não pode ser desfeita. O registro será removido permanentemente."
+        />
         </>
     );
 }

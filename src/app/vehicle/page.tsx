@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { getVehicles, saveVehicle, deleteVehicle } from "@/lib/data";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ConfirmationDialog from "@/components/shared/ConfirmationDialog";
 
 function VehicleContent() {
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -18,6 +19,11 @@ function VehicleContent() {
     const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
+    
+    // State for deletion dialog
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+    
     const [formData, setFormData] = useState<Omit<Vehicle, 'id'>>({
         brand: "",
         model: "",
@@ -80,17 +86,24 @@ function VehicleContent() {
         setShowForm(true);
     };
 
-    const handleDelete = async (vehicleId: string) => {
-        if (confirm("Tem certeza que deseja excluir este veículo?")) {
-            try {
-                await deleteVehicle(vehicleId);
-                toast({ title: "Sucesso", description: "Veículo excluído." });
-                loadVehicles();
-            } catch (error) {
-                console.error("Erro ao excluir veículo:", error);
-                toast({ title: "Erro", description: "Falha ao excluir veículo.", variant: "destructive" });
-            }
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+        try {
+            await deleteVehicle(itemToDelete);
+            toast({ title: "Sucesso", description: "Veículo excluído." });
+            loadVehicles();
+        } catch (error) {
+            console.error("Erro ao excluir veículo:", error);
+            toast({ title: "Erro", description: "Falha ao excluir veículo.", variant: "destructive" });
+        } finally {
+            setIsDeleteDialogOpen(false);
+            setItemToDelete(null);
         }
+    };
+    
+    const openDeleteDialog = (vehicleId: string) => {
+        setItemToDelete(vehicleId);
+        setIsDeleteDialogOpen(true);
     };
 
     const resetForm = () => {
@@ -321,8 +334,7 @@ function VehicleContent() {
                                                 <Button
                                                     variant="destructive"
                                                     size="icon"
-                                                    onClick={() => handleDelete(vehicle.id)}
-                                                    className="hover:bg-red-50"
+                                                    onClick={() => openDeleteDialog(vehicle.id)}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
@@ -335,6 +347,14 @@ function VehicleContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ConfirmationDialog
+                isOpen={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                onConfirm={handleDelete}
+                title="Tem certeza que deseja excluir este veículo?"
+                description="Esta ação não pode ser desfeita. O registro será removido permanentemente."
+            />
         </div>
     );
 }

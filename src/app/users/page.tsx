@@ -19,11 +19,14 @@ import { Trash2, Users, Shield, User as UserIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 
 function UsersContent() {
     const [users, setUsers] = useState<User[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<string | null>(null);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -62,22 +65,32 @@ function UsersContent() {
         }
     };
 
-    const handleDeleteUser = async (userId: string) => {
-        if (currentUser?.id === userId) {
+    const handleDeleteUser = async () => {
+        if (!userToDelete) return;
+        
+        if (currentUser?.id === userToDelete) {
             toast({ title: "Ação não permitida", description: "Você não pode excluir sua própria conta.", variant: "destructive"});
+            setIsDeleteDialogOpen(false);
+            setUserToDelete(null);
             return;
         }
-
-        if (confirm("Tem certeza que deseja excluir este usuário? Esta ação é irreversível e removerá todos os dados associados a ele.")) {
-            try {
-                await deleteUser(userId);
-                toast({ title: "Sucesso", description: "Usuário excluído."});
-                loadData();
-            } catch (e) {
-                console.error("Falha ao excluir o usuário:", e);
-                toast({ title: "Erro", description: "Ocorreu um erro ao tentar excluir o usuário.", variant: "destructive"});
-            }
+        
+        try {
+            await deleteUser(userToDelete);
+            toast({ title: "Sucesso", description: "Usuário excluído."});
+            loadData();
+        } catch (e) {
+            console.error("Falha ao excluir o usuário:", e);
+            toast({ title: "Erro", description: "Ocorreu um erro ao tentar excluir o usuário.", variant: "destructive"});
+        } finally {
+            setIsDeleteDialogOpen(false);
+            setUserToDelete(null);
         }
+    };
+
+    const openDeleteDialog = (userId: string) => {
+        setUserToDelete(userId);
+        setIsDeleteDialogOpen(true);
     };
 
     const renderLoadingSkeleton = () => (
@@ -150,7 +163,7 @@ function UsersContent() {
                                                 <Button
                                                     variant="destructive"
                                                     size="icon"
-                                                    onClick={() => handleDeleteUser(user.id)}
+                                                    onClick={() => openDeleteDialog(user.id)}
                                                     disabled={currentUser?.id === user.id}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -175,6 +188,13 @@ function UsersContent() {
                     </CardContent>
                 </Card>
             </div>
+             <ConfirmationDialog
+                isOpen={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                onConfirm={handleDeleteUser}
+                title="Tem certeza que deseja excluir este usuário?"
+                description="Esta ação é irreversível e removerá todos os dados associados a ele."
+            />
         </div>
     );
 }
