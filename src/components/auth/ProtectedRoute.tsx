@@ -25,12 +25,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
         
         if (!currentUser) {
           setHasAccess(false);
-          router.push('/');
+          // O main-layout irá tratar de mostrar a tela de login
         } else if (requiredRole) {
-          const hasRequiredRole = currentUser.role === requiredRole;
+          // Admin tem acesso a tudo
+          const hasRequiredRole = currentUser.role === 'admin' || currentUser.role === requiredRole;
           setHasAccess(hasRequiredRole);
           if(!hasRequiredRole) {
-            router.push('/dashboard');
+            router.push('/dashboard'); // Redireciona se não tiver o papel
           }
         } else {
           setHasAccess(true);
@@ -38,7 +39,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       } catch (error) {
         setUser(null);
         setHasAccess(false);
-        router.push('/');
       } finally {
         setIsLoading(false);
       }
@@ -51,7 +51,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <Car className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-slate-600">Verificando autenticação...</p>
         </div>
       </div>
@@ -59,12 +59,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   }
 
   if (!user) {
-    // This will be briefly displayed before redirection kicks in
-    return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-            <p>Redirecionando para o login...</p>
-        </div>
-    );
+    // A tela de login é gerenciada pelo MainLayout, então não renderizamos nada aqui.
+    // O MainLayout irá mostrar a UI de login.
+    return null;
   }
 
   if (!hasAccess) {
