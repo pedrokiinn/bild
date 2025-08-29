@@ -1,3 +1,4 @@
+
 'use client';
 import { DailyChecklist, Vehicle } from '@/types';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +60,7 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
             <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-                        <ClipboardCheck className="w-5 h-5 text-emerald-600" />
+                        <ClipboardCheck className="w-5 h-5 text-primary" />
                         Inspeções Recentes
                     </CardTitle>
                 </CardHeader>
@@ -109,7 +110,7 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
         </div>
         {!isLoading && checklists.length > 0 && (
           <div className="mt-4 text-right">
-             <Link href="/history" className="text-sm font-medium text-emerald-600 hover:underline flex items-center justify-end gap-1">
+             <Link href="/history" className="text-sm font-medium text-primary hover:underline flex items-center justify-end gap-1">
                 Ver Histórico Completo
                 <ArrowRight className="h-4 w-4" />
             </Link>
