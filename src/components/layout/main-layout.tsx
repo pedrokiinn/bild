@@ -22,7 +22,6 @@ import { Badge } from '../ui/badge';
 import { User, getCurrentUser, login, logout } from '@/lib/auth';
 import { Logo } from '../Logo';
 import QRCodeModal from '../auth/QRCodeModal';
-import { SheetTitle } from '../ui/sheet';
 
 
 const navigationItems = [
@@ -105,6 +104,7 @@ function NavigationMenu() {
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
+    const pathname = usePathname();
     const [user, setUser] = React.useState<User | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [isQrModalOpen, setIsQrModalOpen] = React.useState(false);
@@ -211,7 +211,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                                         {user.name || 'Usuário'}
                                     </p>
                                     <div className="flex items-center gap-2">
-                                        <Badge className={'bg-emerald-100 text-emerald-800 text-xs'}>
+                                        <Badge className={user.role === 'admin' ? 'bg-emerald-100 text-emerald-800 text-xs' : 'bg-blue-100 text-blue-800 text-xs'}>
                                             {user.role}
                                         </Badge>
                                     </div>
@@ -233,10 +233,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
             <SidebarInset>
                  <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between lg:hidden">
+                    <div className="flex items-center gap-2">
+                        <SidebarTrigger>
+                            <Menu className="w-5 h-5" />
+                        </SidebarTrigger>
+                        <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'CarCheck'}</h1>
+                    </div>
                     <Logo />
-                    <SidebarTrigger>
-                        <Menu className="w-5 h-5" />
-                    </SidebarTrigger>
                 </header>
 
                 <main className="flex-1 overflow-auto">
