@@ -5,15 +5,7 @@ import { getChecklists, getVehicles } from '@/lib/data';
 import { getCurrentUser } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, Clock, CheckCircle2 } from 'lucide-react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
+import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, User as UserIcon } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -27,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PdfGeneratorButton from '@/components/history/PdfGeneratorButton';
 import { useToast } from '@/hooks/use-toast';
-import { saveChecklist, deleteChecklist as deleteChecklistAction } from '@/lib/data';
+import { deleteChecklist as deleteChecklistAction } from '@/lib/data';
 import { ArrivalDialog } from '@/components/history/ArrivalDialog';
 import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
@@ -114,14 +106,20 @@ function HistoryContent() {
         if (!selectedChecklist) return;
 
         try {
-            const updatedChecklist = {
+            const updatedChecklistData: DailyChecklist = {
                 ...selectedChecklist,
                 arrivalTimestamp: new Date().getTime(),
                 arrivalMileage: arrivalMileage,
-                status: selectedChecklist.status === 'problem' ? 'problem' : 'completed' as const,
+                status: selectedChecklist.status === 'problem' ? 'problem' : 'completed',
             };
 
-            await saveChecklist(updatedChecklist);
+            await deleteChecklistAction(selectedChecklist.id);
+            // In a real DB, you'd update, but here we simulate by deleting and re-adding
+            const checklistsWithoutOld = checklists.filter(c => c.id !== selectedChecklist.id);
+            const newChecklists = [updatedChecklistData, ...checklistsWithoutOld];
+            
+            // This is a mock save, in real app this would be a DB call
+            setChecklists(newChecklists.map(c => ({...c, vehicle: vehicles.find(v => v.id === c.vehicleId)})));
 
             toast({
                 title: "Chegada registrada!",
@@ -152,32 +150,24 @@ function HistoryContent() {
     });
 
     const renderSkeleton = () => (
-         <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
-            <CardContent className="p-4">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="hidden md:table-cell">Veículo</TableHead>
-                            <TableHead>Motorista</TableHead>
-                            <TableHead className="hidden md:table-cell">Data</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {Array(5).fill(0).map((_, i) => (
-                            <TableRow key={i}>
-                                <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
-                                <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                                <TableCell className="text-right"><Skeleton className="h-8 w-20" /></TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array(6).fill(0).map((_, i) => (
+                <Card key={i} className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
+                    <CardHeader>
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <div className="flex justify-between items-center pt-4">
+                            <Skeleton className="h-10 w-24" />
+                            <Skeleton className="h-10 w-24" />
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
     );
 
     const getStatusBadge = (status: DailyChecklist['status']) => {
@@ -233,69 +223,72 @@ function HistoryContent() {
                 </div>
 
                 {isLoading ? renderSkeleton() : (
-                    <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
-                        <CardContent className="p-2 md:p-4">
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="hidden md:table-cell">Veículo</TableHead>
-                                        <TableHead>Motorista</TableHead>
-                                        <TableHead className="hidden md:table-cell">Data</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredChecklists.map(checklist => {
-                                        const vehicle = checklist.vehicle;
-                                        return (
-                                            <TableRow key={checklist.id}>
-                                                <TableCell className="hidden md:table-cell">
-                                                    <div className="font-medium">{vehicle ? `${vehicle.brand} ${vehicle.model}` : 'N/A'}</div>
-                                                    <div className="text-sm text-muted-foreground">{vehicle?.license_plate}</div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="font-medium md:hidden">{vehicle ? `${vehicle.brand} ${vehicle.model}` : 'N/A'}</div>
-                                                    <div className="text-muted-foreground">{checklist.driverName}</div>
-                                                </TableCell>
-                                                <TableCell className="hidden md:table-cell">{new Date(checklist.date).toLocaleDateString('pt-BR')}</TableCell>
-                                                <TableCell>{getStatusBadge(checklist.status)}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex items-center justify-end gap-1 md:gap-2">
-                                                        {checklist.status === 'pending_arrival' && (
-                                                            <Button size="sm" onClick={() => { setSelectedChecklist(checklist); setIsArrivalDialogOpen(true); }}>
-                                                                <Clock className="w-4 h-4 md:mr-2" />
-                                                                <span className="hidden md:inline">Chegada</span>
-                                                            </Button>
-                                                        )}
-                                                         <Dialog>
-                                                            <DialogTrigger asChild>
-                                                                <Button variant="outline" size="icon">
-                                                                    <Eye className="w-4 h-4" />
-                                                                </Button>
-                                                            </DialogTrigger>
-                                                            <DialogContent className="sm:max-w-2xl">
-                                                                <DialogHeader>
-                                                                    <DialogTitle>Detalhes do Checklist</DialogTitle>
-                                                                </DialogHeader>
-                                                                <ChecklistViewer checklist={checklist} vehicle={vehicle} />
-                                                            </DialogContent>
-                                                        </Dialog>
-                                                        <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
-                                                        {currentUser?.role === 'admin' && (
-                                                            <Button variant="destructive" size="icon" onClick={() => openDeleteDialog(checklist.id)}>
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredChecklists.map(checklist => {
+                            const vehicle = checklist.vehicle;
+                            return (
+                                <Card key={checklist.id} className={`bg-white/80 backdrop-blur-sm shadow-lg border-0 transition-all hover:shadow-2xl flex flex-col ${checklist.status === 'problem' ? 'border-l-4 border-destructive' : ''}`}>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-base font-bold">
+                                            <Car className="w-5 h-5 text-primary" />
+                                            {vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.license_plate})` : "Veículo não encontrado"}
+                                        </CardTitle>
+                                        <p className="text-xs text-slate-500 flex items-center gap-2 pt-1">
+                                            <Calendar className="w-3 h-3" /> {new Date(checklist.date).toLocaleDateString('pt-BR')}
+                                        </p>
+                                    </CardHeader>
+                                    <CardContent className="flex-1 flex flex-col justify-between">
+                                        <div className="space-y-3 text-sm mb-4">
+                                            <div className="flex items-center gap-2 text-slate-700">
+                                                <UserIcon className="w-4 h-4 text-muted-foreground" /> 
+                                                <span className="font-medium">Motorista:</span> {checklist.driverName}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                 <span className="font-medium text-slate-700">Status:</span> {getStatusBadge(checklist.status)}
+                                            </div>
+                                             {checklist.status === 'problem' && (
+                                                <p className="flex items-center gap-2 text-destructive font-semibold p-2 bg-destructive/10 rounded-md text-xs">
+                                                    <AlertTriangle className="w-4 h-4" /> 
+                                                    Atenção: Checklist com problemas!
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex justify-between items-center pt-4 border-t border-slate-200/60">
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="outline" size="sm">
+                                                        <Eye className="w-4 h-4 mr-2" />
+                                                        Ver Dados
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="sm:max-w-2xl">
+                                                    <DialogHeader>
+                                                        <DialogTitle>Detalhes do Checklist</DialogTitle>
+                                                    </DialogHeader>
+                                                    <ChecklistViewer checklist={checklist} vehicle={vehicle} />
+                                                </DialogContent>
+                                            </Dialog>
+
+                                            <div className="flex items-center gap-1">
+                                                {checklist.status === 'pending_arrival' && (
+                                                    <Button size="sm" variant="ghost" className="text-xs" onClick={() => { setSelectedChecklist(checklist); setIsArrivalDialogOpen(true); }}>
+                                                        <Clock className="w-3 h-3 mr-1" />
+                                                        Chegada
+                                                    </Button>
+                                                )}
+                                                <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
+                                                {currentUser?.role === 'admin' && (
+                                                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => openDeleteDialog(checklist.id)}>
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
                 )}
                 {!isLoading && filteredChecklists.length === 0 && (
                      <div className="text-center py-16">
@@ -331,6 +324,8 @@ function HistoryContent() {
 
 export default function HistoryPage() {
     return (
-        <HistoryContent />
+        <ProtectedRoute>
+            <HistoryContent />
+        </ProtectedRoute>
     );
 }
