@@ -1,6 +1,6 @@
 
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -17,11 +17,19 @@ import {
     useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Settings, Users, QrCode } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
-import { User, getCurrentUser, login, logout } from '@/lib/auth';
+import { User, getCurrentUser, login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
-import QRCodeModal from '../auth/QRCodeModal';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 
 
 const navigationItems = [
@@ -51,6 +59,12 @@ const navigationItems = [
         url: "/users",
         icon: Users,
         adminOnly: true,
+    },
+    {
+        title: "Relatórios",
+        url: "/reports",
+        icon: FileText,
+        adminOnly: true
     }
 ];
 
@@ -74,7 +88,9 @@ function NavigationMenu() {
     };
 
     const handleLinkClick = () => {
-        setOpenMobile(false);
+        if(useSidebar().isMobile) {
+            setOpenMobile(false);
+        }
     }
 
     return (
@@ -102,16 +118,112 @@ function NavigationMenu() {
     );
 }
 
+function LoginTab({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            await login(username, password);
+            onLoginSuccess();
+        } catch (error: any) {
+            toast({
+                title: "Falha no Login",
+                description: error.message || "Ocorreu um erro. Tente novamente.",
+                variant: 'destructive',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="login-username">Usuário</Label>
+                <Input id="login-username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="login-password">Senha</Label>
+                <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Entrar
+            </Button>
+        </form>
+    )
+}
+
+function RegisterTab({ onRegisterSuccess }: { onRegisterSuccess: () => void }) {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (password !== confirmPassword) {
+            toast({
+                title: "Erro de Cadastro",
+                description: "As senhas não coincidem.",
+                variant: 'destructive',
+            });
+            return;
+        }
+        setIsLoading(true);
+        try {
+            await register(username, password);
+            toast({
+                title: "Cadastro realizado!",
+                description: "Você já pode fazer login com suas novas credenciais.",
+            });
+            onRegisterSuccess();
+        } catch (error: any) {
+             toast({
+                title: "Falha no Cadastro",
+                description: error.message || "Ocorreu um erro. Tente novamente.",
+                variant: 'destructive',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="register-username">Colaborador</Label>
+                <Input id="register-username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="register-password">Senha</Label>
+                <Input id="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="register-confirm-password">Repetir Senha</Label>
+                <Input id="register-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+                 {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Cadastrar
+            </Button>
+        </form>
+    )
+}
+
+
 function LayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const [user, setUser] = React.useState<User | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
-    const [isQrModalOpen, setIsQrModalOpen] = React.useState(false);
-
-    React.useEffect(() => {
-        checkUser();
-    }, []);
+    const [activeTab, setActiveTab] = React.useState("login");
 
     const checkUser = async () => {
         setIsLoading(true);
@@ -125,10 +237,17 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const handleLogin = async () => {
-        await login();
-        await checkUser();
+    React.useEffect(() => {
+        checkUser();
+    }, []);
+
+    const handleAuthSuccess = () => {
+        checkUser();
         router.refresh();
+    }
+    
+    const handleRegisterSuccess = () => {
+        setActiveTab("login");
     }
 
     const handleLogout = async () => {
@@ -148,42 +267,31 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
     if (!user) {
         return (
-             <>
-                <QRCodeModal
-                    isOpen={isQrModalOpen}
-                    onClose={() => setIsQrModalOpen(false)}
-                    loginUrl="https://example.com/login" // Placeholder URL
-                />
-                <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
-                    <div className="text-center space-y-6">
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
+                <div className="w-full max-w-md mx-auto">
+                     <div className="text-center space-y-4 mb-8">
                         <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg mx-auto">
                             <ClipboardCheck className="w-10 h-10 text-primary-foreground" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-slate-900">Bem-vindo ao CarCheck</h1>
-                            <p className="text-slate-600">Faça login para continuar.</p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
-                            <Button
-                                size="lg"
-                                onClick={handleLogin}
-                                className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/90 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                            >
-                                Fazer Login
-                            </Button>
-                             <Button
-                                size="lg"
-                                variant="outline"
-                                onClick={() => setIsQrModalOpen(true)}
-                                className="w-full sm:w-auto"
-                            >
-                                <QrCode className="w-5 h-5 mr-2" />
-                                Login com QR Code
-                            </Button>
+                            <p className="text-slate-600">Faça login ou cadastre-se para continuar.</p>
                         </div>
                     </div>
+                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="login">Entrar</TabsTrigger>
+                            <TabsTrigger value="register">Cadastrar</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="login">
+                           <LoginTab onLoginSuccess={handleAuthSuccess} />
+                        </TabsContent>
+                        <TabsContent value="register">
+                           <RegisterTab onRegisterSuccess={handleRegisterSuccess} />
+                        </TabsContent>
+                    </Tabs>
                 </div>
-            </>
+            </div>
         );
     }
     return (
@@ -239,7 +347,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         </SidebarTrigger>
                         <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'CarCheck'}</h1>
                     </div>
-                    <Logo />
+                    <div className="lg:hidden">
+                        <Logo />
+                    </div>
                 </header>
 
                 <main className="flex-1 overflow-auto">

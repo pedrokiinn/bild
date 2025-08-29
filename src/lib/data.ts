@@ -1,12 +1,13 @@
 
-import type { DailyChecklist, Vehicle, User, ChecklistItemOption } from "@/types";
+import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format } from "date-fns";
 
 // Mock data
-let users: User[] = [
-    { id: '1', name: 'Admin User', role: 'admin', email: 'admin@example.com' },
-    { id: '2', name: 'Collaborator User', role: 'collaborator', email: 'collaborator@example.com' }
+export let users: User[] = [
+    { id: '0', name: 'PedroNobre', role: 'admin', email: 'pedro@example.com', password: 'Pedro234567' },
 ];
+
+export let deletionReports: DeletionReport[] = [];
 
 
 let vehicles: Vehicle[] = [
@@ -67,6 +68,11 @@ export const getUsers = async (): Promise<User[]> => {
     return [...users];
 };
 
+export const getUserByName = async (name: string): Promise<User | undefined> => {
+    await delay(100);
+    return users.find(u => u.name?.toLowerCase() === name.toLowerCase());
+}
+
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<User> => {
     await delay(500);
     const userIndex = users.findIndex(u => u.id === userId);
@@ -77,10 +83,34 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
     throw new Error("User not found");
 };
 
-export const deleteUser = async (userId: string): Promise<void> => {
+export const deleteUser = async (userId: string, reason: string, adminName: string): Promise<void> => {
     await delay(500);
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) throw new Error("Usuário não encontrado.");
+
+    const report: DeletionReport = {
+        id: String(Date.now()),
+        deletedUserId: userToDelete.id,
+        deletedUserName: userToDelete.name || 'N/A',
+        adminId: users.find(u => u.name === adminName)?.id || 'N/A',
+        adminName,
+        reason,
+        timestamp: new Date().getTime(),
+    };
+    deletionReports.push(report);
     users = users.filter(u => u.id !== userId);
 };
+
+// Deletion Report Functions
+export const getDeletionReports = async (): Promise<DeletionReport[]> => {
+    await delay(500);
+    return [...deletionReports].sort((a,b) => b.timestamp - a.timestamp);
+}
+
+export const deleteReport = async (reportId: string): Promise<void> => {
+    await delay(500);
+    deletionReports = deletionReports.filter(r => r.id !== reportId);
+}
 
 
 // Vehicle Functions

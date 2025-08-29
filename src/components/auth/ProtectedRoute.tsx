@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, getCurrentUser } from '@/lib/auth';
 import { Car, ShieldAlert } from 'lucide-react';
+import { MainLayout } from '../layout/main-layout';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -19,29 +20,25 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   useEffect(() => {
     const checkAuth = async () => {
       setIsLoading(true);
-      try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-        
-        if (!currentUser) {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+      
+      if (!currentUser) {
+          // The main-layout will handle showing the login screen.
           setHasAccess(false);
-          // O main-layout irá tratar de mostrar a tela de login
-        } else if (requiredRole) {
-          // Admin tem acesso a tudo
-          const hasRequiredRole = currentUser.role === 'admin' || currentUser.role === requiredRole;
-          setHasAccess(hasRequiredRole);
-          if(!hasRequiredRole) {
-            router.push('/dashboard'); // Redireciona se não tiver o papel
-          }
-        } else {
-          setHasAccess(true);
+      } else if (requiredRole) {
+        // Admin has access to everything
+        const hasRequiredRole = currentUser.role === 'admin' || currentUser.role === requiredRole;
+        setHasAccess(hasRequiredRole);
+        if(!hasRequiredRole) {
+          // This should ideally not happen if navigation is controlled, but as a fallback:
+          router.push('/dashboard'); 
         }
-      } catch (error) {
-        setUser(null);
-        setHasAccess(false);
-      } finally {
-        setIsLoading(false);
+      } else {
+        setHasAccess(true);
       }
+
+      setIsLoading(false);
     };
 
     checkAuth();
@@ -58,14 +55,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     );
   }
 
+  // The login UI is now handled by MainLayout, so if there's no user,
+  // MainLayout will render the login form, and we shouldn't render anything here.
+  // The check for `hasAccess` is for role-based protection after login.
   if (!user) {
-    // A tela de login é gerenciada pelo MainLayout, então não renderizamos nada aqui.
-    // O MainLayout irá mostrar a UI de login.
-    return null;
+    return null; // MainLayout will render the login screen
   }
 
   if (!hasAccess) {
     return (
+        // This will be shown inside the MainLayout if the user is logged in but lacks permissions
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
             <div className="text-center space-y-4">
                 <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">

@@ -32,6 +32,17 @@ export interface User {
   name?: string | null;
   email?: string | null;
   role: 'admin' | 'collaborator';
+  password?: string;
+}
+
+export interface DeletionReport {
+    id: string;
+    deletedUserId: string;
+    deletedUserName: string;
+    adminId: string;
+    adminName: string;
+    reason: string;
+    timestamp: number;
 }
 
 export interface ChecklistItemOption {

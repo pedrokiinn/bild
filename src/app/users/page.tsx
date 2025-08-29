@@ -1,7 +1,7 @@
 
 'use client';
 import React, { useState, useEffect } from 'react';
-import { User } from '@/types';
+import { User, DeletionReport } from '@/types';
 import { getUsers, updateUserRole, deleteUser } from '@/lib/data';
 import { getCurrentUser } from '@/lib/auth';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -14,19 +14,76 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Users, Shield, User as UserIcon } from 'lucide-react';
+import { Trash2, Users, Shield, User as UserIcon, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
-import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+
+function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
+    const [reason, setReason] = useState('');
+
+    const handleConfirm = () => {
+        if (!reason.trim()) {
+            alert('Por favor, forneça uma justificativa para a exclusão.');
+            return;
+        }
+        onConfirm(reason);
+    }
+
+    return (
+         <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Excluir Usuário</DialogTitle>
+                    <DialogDescription>
+                        Para excluir este usuário, por favor, forneça uma justificativa. Esta ação é irreversível e será registrada.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="reason" className="text-left">Justificativa</Label>
+                    <Textarea
+                        id="reason"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="Ex: Fim de contrato, duplicidade de conta, etc."
+                        className="mt-2"
+                    />
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancelar</Button>
+                    <Button variant="destructive" onClick={handleConfirm} disabled={isSaving || !reason.trim()}>
+                        {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Confirmar Exclusão
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 function UsersContent() {
     const [users, setUsers] = useState<User[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    
+    // State for deletion dialog
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState<string | null>(null);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
     const { toast } = useToast();
 
     useEffect(() => {
@@ -47,10 +104,10 @@ function UsersContent() {
     };
 
     const handleRoleChange = async (userId: string, newRole: 'admin' | 'collaborator') => {
-        const userToChange = users.find(u => u.id === userId);
-        const admins = users.filter(u => u.role === 'admin');
+        if (!currentUser) return;
 
-        if (currentUser?.id === userId && newRole !== 'admin' && admins.length <= 1) {
+        const admins = users.filter(u => u.role === 'admin');
+        if (currentUser.id === userId && newRole !== 'admin' && admins.length <= 1) {
             toast({ title: "Ação não permitida", description: "Você não pode remover sua própria permissão de administrador, pois é o único existente.", variant: "destructive"});
             return;
         }
@@ -65,31 +122,33 @@ function UsersContent() {
         }
     };
 
-    const handleDeleteUser = async () => {
-        if (!userToDelete) return;
+    const handleDeleteUser = async (reason: string) => {
+        if (!userToDelete || !currentUser || !currentUser.name) return;
         
-        if (currentUser?.id === userToDelete) {
+        if (currentUser.id === userToDelete.id) {
             toast({ title: "Ação não permitida", description: "Você não pode excluir sua própria conta.", variant: "destructive"});
             setIsDeleteDialogOpen(false);
             setUserToDelete(null);
             return;
         }
         
+        setIsSaving(true);
         try {
-            await deleteUser(userToDelete);
-            toast({ title: "Sucesso", description: "Usuário excluído."});
+            await deleteUser(userToDelete.id, reason, currentUser.name);
+            toast({ title: "Sucesso", description: `Usuário ${userToDelete.name} excluído.`});
             loadData();
-        } catch (e) {
+        } catch (e: any) {
             console.error("Falha ao excluir o usuário:", e);
-            toast({ title: "Erro", description: "Ocorreu um erro ao tentar excluir o usuário.", variant: "destructive"});
+            toast({ title: "Erro", description: e.message || "Ocorreu um erro ao tentar excluir o usuário.", variant: "destructive"});
         } finally {
+            setIsSaving(false);
             setIsDeleteDialogOpen(false);
             setUserToDelete(null);
         }
     };
 
-    const openDeleteDialog = (userId: string) => {
-        setUserToDelete(userId);
+    const openDeleteDialog = (user: User) => {
+        setUserToDelete(user);
         setIsDeleteDialogOpen(true);
     };
 
@@ -114,13 +173,10 @@ function UsersContent() {
                             Gerenciamento de Usuários
                         </CardTitle>
                         <p className="text-slate-600 text-sm md:text-base">
-                            Adicione, remova e gerencie as permissões dos usuários do sistema.
+                            Promova, rebaixe ou remova usuários do sistema.
                         </p>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-slate-700 bg-blue-50 border border-blue-200 p-3 rounded-lg mb-6">
-                            <strong>Nota:</strong> Esta é uma simulação. Em um ambiente real, novos usuários seriam convidados através de um sistema de autenticação.
-                        </p>
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
@@ -163,7 +219,7 @@ function UsersContent() {
                                                 <Button
                                                     variant="destructive"
                                                     size="icon"
-                                                    onClick={() => openDeleteDialog(user.id)}
+                                                    onClick={() => openDeleteDialog(user)}
                                                     disabled={currentUser?.id === user.id}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -188,12 +244,11 @@ function UsersContent() {
                     </CardContent>
                 </Card>
             </div>
-             <ConfirmationDialog
+             <DeletionDialog
                 isOpen={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}
                 onConfirm={handleDeleteUser}
-                title="Tem certeza que deseja excluir este usuário?"
-                description="Esta ação é irreversível e removerá todos os dados associados a ele."
+                isSaving={isSaving}
             />
         </div>
     );
@@ -206,4 +261,3 @@ export default function UsersPage() {
         </ProtectedRoute>
     );
 }
-
