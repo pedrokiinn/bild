@@ -194,7 +194,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                 </SidebarHeader>
 
                 <SidebarContent className='p-3'>
-                    <SheetTitle className="hidden">Menu de Navegação</SheetTitle>
                     <NavigationMenu />
                 </SidebarContent>
 
