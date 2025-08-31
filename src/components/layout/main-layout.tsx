@@ -71,7 +71,7 @@ const navigationItems = [
 function NavigationMenu() {
     const pathname = usePathname();
     const [user, setUser] = React.useState<User | null>(null);
-    const { setOpenMobile } = useSidebar();
+    const { setOpenMobile, isMobile } = useSidebar();
 
      React.useEffect(() => {
         const checkUser = async () => {
@@ -88,7 +88,7 @@ function NavigationMenu() {
     };
 
     const handleLinkClick = () => {
-        if(useSidebar().isMobile) {
+        if(isMobile) {
             setOpenMobile(false);
         }
     }
