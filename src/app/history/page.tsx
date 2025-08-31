@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import type { DailyChecklist, Vehicle, User } from '@/types';
@@ -24,6 +25,7 @@ import { ArrivalDialog } from '@/components/history/ArrivalDialog';
 import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -185,7 +187,6 @@ function HistoryContent() {
     };
 
     return (
-        <>
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-7xl mx-auto">
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl mb-6">
@@ -202,8 +203,8 @@ function HistoryContent() {
 
                 <div className="bg-white p-4 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-2 md:gap-4 items-center">
                     <div className="relative w-full md:flex-1">
-                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                         <Input 
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input 
                             placeholder="Buscar por motorista, placa ou modelo..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -244,24 +245,30 @@ function HistoryContent() {
                                                 <UserIcon className="w-4 h-4 text-muted-foreground" /> 
                                                 <span className="font-medium">Motorista:</span> {checklist.driverName}
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                 <span className="font-medium text-slate-700">Status:</span> {getStatusBadge(checklist.status)}
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="font-medium text-slate-700">Status:</span> {getStatusBadge(checklist.status)}
                                             </div>
-                                             {checklist.status === 'problem' && (
+                                            {checklist.status === 'problem' && (
                                                 <p className="flex items-center gap-2 text-destructive font-semibold p-2 bg-destructive/10 rounded-md text-xs">
                                                     <AlertTriangle className="w-4 h-4" /> 
                                                     Atenção: Checklist com problemas!
                                                 </p>
                                             )}
                                         </div>
-                                        <div className="flex justify-between items-center pt-4 border-t border-slate-200/60">
+                                        <div className="flex justify-end items-center pt-4 border-t border-slate-200/60 gap-1">
                                             <Dialog>
-                                                <DialogTrigger asChild>
-                                                    <Button variant="outline" size="sm">
-                                                        <Eye className="w-4 h-4 mr-2" />
-                                                        Ver Dados
-                                                    </Button>
-                                                </DialogTrigger>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="outline" size="icon">
+                                                                <Eye className="w-4 h-4" />
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Ver Dados</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
                                                 <DialogContent className="sm:max-w-2xl">
                                                     <DialogHeader>
                                                         <DialogTitle>Detalhes do Checklist</DialogTitle>
@@ -270,20 +277,33 @@ function HistoryContent() {
                                                 </DialogContent>
                                             </Dialog>
 
-                                            <div className="flex items-center gap-1">
-                                                {checklist.status === 'pending_arrival' && (
-                                                    <Button size="sm" variant="ghost" className="text-xs" onClick={() => { setSelectedChecklist(checklist); setIsArrivalDialogOpen(true); }}>
-                                                        <Clock className="w-3 h-3 mr-1" />
-                                                        Chegada
-                                                    </Button>
-                                                )}
-                                                <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
-                                                {currentUser?.role === 'admin' && (
-                                                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => openDeleteDialog(checklist.id)}>
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
+                                            {checklist.status === 'pending_arrival' && (
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button size="icon" variant="ghost" onClick={() => { setSelectedChecklist(checklist); setIsArrivalDialogOpen(true); }}>
+                                                            <Clock className="w-4 h-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Registrar Chegada</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )}
+
+                                            <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
+
+                                            {currentUser?.role === 'admin' && (
+                                                 <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(checklist.id)}>
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                      <p>Excluir Checklist</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )}
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -292,18 +312,17 @@ function HistoryContent() {
                     </div>
                 )}
                 {!isLoading && filteredChecklists.length === 0 && (
-                     <div className="text-center py-16">
+                    <div className="text-center py-16">
                         <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-slate-900 mb-2">
                             Nenhum checklist encontrado
                         </h3>
                         <p className="text-slate-600 text-sm">
-                           Ajuste os filtros ou crie um novo checklist.
+                        Ajuste os filtros ou crie um novo checklist.
                         </p>
                     </div>
                 )}
             </div>
-        </div>
         {selectedChecklist && (
             <ArrivalDialog
                 isOpen={isArrivalDialogOpen}
@@ -319,14 +338,17 @@ function HistoryContent() {
             title="Tem certeza que deseja excluir este checklist?"
             description="Esta ação não pode ser desfeita. O registro será removido permanentemente."
         />
-        </>
+    </div>
     );
 }
 
 export default function HistoryPage() {
     return (
         <ProtectedRoute>
-            <HistoryContent />
+            <TooltipProvider>
+                <HistoryContent />
+            </TooltipProvider>
         </ProtectedRoute>
     );
 }
+
