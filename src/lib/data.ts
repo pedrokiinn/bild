@@ -1,194 +1,201 @@
-
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format } from "date-fns";
+import { db } from './firebase';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp } from "firebase/firestore";
 
-// Mock data
-export let users: User[] = [
-    { id: '0', name: 'PedroNobre', role: 'admin', password: 'Pedro234567' },
-];
+// Helper para converter Timestamps do Firestore para objetos Date nos dados aninhados.
+// Isso é útil para os componentes do lado do cliente que esperam objetos Date.
+const convertTimestamps = (data: any) => {
+  const aninhado = data;
+  for (const key in aninhado) {
+    if (aninhado[key] instanceof Timestamp) {
+      aninhado[key] = aninhado[key].toDate();
+    }
+  }
+  return aninhado;
+};
 
-export let deletionReports: DeletionReport[] = [];
-
-
-let vehicles: Vehicle[] = [
-  { id: '1', brand: 'Fiat', model: 'Toro', year: 2023, license_plate: 'BRA2E19', color: 'Branco', mileage: 15000 },
-  { id: '2', brand: 'Chevrolet', model: 'S10', year: 2022, license_plate: 'MER1C0S', color: 'Prata', mileage: 45000 },
-  { id: '3', brand: 'Ford', model: 'Ranger', year: 2024, license_plate: 'FOR4D00', color: 'Azul', mileage: 2500 },
-];
-
-let checklists: DailyChecklist[] = [
-  {
-    id: 'c1',
-    vehicleId: '1',
-    driverName: 'João Silva',
-    departureTimestamp: new Date('2024-07-22T08:00:00').getTime(),
-    arrivalTimestamp: new Date('2024-07-22T18:00:00').getTime(),
-    departureMileage: 14800,
-    arrivalMileage: 15000,
-    checklistItems: { 'Nível de Combustível': 'ok', 'Pressão dos Pneus': 'ok', 'Condição dos Pneus': 'ok', 'Luzes e Sinalização': 'ok', 'Níveis de Fluidos': 'ok', 'Documentação': 'ok' },
-    checklistValues: { 'fuel_level': 'full', 'tire_pressure': 'ok', 'tire_condition': 'excellent', 'lights_status': 'all_working', 'fluid_levels': 'ok', 'documentation': 'ok' },
-    notes: 'Tudo certo.',
-    status: 'completed',
-    date: '2024-07-22',
-  },
-  {
-    id: 'c2',
-    vehicleId: '2',
-    driverName: 'Maria Oliveira',
-    departureTimestamp: new Date('2024-07-22T09:00:00').getTime(),
-    arrivalTimestamp: new Date('2024-07-22T19:00:00').getTime(),
-    departureMileage: 44800,
-    arrivalMileage: 45000,
-    checklistItems: { 'Nível de Combustível': 'ok', 'Pressão dos Pneus': 'problem', 'Condição dos Pneus': 'ok', 'Luzes e Sinalização': 'ok', 'Níveis de Fluidos': 'ok', 'Documentação': 'ok' },
-    checklistValues: { 'fuel_level': 'half', 'tire_pressure': 'low', 'tire_condition': 'good', 'lights_status': 'all_working', 'fluid_levels': 'ok', 'documentation': 'ok' },
-    notes: 'Pneu dianteiro direito parece baixo.',
-    status: 'problem',
-    date: '2024-07-22',
-    aiDiagnosis: "A anomalia no pneu pode indicar um furo lento ou problema na válvula. Recomenda-se verificação da pressão e inspeção visual por um profissional."
-  },
-  {
-    id: 'c3',
-    vehicleId: '1',
-    driverName: 'João Silva',
-    departureTimestamp: new Date().setHours(8, 0, 0, 0),
-    departureMileage: 15000,
-    checklistItems: { 'Nível de Combustível': 'ok', 'Pressão dos Pneus': 'ok', 'Condição dos Pneus': 'ok', 'Luzes e Sinalização': 'ok', 'Níveis de Fluidos': 'ok', 'Documentação': 'ok' },
-    checklistValues: { 'fuel_level': 'three_quarter', 'tire_pressure': 'ok', 'tire_condition': 'good', 'lights_status': 'all_working', 'fluid_levels': 'ok', 'documentation': 'ok' },
-    status: 'pending_arrival',
-    date: format(new Date(), 'yyyy-MM-dd'),
-  },
-];
-
-// Simulate API latency
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 // User Functions
 export const getUsers = async (): Promise<User[]> => {
-    await delay(500);
-    return [...users];
+    const usersCollection = collection(db, "users");
+    const userSnapshot = await getDocs(usersCollection);
+    return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 };
 
 export const getUserByName = async (name: string): Promise<User | undefined> => {
-    await delay(100);
-    return users.find(u => u.name?.toLowerCase() === name.toLowerCase());
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("name", "==", name));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return undefined;
+    }
+    const docData = querySnapshot.docs[0];
+    return { id: docData.id, ...docData.data() } as User;
 }
 
-export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<User> => {
-    await delay(500);
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-        users[userIndex].role = newRole;
-        return users[userIndex];
-    }
-    throw new Error("User not found");
+export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
+    const userDoc = doc(db, "users", userId);
+    await updateDoc(userDoc, { role: newRole });
 };
 
 export const deleteUser = async (userId: string, reason: string, adminName: string): Promise<void> => {
-    await delay(500);
-    const userToDelete = users.find(u => u.id === userId);
+    const userToDeleteDoc = doc(db, "users", userId);
+    const userToDeleteSnap = await getDoc(userToDeleteDoc);
+    const userToDelete = userToDeleteSnap.data() as User;
+    
     if (!userToDelete) throw new Error("Usuário não encontrado.");
+    
+    const adminUser = await getUserByName(adminName);
 
-    const report: DeletionReport = {
-        id: String(Date.now()),
-        deletedUserId: userToDelete.id,
+    const report: Omit<DeletionReport, 'id' | 'timestamp'> & { timestamp: any } = {
+        deletedUserId: userId,
         deletedUserName: userToDelete.name || 'N/A',
-        adminId: users.find(u => u.name === adminName)?.id || 'N/A',
+        adminId: adminUser?.id || 'N/A',
         adminName,
         reason,
-        timestamp: new Date().getTime(),
+        timestamp: serverTimestamp(),
     };
-    deletionReports.push(report);
-    users = users.filter(u => u.id !== userId);
+    
+    const reportCollection = collection(db, "deletionReports");
+    
+    // Usar um batch para garantir que ambas as operações (exclusão e criação de relatório) sejam atômicas
+    const batch = writeBatch(db);
+    batch.delete(userToDeleteDoc);
+    batch.set(doc(reportCollection), report);
+
+    await batch.commit();
 };
 
 // Deletion Report Functions
 export const getDeletionReports = async (): Promise<DeletionReport[]> => {
-    await delay(500);
-    return [...deletionReports].sort((a,b) => b.timestamp - a.timestamp);
+    const reportsCollection = collection(db, "deletionReports");
+    const q = query(reportsCollection, orderBy("timestamp", "desc"));
+    const reportSnapshot = await getDocs(q);
+    return reportSnapshot.docs.map(doc => {
+        const data = doc.data();
+        // Converte o timestamp para um número para manter a compatibilidade com a ordenação no cliente
+        if (data.timestamp instanceof Timestamp) {
+            data.timestamp = data.timestamp.toMillis();
+        }
+        return { id: doc.id, ...data } as DeletionReport;
+    });
 }
 
+
 export const deleteReport = async (reportId: string): Promise<void> => {
-    await delay(500);
-    deletionReports = deletionReports.filter(r => r.id !== reportId);
+    const reportDoc = doc(db, "deletionReports", reportId);
+    await deleteDoc(reportDoc);
 }
 
 
 // Vehicle Functions
 export const getVehicles = async (): Promise<Vehicle[]> => {
-  await delay(500);
-  return [...vehicles];
+  const vehiclesCollection = collection(db, "vehicles");
+  const vehicleSnapshot = await getDocs(vehiclesCollection);
+  return vehicleSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
 };
 
 export const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
-  await delay(300);
-  return vehicles.find(v => v.id === id);
+  const vehicleDoc = doc(db, "vehicles", id);
+  const vehicleSnap = await getDoc(vehicleDoc);
+  if (vehicleSnap.exists()) {
+      return { id: vehicleSnap.id, ...vehicleSnap.data() } as Vehicle;
+  }
+  return undefined;
 }
 
 export const saveVehicle = async (vehicle: Omit<Vehicle, 'id'> & { id?: string }): Promise<Vehicle> => {
-  await delay(1000);
   if (vehicle.id) {
-    const index = vehicles.findIndex(v => v.id === vehicle.id);
-    if (index !== -1) {
-      vehicles[index] = { ...vehicles[index], ...vehicle };
-      return vehicles[index];
-    }
+    const vehicleDoc = doc(db, "vehicles", vehicle.id);
+    await updateDoc(vehicleDoc, vehicle);
+    return vehicle as Vehicle;
   }
-  const newVehicle: Vehicle = { ...vehicle, id: String(Date.now()) };
-  vehicles.push(newVehicle);
-  return newVehicle;
+  
+  const docRef = await addDoc(collection(db, "vehicles"), vehicle);
+  return { id: docRef.id, ...vehicle } as Vehicle;
 };
 
 export const deleteVehicle = async (id: string): Promise<void> => {
-    await delay(1000);
-    vehicles = vehicles.filter(v => v.id !== id);
+    const vehicleDoc = doc(db, "vehicles", id);
+    await deleteDoc(vehicleDoc);
 }
 
 // Checklist Functions
-export const getChecklists = async (): Promise<DailyChecklist[]> => {
-  await delay(500);
-  return [...checklists].sort((a, b) => b.departureTimestamp - a.departureTimestamp);
+export const getChecklists = async (): Promise<any[]> => {
+    const checklistsCollection = collection(db, "checklists");
+    const q = query(checklistsCollection, orderBy("departureTimestamp", "desc"));
+    const checklistSnapshot = await getDocs(q);
+    
+    return checklistSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+            id: doc.id, 
+            ...data,
+            // Converter timestamps para datas para os componentes do lado do cliente
+            departureTimestamp: data.departureTimestamp?.toDate().getTime(),
+            arrivalTimestamp: data.arrivalTimestamp?.toDate().getTime(),
+        };
+    });
 };
 
+
 export const getChecklistById = async (id:string): Promise<DailyChecklist | undefined> => {
-    await delay(300);
-    return checklists.find(c => c.id === id);
+    const checklistDoc = doc(db, "checklists", id);
+    const checklistSnap = await getDoc(checklistDoc);
+     if (checklistSnap.exists()) {
+      return { id: checklistSnap.id, ...convertTimestamps(checklistSnap.data()) } as DailyChecklist;
+    }
+    return undefined;
 }
 
 export const deleteChecklist = async (id: string): Promise<void> => {
-    await delay(500);
-    checklists = checklists.filter(c => c.id !== id);
+    const checklistDoc = doc(db, "checklists", id);
+    await deleteDoc(checklistDoc);
 }
 
 export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<DailyChecklist | undefined> => {
-  await delay(300);
   const today = format(new Date(), 'yyyy-MM-dd');
-  return checklists.find(c => c.vehicleId === vehicleId && c.date === today);
+  const checklistsRef = collection(db, "checklists");
+  const q = query(checklistsRef, where("vehicleId", "==", vehicleId), where("date", "==", today));
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+      return undefined;
+  }
+  const docData = querySnapshot.docs[0];
+  return { id: docData.id, ...convertTimestamps(docData.data()) } as DailyChecklist;
 };
 
-export const saveChecklist = async (checklist: Omit<DailyChecklist, 'id'> & { id?: string }): Promise<DailyChecklist> => {
-  await delay(1500);
-   if (checklist.id) {
-    const index = checklists.findIndex(c => c.id === checklist.id);
-    if (index !== -1) {
-      checklists[index] = { ...checklists[index], ...checklist };
-      // Also update vehicle mileage
-      const vehicleIndex = vehicles.findIndex(v => v.id === checklists[index].vehicleId);
-      if(vehicleIndex !== -1 && checklist.arrivalMileage) {
-          vehicles[vehicleIndex].mileage = checklist.arrivalMileage;
-      }
-      return checklists[index];
+export const saveChecklist = async (checklistData: any): Promise<any> => {
+  const { id, ...dataToSave } = checklistData;
+
+  // Converte os timestamps numéricos de volta para objetos Timestamp do Firestore antes de salvar
+  if (dataToSave.departureTimestamp) {
+    dataToSave.departureTimestamp = Timestamp.fromMillis(dataToSave.departureTimestamp);
+  }
+   if (dataToSave.arrivalTimestamp) {
+    dataToSave.arrivalTimestamp = Timestamp.fromMillis(dataToSave.arrivalTimestamp);
+  }
+  
+  if (id) {
+    const checklistDoc = doc(db, "checklists", id);
+    await updateDoc(checklistDoc, dataToSave);
+
+    if (dataToSave.arrivalMileage) {
+        const vehicleDoc = doc(db, "vehicles", dataToSave.vehicleId);
+        await updateDoc(vehicleDoc, { mileage: dataToSave.arrivalMileage });
     }
-  }
-  const newChecklist: DailyChecklist = { ...checklist, id: String(Date.now()) };
-  checklists.push(newChecklist);
+
+    return { id, ...checklistData };
+  } 
   
-  // Also update vehicle mileage
-  const vehicleIndex = vehicles.findIndex(v => v.id === newChecklist.vehicleId);
-  if(vehicleIndex !== -1) {
-      vehicles[vehicleIndex].mileage = newChecklist.departureMileage;
-  }
+  const docRef = await addDoc(collection(db, "checklists"), dataToSave);
+
+  const vehicleDoc = doc(db, "vehicles", dataToSave.vehicleId);
+  await updateDoc(vehicleDoc, { mileage: dataToSave.departureMileage });
   
-  return newChecklist;
+  return { id: docRef.id, ...checklistData };
 }
 
 export const checklistItemsOptions: ChecklistItemOption[] = [
@@ -260,4 +267,8 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
         ],
         isProblem: (value: string) => value === 'missing',
     },
+];
+
+export let users: User[] = [
+    { id: '0', name: 'PedroNobre', role: 'admin', password: 'Pedro234567' },
 ];

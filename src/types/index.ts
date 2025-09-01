@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 
 export interface Vehicle {
   id: string;
@@ -15,8 +16,8 @@ export interface DailyChecklist {
   id: string;
   vehicleId: string;
   driverName: string;
-  departureTimestamp: number;
-  arrivalTimestamp?: number;
+  departureTimestamp: Timestamp;
+  arrivalTimestamp?: Timestamp;
   departureMileage: number;
   arrivalMileage?: number;
   checklistItems: Record<string, 'ok' | 'problem'>;
@@ -41,7 +42,7 @@ export interface DeletionReport {
     adminId: string;
     adminName: string;
     reason: string;
-    timestamp: number;
+    timestamp: Timestamp;
 }
 
 export interface ChecklistItemOption {

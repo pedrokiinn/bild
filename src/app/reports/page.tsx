@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Timestamp } from 'firebase/firestore';
 
 
 function PasswordConfirmationDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (password: string) => void, isSaving: boolean }) {
@@ -162,7 +163,11 @@ function ReportsContent() {
 
                 {isLoading ? renderLoadingSkeleton() : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {reports.map(report => (
+                        {reports.map(report => {
+                             const reportDate = report.timestamp instanceof Timestamp 
+                                ? report.timestamp.toDate() 
+                                : new Date(report.timestamp);
+                            return (
                             <Card key={report.id} className="bg-white/80 backdrop-blur-sm shadow-lg border-0 hover:shadow-2xl transition-shadow flex flex-col">
                                 <CardHeader>
                                     <div className="flex items-start justify-between">
@@ -174,7 +179,7 @@ function ReportsContent() {
                                                 <CardTitle className="text-base font-bold text-slate-900">{report.deletedUserName}</CardTitle>
                                                 <p className="text-xs text-slate-500 flex items-center gap-1.5 pt-1">
                                                     <Calendar className="w-3 h-3"/>
-                                                    {format(new Date(report.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                                    {format(reportDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                                 </p>
                                             </div>
                                         </div>
@@ -204,7 +209,7 @@ function ReportsContent() {
                                     </Button>
                                 </CardFooter>
                             </Card>
-                        ))}
+                        )})}
                     </div>
                 )}
                 

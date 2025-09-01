@@ -11,6 +11,7 @@ import { subDays, format } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { Timestamp } from 'firebase/firestore';
 
 function DashboardContent() {
     const [data, setData] = useState<{ checklists: (DailyChecklist & { vehicle?: Vehicle })[], vehicles: Vehicle[] }>({ checklists: [], vehicles: [] });
@@ -48,7 +49,10 @@ function DashboardContent() {
 
     const getWeeklyAverage = () => {
         const lastWeek = checklists.filter(checklist => {
-            const checkDate = new Date(checklist.date);
+            const checkDate = checklist.departureTimestamp instanceof Timestamp
+                ? checklist.departureTimestamp.toDate()
+                : new Date(checklist.departureTimestamp);
+
             const weekAgo = subDays(new Date(), 7);
             return checkDate >= weekAgo;
         });

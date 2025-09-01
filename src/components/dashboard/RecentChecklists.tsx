@@ -8,6 +8,7 @@ import { ArrowRight, TrendingUp, TrendingDown, Minus, ClipboardCheck } from 'luc
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Timestamp } from 'firebase/firestore';
 
 interface RecentChecklistsProps {
   checklists: (DailyChecklist & { vehicle?: Vehicle })[];
@@ -47,7 +48,7 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
     const getPreviousChecklistScore = (currentChecklist: DailyChecklist) => {
         const vehicleChecklists = checklists
             .filter(c => c.vehicleId === currentChecklist.vehicleId)
-            .sort((a,b) => b.departureTimestamp - a.departureTimestamp);
+            .sort((a,b) => (b.departureTimestamp as any) - (a.departureTimestamp as any));
         
         const currentIndex = vehicleChecklists.findIndex(c => c.id === currentChecklist.id);
         const previousChecklist = vehicleChecklists[currentIndex + 1];
@@ -89,13 +90,16 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
             {checklists.slice(0, 5).map(checklist => {
                 const currentScore = getScore(checklist);
                 const previousScore = getPreviousChecklistScore(checklist);
+                const departureDate = checklist.departureTimestamp instanceof Timestamp 
+                                ? checklist.departureTimestamp.toDate() 
+                                : new Date(checklist.departureTimestamp);
 
                 return (
                     <div key={checklist.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors duration-200">
                         <div>
                             <p className="font-semibold text-sm text-slate-800">{getVehicleInfo(checklist.vehicleId)}</p>
                             <p className="text-xs text-slate-500">
-                                {checklist.driverName} • {format(new Date(checklist.departureTimestamp), "dd/MM/yyyy", { locale: ptBR })}
+                                {checklist.driverName} • {format(departureDate, "dd/MM/yyyy", { locale: ptBR })}
                             </p>
                         </div>
                         <div className="flex items-center gap-2">

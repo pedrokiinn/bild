@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { checklistItemsOptions } from '@/lib/data';
 import { ScrollArea } from '../ui/scroll-area';
+import { Timestamp } from 'firebase/firestore';
 
 interface ChecklistViewerProps {
     checklist?: DailyChecklist & { vehicle?: Vehicle };
@@ -43,6 +44,14 @@ export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerP
     if (!checklist) {
         return <p>Carregando dados do checklist...</p>;
     }
+    
+    const departureDate = checklist.departureTimestamp instanceof Timestamp 
+        ? checklist.departureTimestamp.toDate() 
+        : new Date(checklist.departureTimestamp);
+        
+    const arrivalDate = checklist.arrivalTimestamp
+        ? (checklist.arrivalTimestamp instanceof Timestamp ? checklist.arrivalTimestamp.toDate() : new Date(checklist.arrivalTimestamp))
+        : null;
 
     return (
         <ScrollArea className="max-h-[70vh] pr-4">
@@ -80,13 +89,13 @@ export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerP
                         <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-muted-foreground" />
                             <span className="font-medium text-muted-foreground">Data Saída:</span>
-                            <span className="font-semibold">{format(new Date(checklist.departureTimestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                            <span className="font-semibold">{format(departureDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                         </div>
-                         {checklist.arrivalTimestamp && (
+                         {arrivalDate && (
                             <div className="flex items-center gap-2">
                                 <Calendar className="w-4 h-4 text-muted-foreground" />
                                 <span className="font-medium text-muted-foreground">Data Chegada:</span>
-                                <span className="font-semibold">{format(new Date(checklist.arrivalTimestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                                <span className="font-semibold">{format(arrivalDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                             </div>
                         )}
                     </CardContent>

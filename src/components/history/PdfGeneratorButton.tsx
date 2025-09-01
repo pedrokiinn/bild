@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { checklistItemsOptions } from '@/lib/data';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Timestamp } from 'firebase/firestore';
 
 interface PdfGeneratorButtonProps {
     checklist?: DailyChecklist & { vehicle?: Vehicle };
@@ -23,6 +24,10 @@ const getOptionLabel = (itemKey: string, value: string) => {
 export default function PdfGeneratorButton({ checklist, vehicle }: PdfGeneratorButtonProps) {
     const generateHTMLForPDF = () => {
         if (!checklist || !vehicle) return "";
+
+        const departureDate = checklist.departureTimestamp instanceof Timestamp 
+        ? checklist.departureTimestamp.toDate() 
+        : new Date(checklist.departureTimestamp);
 
         const itemsComProblema = Object.entries(checklist.checklistValues || {})
             .filter(([key]) => {
@@ -85,7 +90,7 @@ export default function PdfGeneratorButton({ checklist, vehicle }: PdfGeneratorB
                 <div class="container">
                     <div class="header">
                         <div class="title">Relatório de Inspeção Veicular</div>
-                        <div class="subtitle">${format(new Date(checklist.departureTimestamp), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}</div>
+                        <div class="subtitle">${format(departureDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}</div>
                     </div>
                     <div class="divider"></div>
 

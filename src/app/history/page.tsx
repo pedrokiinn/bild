@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import type { DailyChecklist, Vehicle, User } from '@/types';
-import { getChecklists, getVehicles } from '@/lib/data';
+import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { getCurrentUser } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Timestamp } from 'firebase/firestore';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -109,20 +110,14 @@ function HistoryContent() {
         if (!selectedChecklist) return;
 
         try {
-            const updatedChecklistData: DailyChecklist = {
+            const updatedChecklistData = {
                 ...selectedChecklist,
                 arrivalTimestamp: new Date().getTime(),
                 arrivalMileage: arrivalMileage,
                 status: selectedChecklist.status === 'problem' ? 'problem' : 'completed',
             };
-
-            await deleteChecklistAction(selectedChecklist.id);
-            // In a real DB, you'd update, but here we simulate by deleting and re-adding
-            const checklistsWithoutOld = checklists.filter(c => c.id !== selectedChecklist.id);
-            const newChecklists = [updatedChecklistData, ...checklistsWithoutOld];
             
-            // This is a mock save, in real app this would be a DB call
-            setChecklists(newChecklists.map(c => ({...c, vehicle: vehicles.find(v => v.id === c.vehicleId)})));
+            await saveChecklist(updatedChecklistData);
 
             toast({
                 title: "Chegada registrada!",
@@ -228,6 +223,10 @@ function HistoryContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredChecklists.map(checklist => {
                             const vehicle = checklist.vehicle;
+                            const departureDate = checklist.departureTimestamp instanceof Timestamp 
+                                ? checklist.departureTimestamp.toDate() 
+                                : new Date(checklist.departureTimestamp);
+
                             return (
                                 <Card key={checklist.id} className={`bg-white/80 backdrop-blur-sm shadow-lg border-0 transition-all hover:shadow-2xl flex flex-col ${checklist.status === 'problem' ? 'border-l-4 border-destructive' : ''}`}>
                                     <CardHeader>
@@ -236,7 +235,7 @@ function HistoryContent() {
                                             {vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.license_plate})` : "Veículo não encontrado"}
                                         </CardTitle>
                                         <p className="text-xs text-slate-500 flex items-center gap-2 pt-1">
-                                            <Calendar className="w-3 h-3" /> {new Date(checklist.date).toLocaleDateString('pt-BR')}
+                                            <Calendar className="w-3 h-3" /> {departureDate.toLocaleDateString('pt-BR')}
                                         </p>
                                     </CardHeader>
                                     <CardContent className="flex-1 flex flex-col justify-between">
@@ -351,4 +350,3 @@ export default function HistoryPage() {
         </ProtectedRoute>
     );
 }
-
