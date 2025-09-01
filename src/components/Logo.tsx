@@ -1,10 +1,8 @@
-
-
 import { Car } from 'lucide-react';
 
-export function Logo() {
+export function Logo({ className }: { className?: string }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className={`flex items-center gap-3 ${className}`}>
         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg">
             <Car className="w-6 h-6 text-primary-foreground" />
         </div>

@@ -17,7 +17,7 @@ import {
     useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2 } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { User, getCurrentUser, login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
@@ -25,11 +25,13 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 
 
 const navigationItems = [
@@ -71,7 +73,7 @@ const navigationItems = [
 function NavigationMenu() {
     const pathname = usePathname();
     const [user, setUser] = React.useState<User | null>(null);
-    const { setOpenMobile, isMobile } = useSidebar();
+    const { isMobile, setOpenMobile } = useSidebar();
 
      React.useEffect(() => {
         const checkUser = async () => {
@@ -118,7 +120,7 @@ function NavigationMenu() {
     );
 }
 
-function LoginTab({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: () => void, onSwitchToRegister: () => void }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -142,24 +144,44 @@ function LoginTab({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     };
 
     return (
-        <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="login-username">Usuário</Label>
-                <Input id="login-username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="login-password">Senha</Label>
-                <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Entrar
-            </Button>
-        </form>
-    )
+        <Card className="w-full max-w-md p-4 sm:p-6">
+            <CardHeader className="text-center">
+                <Logo className="mx-auto mb-6" />
+                <CardTitle className="text-2xl flex items-center justify-center gap-2">
+                    <ArrowRight className="w-6 h-6" />
+                    Acessar sua Conta
+                </CardTitle>
+                <CardDescription>Use seu usuário e senha para continuar.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="login-username">Usuário</Label>
+                        <Input id="login-username" value={username} onChange={(e) => setUsername(e.target.value)} required className="bg-yellow-100/50 focus:bg-yellow-100/70" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="login-password">Senha</Label>
+                        <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="bg-yellow-100/50 focus:bg-yellow-100/70" />
+                    </div>
+                    <Button type="submit" className="w-full bg-green-500 hover:bg-green-600" disabled={isLoading}>
+                        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Entrar
+                    </Button>
+                </form>
+            </CardContent>
+            <CardFooter className="justify-center">
+                <p className="text-sm text-muted-foreground">
+                    Não tem uma conta?{' '}
+                    <button onClick={onSwitchToRegister} className="text-primary hover:underline font-semibold">
+                        Cadastre-se
+                    </button>
+                </p>
+            </CardFooter>
+        </Card>
+    );
 }
 
-function RegisterTab({ onRegisterSuccess }: { onRegisterSuccess: () => void }) {
+function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSuccess: () => void, onSwitchToLogin: () => void }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -196,24 +218,41 @@ function RegisterTab({ onRegisterSuccess }: { onRegisterSuccess: () => void }) {
     };
 
     return (
-        <form onSubmit={handleRegister} className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="register-username">Colaborador</Label>
-                <Input id="register-username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="register-password">Senha</Label>
-                <Input id="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            </div>
-             <div className="space-y-2">
-                <Label htmlFor="register-confirm-password">Repetir Senha</Label>
-                <Input id="register-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-                 {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Cadastrar
-            </Button>
-        </form>
+        <Card className="w-full max-w-md p-4 sm:p-6">
+            <CardHeader className="text-center">
+                <Logo className="mx-auto mb-6" />
+                <CardTitle className="text-2xl">Criar Conta</CardTitle>
+                <CardDescription>Crie uma nova conta para acessar o sistema.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleRegister} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="register-username">Colaborador</Label>
+                        <Input id="register-username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="register-password">Senha</Label>
+                        <Input id="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="register-confirm-password">Repetir Senha</Label>
+                        <Input id="register-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                    </div>
+                    <Button type="submit" className="w-full bg-green-500 hover:bg-green-600" disabled={isLoading}>
+                        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Cadastrar
+                    </Button>
+                </form>
+            </CardContent>
+            <CardFooter className="justify-center">
+                <p className="text-sm text-muted-foreground">
+                    Já tem uma conta?{' '}
+                    <button onClick={onSwitchToLogin} className="text-primary hover:underline font-semibold">
+                        Faça Login
+                    </button>
+                </p>
+            </CardFooter>
+        </Card>
     )
 }
 
@@ -223,7 +262,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [user, setUser] = React.useState<User | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
-    const [activeTab, setActiveTab] = React.useState("login");
+    const [authView, setAuthView] = React.useState<'login' | 'register'>('login');
 
     const checkUser = async () => {
         setIsLoading(true);
@@ -247,7 +286,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     }
     
     const handleRegisterSuccess = () => {
-        setActiveTab("login");
+        setAuthView("login");
     }
 
     const handleLogout = async () => {
@@ -268,29 +307,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (!user) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
-                <div className="w-full max-w-md mx-auto">
-                     <div className="text-center space-y-4 mb-8">
-                        <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg mx-auto">
-                            <ClipboardCheck className="w-10 h-10 text-primary-foreground" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-900">Bem-vindo ao CarCheck</h1>
-                            <p className="text-slate-600">Faça login ou cadastre-se para continuar.</p>
-                        </div>
-                    </div>
-                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="login">Entrar</TabsTrigger>
-                            <TabsTrigger value="register">Cadastrar</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="login">
-                           <LoginTab onLoginSuccess={handleAuthSuccess} />
-                        </TabsContent>
-                        <TabsContent value="register">
-                           <RegisterTab onRegisterSuccess={handleRegisterSuccess} />
-                        </TabsContent>
-                    </Tabs>
-                </div>
+                {authView === 'login' ? (
+                    <LoginView onLoginSuccess={handleAuthSuccess} onSwitchToRegister={() => setAuthView('register')} />
+                ) : (
+                    <RegisterView onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={() => setAuthView('login')} />
+                )}
             </div>
         );
     }
