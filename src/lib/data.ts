@@ -1,3 +1,4 @@
+
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format } from "date-fns";
 import { db } from './firebase';
@@ -269,6 +270,4 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
     },
 ];
 
-export let users: User[] = [
-    { id: '0', name: 'PedroNobre', role: 'admin', password: 'Pedro234567' },
-];
+export let users: User[] = [];
