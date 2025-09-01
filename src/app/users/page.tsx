@@ -156,7 +156,6 @@ function UsersContent() {
         Array(5).fill(0).map((_, index) => (
             <TableRow key={index}>
                 <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-48" /></TableCell>
                 <TableCell><Skeleton className="h-10 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-10 w-10" /></TableCell>
             </TableRow>
@@ -182,7 +181,6 @@ function UsersContent() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Nome</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Email</TableHead>
                                         <TableHead>Função</TableHead>
                                         <TableHead>Ações</TableHead>
                                     </TableRow>
@@ -191,7 +189,6 @@ function UsersContent() {
                                     {isLoading ? renderLoadingSkeleton() : users.map(user => (
                                         <TableRow key={user.id}>
                                             <TableCell className="font-medium">{user.name}</TableCell>
-                                            <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
                                             <TableCell>
                                                 <Select
                                                     value={user.role}

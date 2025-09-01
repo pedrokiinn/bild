@@ -6,7 +6,6 @@ export interface User {
   name?: string | null;
   role: 'admin' | 'collaborator';
   password?: string;
-  email?: string | null;
 }
 
 // Simulate a logged-in user
@@ -71,8 +70,7 @@ export function register(username: string, password_raw: string): Promise<User> 
                 id: String(Date.now()),
                 name: username,
                 role: isFirstUser ? 'admin' : 'collaborator',
-                password: password_raw,
-                email: `${username.toLowerCase()}@example.com`
+                password: password_raw
             };
             users.push(newUser);
             resolve(newUser);

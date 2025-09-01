@@ -4,7 +4,7 @@ import { format } from "date-fns";
 
 // Mock data
 export let users: User[] = [
-    { id: '0', name: 'PedroNobre', role: 'admin', email: 'pedro@example.com', password: 'Pedro234567' },
+    { id: '0', name: 'PedroNobre', role: 'admin', password: 'Pedro234567' },
 ];
 
 export let deletionReports: DeletionReport[] = [];
