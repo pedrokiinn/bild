@@ -304,76 +304,77 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    if (!user) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
-                {authView === 'login' ? (
-                    <LoginView onLoginSuccess={handleAuthSuccess} onSwitchToRegister={() => setAuthView('register')} />
-                ) : (
-                    <RegisterView onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={() => setAuthView('login')} />
-                )}
-            </div>
-        );
-    }
     return (
         <div className="min-h-screen flex w-full">
-            <Sidebar>
-                <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
-                    <Logo />
-                </SidebarHeader>
+            {user ? (
+                <>
+                    <Sidebar>
+                        <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
+                            <Logo />
+                        </SidebarHeader>
 
-                <SidebarContent className='p-3'>
-                    <NavigationMenu />
-                </SidebarContent>
+                        <SidebarContent className='p-3'>
+                            <NavigationMenu />
+                        </SidebarContent>
 
-                <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
-                    {user && (
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
-                                    <span className="text-white font-semibold text-sm">
-                                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                                    </span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-slate-900 text-sm truncate">
-                                        {user.name || 'Usuário'}
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                        <Badge className={user.role === 'admin' ? 'bg-emerald-100 text-emerald-800 text-xs' : 'bg-blue-100 text-blue-800 text-xs'}>
-                                            {user.role}
-                                        </Badge>
+                        <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
+                            {user && (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
+                                            <span className="text-white font-semibold text-sm">
+                                                {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                            </span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-slate-900 text-sm truncate">
+                                                {user.name || 'Usuário'}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <Badge className={user.role === 'admin' ? 'bg-emerald-100 text-emerald-800 text-xs' : 'bg-blue-100 text-blue-800 text-xs'}>
+                                                    {user.role}
+                                                </Badge>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleLogout}
+                                        className="w-full"
+                                    >
+                                        <LogOut className="w-4 h-4 mr-2" />
+                                        Sair
+                                    </Button>
                                 </div>
+                            )}
+                        </SidebarFooter>
+                    </Sidebar>
+
+                    <SidebarInset>
+                         <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between lg:hidden">
+                            <div className="flex items-center gap-2">
+                                <SidebarTrigger>
+                                    <Menu className="w-5 h-5" />
+                                </SidebarTrigger>
+                                <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'CarCheck'}</h1>
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleLogout}
-                                className="w-full"
-                            >
-                                <LogOut className="w-4 h-4 mr-2" />
-                                Sair
-                            </Button>
-                        </div>
+                        </header>
+
+                        <main className="flex-1 overflow-auto">
+                            {children}
+                        </main>
+                    </SidebarInset>
+                </>
+            ) : (
+                <div className="w-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-gray-100">
+                    {authView === 'login' ? (
+                        <LoginView onLoginSuccess={handleAuthSuccess} onSwitchToRegister={() => setAuthView('register')} />
+                    ) : (
+                        <RegisterView onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={() => setAuthView('login')} />
                     )}
-                </SidebarFooter>
-            </Sidebar>
-
-            <SidebarInset>
-                 <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between lg:hidden">
-                    <div className="flex items-center gap-2">
-                        <SidebarTrigger>
-                            <Menu className="w-5 h-5" />
-                        </SidebarTrigger>
-                        <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'CarCheck'}</h1>
-                    </div>
-                </header>
-
-                <main className="flex-1 overflow-auto">
-                    {children}
-                </main>
-            </SidebarInset>
+                </div>
+            )}
         </div>
     );
 }
@@ -385,5 +386,3 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </SidebarProvider>
     )
 }
-
-    
