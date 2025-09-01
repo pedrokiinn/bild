@@ -2,13 +2,12 @@
 const admin = require('firebase-admin');
 
 // Carregue a chave da sua conta de serviço
-// IMPORTANTE: Substitua este arquivo pelo arquivo de chave de serviço real do seu projeto Firebase.
 const serviceAccount = require('./serviceAccountKey.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   // IMPORTANTE: Substitua 'SEU-PROJECT-ID' pelo ID do seu projeto Firebase.
-  databaseURL: "https://SEU-PROJECT-ID.firebaseio.com"
+  databaseURL: "https://carcheck-gkeh4.firebaseio.com"
 });
 
 const db = admin.database();
