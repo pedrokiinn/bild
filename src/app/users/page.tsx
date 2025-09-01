@@ -1,19 +1,11 @@
 
 'use client';
 import React, { useState, useEffect } from 'react';
-import { User, DeletionReport } from '@/types';
+import { User } from '@/types';
 import { getUsers, updateUserRole, deleteUser } from '@/lib/data';
 import { getCurrentUser } from '@/lib/auth';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Button } from '@/components/ui/button';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -21,15 +13,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Users, Shield, User as UserIcon, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Trash2, Users, Shield, User as UserIcon, Loader2, Search } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
     const [reason, setReason] = useState('');
@@ -79,6 +71,7 @@ function UsersContent() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
     
     // State for deletion dialog
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -109,6 +102,8 @@ function UsersContent() {
         const admins = users.filter(u => u.role === 'admin');
         if (currentUser.id === userId && newRole !== 'admin' && admins.length <= 1) {
             toast({ title: "Ação não permitida", description: "Você não pode remover sua própria permissão de administrador, pois é o único existente.", variant: "destructive"});
+            // Revert UI change
+            setTimeout(loadData, 100);
             return;
         }
 
@@ -152,19 +147,34 @@ function UsersContent() {
         setIsDeleteDialogOpen(true);
     };
 
+    const filteredUsers = users.filter(u => {
+        return searchTerm === '' || u.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+
     const renderLoadingSkeleton = () => (
-        Array(5).fill(0).map((_, index) => (
-            <TableRow key={index}>
-                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-10 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-10 w-10" /></TableCell>
-            </TableRow>
-        ))
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array(3).fill(0).map((_, index) => (
+                <Card key={index} className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
+                    <CardHeader className="flex-row items-center gap-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-1">
+                            <Skeleton className="h-6 w-32" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-10 w-full" />
+                    </CardContent>
+                    <CardFooter className="flex justify-end">
+                        <Skeleton className="h-10 w-10" />
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
     );
 
     return (
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
-            <div className="max-w-6xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto space-y-6">
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900">
@@ -175,71 +185,84 @@ function UsersContent() {
                             Promova, rebaixe ou remova usuários do sistema.
                         </p>
                     </CardHeader>
-                    <CardContent>
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Nome</TableHead>
-                                        <TableHead>Função</TableHead>
-                                        <TableHead>Ações</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isLoading ? renderLoadingSkeleton() : users.map(user => (
-                                        <TableRow key={user.id}>
-                                            <TableCell className="font-medium">{user.name}</TableCell>
-                                            <TableCell>
-                                                <Select
-                                                    value={user.role}
-                                                    onValueChange={(newRole: 'admin' | 'collaborator') => handleRoleChange(user.id, newRole)}
-                                                    disabled={currentUser?.id === user.id && users.filter(u => u.role === 'admin').length <= 1}
-                                                >
-                                                    <SelectTrigger className="w-[150px] text-xs sm:text-sm">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="admin">
-                                                            <div className="flex items-center gap-2">
-                                                                <Shield className="w-4 h-4 text-primary" /> Administrador
-                                                            </div>
-                                                        </SelectItem>
-                                                        <SelectItem value="collaborator">
-                                                            <div className="flex items-center gap-2">
-                                                                <UserIcon className="w-4 h-4 text-blue-600" /> Colaborador
-                                                            </div>
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    onClick={() => openDeleteDialog(user)}
-                                                    disabled={currentUser?.id === user.id}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                         { !isLoading && users.length === 0 && (
-                            <div className="text-center py-12">
-                                <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                                    Nenhum outro usuário encontrado
-                                </h3>
-                                <p className="text-slate-600 text-sm">
-                                    Novos usuários aparecerão aqui assim que se registrarem.
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
                 </Card>
+
+                 <div className="bg-white p-4 rounded-xl shadow-md flex items-center">
+                    <div className="relative w-full">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input 
+                            placeholder="Buscar por nome de usuário..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 text-sm"
+                        />
+                    </div>
+                </div>
+
+                {isLoading ? renderLoadingSkeleton() : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredUsers.map(user => (
+                            <Card key={user.id} className="bg-white/80 backdrop-blur-sm shadow-lg border-0 hover:shadow-2xl transition-shadow flex flex-col">
+                                <CardHeader className="flex-row items-center gap-4">
+                                     <div className="w-12 h-12 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center shrink-0">
+                                        <span className="text-white font-semibold text-xl">
+                                            {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-base">{user.name}</CardTitle>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="flex-1">
+                                    <Label>Função</Label>
+                                    <Select
+                                        value={user.role}
+                                        onValueChange={(newRole: 'admin' | 'collaborator') => handleRoleChange(user.id, newRole)}
+                                        disabled={currentUser?.id === user.id && users.filter(u => u.role === 'admin').length <= 1}
+                                    >
+                                        <SelectTrigger className="w-full text-xs sm:text-sm mt-1">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="admin">
+                                                <div className="flex items-center gap-2">
+                                                    <Shield className="w-4 h-4 text-primary" /> Administrador
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="collaborator">
+                                                <div className="flex items-center gap-2">
+                                                    <UserIcon className="w-4 h-4 text-blue-600" /> Colaborador
+                                                </div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </CardContent>
+                                <CardFooter className="flex justify-end pt-4 border-t border-slate-200/60">
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        onClick={() => openDeleteDialog(user)}
+                                        disabled={currentUser?.id === user.id}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+
+                { !isLoading && filteredUsers.length === 0 && (
+                    <div className="text-center py-16">
+                         <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                           Nenhum usuário encontrado
+                        </h3>
+                        <p className="text-slate-600 text-sm">
+                            Ajuste os filtros ou verifique o nome pesquisado.
+                        </p>
+                    </div>
+                )}
             </div>
              <DeletionDialog
                 isOpen={isDeleteDialogOpen}
