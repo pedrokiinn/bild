@@ -347,9 +347,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         </SidebarTrigger>
                         <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'CarCheck'}</h1>
                     </div>
-                    <div className="lg:hidden">
-                        <Logo />
-                    </div>
                 </header>
 
                 <main className="flex-1 overflow-auto">
