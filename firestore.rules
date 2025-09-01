@@ -4,61 +4,63 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
+    function isAdmin() {
+      // Check if the user making the request has the 'admin' role in their user document.
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      // Check if the authenticated user's ID matches the document ID they are trying to access.
+      return request.auth.uid == userId;
     }
 
-    function getRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    // Default rule: Deny all reads/writes unless explicitly allowed in nested blocks.
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    function isAdmin() {
-      return isSignedIn() && getRole() == 'admin';
-    }
-
-    // Coleção de Usuários
+    // Users Collection Rules
     match /users/{userId} {
-      // PERMITIR que qualquer pessoa crie uma conta (cadastro) e leia a lista para verificar credenciais (login).
+      // Allow anyone to create a user (for registration).
+      // Allow reading the list of users for login/username checks.
       allow list, create: if true;
 
-      // PERMITIR que um usuário leia seus próprios dados ou que um admin leia qualquer dado.
-      allow get: if isOwner(userId) || isAdmin();
+      // Allow a user to get their own data, or an admin to get any user's data.
+      allow get: if request.auth != null && (isOwner(userId) || isAdmin());
       
-      // PERMITIR que um admin atualize qualquer usuário.
-      allow update: if isAdmin();
+      // Allow a user to update their own data (e.g., password), or an admin to update any user's data (e.g., role).
+      allow update: if request.auth != null && (isOwner(userId) || isAdmin());
 
-      // PERMITIR que um admin exclua qualquer usuário, exceto a si mesmo se for o último admin.
-      allow delete: if isAdmin();
+      // Only admins can delete users.
+      allow delete: if request.auth != null && isAdmin();
     }
 
-    // Coleção de Veículos
+    // Vehicles Collection Rules
     match /vehicles/{vehicleId} {
-      // Qualquer usuário logado pode ver os veículos.
-      allow read: if isSignedIn();
-      // Apenas admins podem criar, editar ou apagar veículos.
-      allow write: if isAdmin();
+      // Any authenticated user can read vehicle info.
+      allow read: if request.auth != null;
+      // Only admins can create, update, or delete vehicle info.
+      allow write: if request.auth != null && isAdmin();
     }
 
-    // Coleção de Checklists
+    // Checklists Collection Rules
     match /checklists/{checklistId} {
-      // Qualquer usuário logado pode ler checklists.
-      allow read: if isSignedIn();
-      // Qualquer usuário logado pode criar um checklist.
-      allow create: if isSignedIn();
-      // Apenas admins podem apagar checklists.
-      allow delete: if isAdmin();
-      // O dono do checklist (motorista) ou um admin podem atualizar (ex: registrar chegada).
-      allow update: if isAdmin() || (isSignedIn() && resource.data.driverName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name);
+      // Any authenticated user can read the list of checklists or get a specific one.
+      allow read: if request.auth != null;
+
+      // Any authenticated user can create a checklist.
+      allow create: if request.auth != null;
+      
+      // Only the user who created the checklist or an admin can update it.
+      allow update: if request.auth != null && (resource.data.driverName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name || isAdmin());
+
+      // Only an admin can delete a checklist.
+      allow delete: if request.auth != null && isAdmin();
     }
     
-    // Coleção de Relatórios de Exclusão
+    // Deletion Reports Collection Rules (admin only)
     match /deletionReports/{reportId} {
-        // Apenas admins podem ler ou escrever relatórios.
-        allow read, write: if isAdmin();
+        allow read, write: if request.auth != null && isAdmin();
     }
   }
 }
