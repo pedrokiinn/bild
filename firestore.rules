@@ -1,57 +1,57 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-  
+    
+    // Função para verificar se um usuário é administrador
     function isAdmin() {
-      // Verifica se o usuário autenticado tem a role de 'admin' no seu documento.
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    function isOwner(userId) {
-      // Verifica se o usuário autenticado é o dono do documento.
-      return request.auth != null && request.auth.uid == userId;
+    // Função para verificar se o usuário está logado
+    function isSignedIn() {
+      return request.auth != null;
     }
-
-    // Regras para a coleção de usuários
+    
+    // Regras para a coleção 'users'
     match /users/{userId} {
-      // PERMISSÃO CORRIGIDA: Qualquer um pode criar um usuário (necessário para o cadastro).
-      allow create: if true;
-      
-      // PERMISSÃO CORRIGIDA: Qualquer usuário logado pode consultar a lista (necessário para login e gerenciamento).
-      allow list: if request.auth != null;
+      // PERMITIR CADASTRO: Um usuário pode criar seu próprio documento de perfil.
+      allow create: if request.auth.uid == userId;
 
-      // Um usuário pode ler ou atualizar seus próprios dados. Admins podem ler/atualizar qualquer um.
-      allow get, update: if isOwner(userId) || isAdmin();
+      // PERMITIR LOGIN E BUSCA DE PERFIL: Qualquer usuário logado pode ler perfis.
+      allow read: if isSignedIn();
+
+      // PERMITIR ATUALIZAÇÃO: Apenas o dono do perfil ou um admin pode atualizar.
+      allow update: if request.auth.uid == userId || isAdmin();
       
-      // Apenas admins podem deletar usuários.
+      // PERMITIR EXCLUSÃO: Apenas administradores podem excluir usuários.
       allow delete: if isAdmin();
     }
 
-    // Regras para a coleção de veículos
+    // Regras para a coleção 'vehicles'
     match /vehicles/{vehicleId} {
-      // Qualquer usuário logado pode ler a lista de veículos.
-      allow read: if request.auth != null;
+      // QUALQUER USUÁRIO LOGADO PODE VER: Necessário para o checklist.
+      allow read: if isSignedIn();
       
-      // Apenas admins podem criar, atualizar ou deletar veículos.
+      // APENAS ADMINS PODEM MODIFICAR:
       allow write: if isAdmin();
     }
 
-    // Regras para a coleção de checklists
+    // Regras para a coleção 'checklists'
     match /checklists/{checklistId} {
-      // Qualquer usuário logado pode ler ou criar checklists.
-      allow read, create: if request.auth != null;
-      
-      // Um usuário pode atualizar seu próprio checklist (para registrar chegada), ou um admin pode atualizar qualquer um.
-      allow update: if (isOwner(resource.data.driverId) || isAdmin());
-      
-      // Apenas admins podem deletar checklists.
-      allow delete: if isAdmin();
-    }
+        // QUALQUER USUÁRIO LOGADO PODE LER E CRIAR
+        allow read, create: if isSignedIn();
 
-    // Regras para os relatórios de exclusão
+        // APENAS O MOTORISTA DO CHECKLIST OU UM ADMIN PODEM ATUALIZAR
+        allow update: if (isSignedIn() && resource.data.driverId == request.auth.uid) || isAdmin();
+        
+        // APENAS ADMINS PODEM DELETAR
+        allow delete: if isAdmin();
+    }
+    
+    // Regras para a coleção 'deletionReports'
     match /deletionReports/{reportId} {
-        // Apenas admins podem ler e escrever relatórios.
+        // APENAS ADMINS PODEM ACESSAR
         allow read, write: if isAdmin();
     }
   }
