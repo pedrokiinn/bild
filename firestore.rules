@@ -1,9 +1,49 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      // PERIGO: Permite que qualquer um leia e escreva. Apenas para testes.
-      allow read, write: if true;
+    
+    // Helper function to get user role from the 'users' collection
+    function getUserRole(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+    }
+
+    // Rules for the 'users' collection
+    match /users/{userId} {
+      // Admins can read all user profiles. Collaborators can read their own.
+      allow read: if request.auth != null && (getUserRole(request.auth.uid) == 'admin' || request.auth.uid == userId);
+      // A new user can create their own profile document.
+      allow create: if request.auth.uid == userId;
+      // Admins can update any user (e.g., change roles).
+      allow update: if request.auth != null && getUserRole(request.auth.uid) == 'admin';
+      // Admins can delete users.
+      allow delete: if request.auth != null && getUserRole(request.auth.uid) == 'admin';
+    }
+
+    // Rules for the 'vehicles' collection
+    match /vehicles/{vehicleId} {
+      // Any authenticated user can read vehicle data.
+      allow read: if request.auth != null;
+      // Only admins can create, update, or delete vehicles.
+      allow write: if request.auth != null && getUserRole(request.auth.uid) == 'admin';
+    }
+
+    // Rules for the 'checklists' collection
+    match /checklists/{checklistId} {
+        // Admins can read all checklists. Collaborators can read their own.
+        allow read: if request.auth != null && (getUserRole(request.auth.uid) == 'admin' || resource.data.driverId == request.auth.uid);
+        // Any authenticated user can create a new checklist.
+        allow create: if request.auth != null;
+        // Admins can update any checklist. Collaborators can only update their own.
+        allow update: if request.auth != null && (getUserRole(request.auth.uid) == 'admin' || resource.data.driverId == request.auth.uid);
+        // Only admins can delete checklists.
+        allow delete: if request.auth != null && getUserRole(request.auth.uid) == 'admin';
+    }
+    
+    // Rules for deletion reports (only admins should interact with these)
+    match /deletionReports/{reportId} {
+        // Only admins can read, create, or delete reports.
+        allow read, write: if request.auth != null && getUserRole(request.auth.uid) == 'admin';
     }
   }
 }
