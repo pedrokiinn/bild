@@ -24,6 +24,15 @@ export const getUsers = async (): Promise<User[]> => {
     return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 };
 
+export const getUserById = async (id: string): Promise<User | undefined> => {
+    const userDoc = doc(db, "users", id);
+    const userSnap = await getDoc(userDoc);
+    if (userSnap.exists()) {
+        return { id: userSnap.id, ...userSnap.data() } as User;
+    }
+    return undefined;
+}
+
 export const getUserByName = async (name: string): Promise<User | undefined> => {
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("name", "==", name));
@@ -269,5 +278,3 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
         isProblem: (value: string) => value === 'missing',
     },
 ];
-
-export let users: User[] = [];

@@ -1,5 +1,5 @@
 // A mock auth.ts file to simulate user authentication
-import { getUserByName, getUsers } from "./data";
+import { getUserByName, getUsers, getUserById } from "./data";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -20,9 +20,8 @@ export function getCurrentUser(): Promise<User | null> {
     if (typeof window !== 'undefined') {
       const userId = localStorage.getItem('currentUser');
       if (userId) {
-        // This is not ideal as it fetches all users. In a real app, you'd fetch a single user by ID.
-        const allUsers = await getUsers();
-        const user = allUsers.find(u => u.id === userId);
+        // Fetch only the current user by ID instead of all users.
+        const user = await getUserById(userId);
         currentUser = user || null;
       } else {
         currentUser = null;
