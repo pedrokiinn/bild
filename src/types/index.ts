@@ -30,7 +30,7 @@ export interface DailyChecklist {
 
 export interface User {
   id: string;
-  name?: string | null;
+  name: string;
   role: 'admin' | 'collaborator';
   password?: string;
 }

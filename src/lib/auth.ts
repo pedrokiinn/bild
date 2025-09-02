@@ -5,7 +5,7 @@ import { db } from "./firebase";
 
 export interface User {
   id: string;
-  name?: string | null;
+  name: string;
   role: 'admin' | 'collaborator';
   password?: string;
 }

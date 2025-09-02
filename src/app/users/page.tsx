@@ -87,7 +87,7 @@ function UsersContent() {
         setIsLoading(true);
         try {
             const [allUsers, me] = await Promise.all([getUsers(), getCurrentUser()]);
-            setUsers(allUsers.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+            setUsers(allUsers.sort((a, b) => a.name.localeCompare(b.name)));
             setCurrentUser(me);
         } catch (e) {
             console.error("Erro ao carregar dados dos usuários:", e);
@@ -148,7 +148,7 @@ function UsersContent() {
     };
 
     const filteredUsers = users.filter(u => {
-        return searchTerm === '' || u.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        return searchTerm === '' || u.name.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     const renderLoadingSkeleton = () => (
@@ -206,7 +206,7 @@ function UsersContent() {
                                 <CardHeader className="flex-row items-center gap-4">
                                      <div className="w-12 h-12 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center shrink-0">
                                         <span className="text-white font-semibold text-xl">
-                                            {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                            {user.name.charAt(0)?.toUpperCase() || 'U'}
                                         </span>
                                     </div>
                                     <div>

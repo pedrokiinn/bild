@@ -323,7 +323,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
                                             <span className="text-white font-semibold text-sm">
-                                                {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                                {user.name.charAt(0)?.toUpperCase() || 'U'}
                                             </span>
                                         </div>
                                         <div className="flex-1 min-w-0">
