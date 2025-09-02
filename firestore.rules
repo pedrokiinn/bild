@@ -1,57 +1,71 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-    
-    function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
 
-    // Default deny all
+    // Default deny all unless explicitly allowed
     match /{document=**} {
       allow read, write: if false;
     }
 
+    // Helper functions
+    function isAdmin() {
+      // Check if the user is authenticated and has the 'admin' role in their user document.
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+        // Check if the authenticated user's ID matches the provided userId.
+        return request.auth != null && request.auth.uid == userId;
+    }
+
     // Users Collection
     match /users/{userId} {
-      // Allow anyone to query the user list by name (for login/signup checks)
-      // and admins to list all users.
-      allow list: if request.query.keys.hasOnly(['name']) || isAdmin();
-      
-      // Allow reading your own user data, or any user data if you're an admin.
-      allow get: if isOwner(userId) || isAdmin();
-      
-      // Allow anyone to create a new user (signup).
+      // Allow anyone to create a user (register).
       allow create: if true;
-
-      // Allow updating your own data, or any user data if you're an admin.
-      allow update: if isOwner(userId) || isAdmin();
       
+      // Allow anyone to query the users collection, but only by name.
+      // This is required for login and to check if a username exists.
+      allow list: if request.query.keys.hasAny(['name']);
+
+      // Allow a user to get their own data, or an admin to get any user's data.
+      allow get: if isOwner(userId) || isAdmin();
+
+      // Allow a user to update their own data, or an admin to update any user.
+      allow update: if isOwner(userId) || isAdmin();
+
       // Only admins can delete users.
       allow delete: if isAdmin();
     }
 
     // Vehicles Collection
     match /vehicles/{vehicleId} {
-      allow list, get: if request.auth != null;
+      // Allow any authenticated user to get a specific vehicle or list all vehicles.
+      allow get, list: if request.auth != null;
+
+      // Only admins can create, update, or delete vehicles.
       allow create, update, delete: if isAdmin();
     }
 
     // Checklists Collection
     match /checklists/{checklistId} {
-      allow list, get: if request.auth != null;
+      // Allow any authenticated user to get a specific checklist or list all checklists.
+      allow get, list: if request.auth != null;
+      
+      // Any authenticated user can create a checklist.
       allow create: if request.auth != null;
-      // Allow update if you are the owner (driver) or an admin.
-      allow update: if isOwner(resource.data.driverId) || isAdmin();
+      
+      // The user who created the checklist or an admin can update it.
+      // The resource.data refers to the data *before* the update.
+      allow update: if request.auth.uid == resource.data.driverId || isAdmin();
+
+      // Only admins can delete checklists.
       allow delete: if isAdmin();
     }
 
     // Deletion Reports Collection
     match /deletionReports/{reportId} {
+        // Only admins can read, write, or delete deletion reports.
         allow read, write, delete: if isAdmin();
     }
   }
