@@ -1,4 +1,3 @@
-
 // seed.js
 const admin = require('firebase-admin');
 const { initializeApp } = require('firebase/app');
@@ -22,7 +21,7 @@ const firebaseConfig = {
 // Inicialize o Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+  databaseURL: `https://carcheck-gkeh4-default-rtdb.firebaseio.com`
 });
 
 // Inicialize o Client SDK
@@ -38,19 +37,6 @@ const adminUserToSeed = {
     email: "Keennlemariem@gmail.com",
     password: "Pedro234567"
 };
-
-const usersToSeed = [
-    {
-        name: "Ana Silva",
-        email: "ana.silva@example.com",
-        password: "colaborador123"
-    },
-    {
-        name: "Carlos Souza",
-        email: "carlos.souza@example.com",
-        password: "colaborador456"
-    }
-];
 
 const vehiclesToSeed = [
     {
@@ -98,7 +84,7 @@ async function seedAdminUser() {
                 // Salva o perfil no Firestore com o UID do Auth como ID do documento
                 await db.collection('users').doc(user.uid).set({
                     name: adminUserToSeed.name,
-                    email: adminUserToSeed.email,
+                    email: adminUserToseed.email,
                     role: 'admin' // O primeiro usuário é sempre admin
                 });
                 console.log(`Usuário administrador ${adminUserToSeed.name} criado com sucesso!`);
@@ -112,27 +98,19 @@ async function seedAdminUser() {
 }
 
 async function seedCollection(collectionName, data) {
-  console.log(`Iniciando o seed da coleção '${collectionName}'...`);
+  console.log(`\nPopulando a coleção '${collectionName}'...`);
   const collectionRef = db.collection(collectionName);
-  const promises = data.map(async (item) => {
-    try {
-      // Para usuários, não vamos mais adicionar por aqui para evitar inconsistência
-      if (collectionName === 'users') {
-        return 0; // Pula a adição de usuários comuns neste script
-      }
-      await collectionRef.add(item);
-      return 1;
-    } catch (error) {
-      console.error(`Erro ao adicionar item na coleção '${collectionName}': `, item, error);
-      return 0;
-    }
-  });
+  const snapshot = await collectionRef.limit(1).get();
 
-  const results = await Promise.all(promises);
-  const successCount = results.reduce((acc, result) => acc + result, 0);
-  if (successCount > 0) {
-      console.log(`Seed da coleção '${collectionName}' concluído. ${successCount} de ${data.length} documentos adicionados.`);
+  if (!snapshot.empty) {
+      console.log(`Coleção '${collectionName}' já contém dados. Pulando.`);
+      return;
   }
+  
+  console.log(`Adicionando ${data.length} documentos...`);
+  const promises = data.map(item => collectionRef.add(item));
+  await Promise.all(promises);
+  console.log(`Coleção '${collectionName}' populada com sucesso.`);
 }
 
 async function seedDatabase() {
@@ -145,7 +123,7 @@ async function seedDatabase() {
     await seedCollection('vehicles', vehiclesToSeed);
     
     console.log("\n--- Processo de seed finalizado com sucesso! ---");
-    console.log("Usuários colaboradores devem ser cadastrados pela interface da aplicação.");
+    console.log("Execute 'npm run dev' para iniciar a aplicação.");
     process.exit(0);
 }
 
