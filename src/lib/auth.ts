@@ -2,17 +2,13 @@
 'use server';
 
 import { 
-    getAuth, 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     signOut,
-    onAuthStateChanged
 } from "firebase/auth";
-import { app, db } from './firebase';
-import { collection, addDoc, doc, getDoc, query, where, getDocs, setDoc } from "firebase/firestore";
+import { auth, db } from './firebase';
+import { collection, doc, getDoc, query, where, getDocs, setDoc } from "firebase/firestore";
 import type { User } from "@/types";
-
-const auth = getAuth(app);
 
 // Helper para converter um nome de usuário em um email falso para o Firebase Auth
 const toEmail = (username: string) => `${username.toLowerCase().replace(/\s+/g, '')}@carcheck.app`;

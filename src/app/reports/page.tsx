@@ -21,7 +21,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getAuth } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 
 function PasswordConfirmationDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: () => void, isSaving: boolean }) {
@@ -61,7 +61,6 @@ function ReportsContent() {
     const [reportToDelete, setReportToDelete] = useState<string | null>(null);
 
     const { toast } = useToast();
-    const auth = getAuth();
 
     const loadData = async () => {
         setIsLoading(true);

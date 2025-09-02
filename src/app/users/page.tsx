@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { getAuth } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
     const [reason, setReason] = useState('');
@@ -78,7 +78,6 @@ function UsersContent() {
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
     const { toast } = useToast();
-    const auth = getAuth();
 
 
     const loadData = async () => {

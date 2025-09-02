@@ -24,8 +24,8 @@ import { Logo } from '../Logo';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import {
   Card,
   CardContent,
@@ -256,7 +256,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authView, setAuthView] = useState<'login' | 'register'>('login');
-    const auth = getAuth(app);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -273,7 +272,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
         // Limpar o listener quando o componente for desmontado
         return () => unsubscribe();
-    }, [auth]);
+    }, []);
 
     const handleAuthSuccess = (loggedInUser: User) => {
         setUser(loggedInUser);

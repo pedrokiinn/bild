@@ -1,9 +1,8 @@
 
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format } from "date-fns";
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 
 // Helper para converter Timestamps do Firestore para objetos Date nos dados aninhados.
 // Isso é útil para os componentes do lado do cliente que esperam objetos Date.
@@ -53,7 +52,6 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
 };
 
 export const deleteUser = async (userId: string, reason: string, adminName: string): Promise<void> => {
-    const auth = getAuth();
     const adminUser = auth.currentUser;
 
     if (!adminUser) {
@@ -178,7 +176,6 @@ export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<Da
 
 export const saveChecklist = async (checklistData: any): Promise<any> => {
   const { id, ...dataToSave } = checklistData;
-  const auth = getAuth();
   const user = auth.currentUser;
 
   if (!user) {

@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getAuth } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { getUserById } from '@/lib/data';
 
 function HistoryContent() {
@@ -42,7 +42,6 @@ function HistoryContent() {
     const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
     const { toast } = useToast();
-    const auth = getAuth();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -76,7 +75,7 @@ function HistoryContent() {
         } finally {
             setIsLoading(false);
         }
-    }, [toast, auth]);
+    }, [toast]);
 
     useEffect(() => {
         loadData();
