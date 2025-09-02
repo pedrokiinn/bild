@@ -1,64 +1,9 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper Functions
-    function isAdmin() {
-      // Check if the user's role is 'admin' in their user document.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    function isOwner(userId) {
-      // Check if the requesting user's ID matches the provided userId.
-      return request.auth.uid == userId;
-    }
-
-    // Users Collection
-    match /users/{userId} {
-      // Allow anyone to check for existing usernames (list) and create new accounts.
-      // This is necessary for the login and registration pages to function.
-      allow list, create: if true;
-
-      // Allow a user to read their own data, or an admin to read any user's data.
-      allow get: if request.auth != null && (isOwner(userId) || isAdmin());
-      
-      // Allow a user to update their own data, or an admin to update any user's data.
-      allow update: if request.auth != null && (isOwner(userId) || isAdmin());
-      
-      // Only admins can delete users.
-      allow delete: if isAdmin();
-    }
-
-    // Vehicles Collection
-    match /vehicles/{vehicleId} {
-      // Allow any authenticated user to read the list of vehicles and individual vehicle details.
-      // This is required for the checklist and dashboard pages.
-      allow list, get: if request.auth != null;
-      
-      // Only admins can create, update, or delete vehicles.
-      allow write: if isAdmin();
-    }
-
-    // Checklists Collection
-    match /checklists/{checklistId} {
-      // Any authenticated user can list and get checklists for the history page.
-      allow list, get: if request.auth != null;
-      
-      // Any authenticated user can create a new checklist.
-      allow create: if request.auth != null;
-      
-      // The user who created the checklist (driver) or an admin can update it.
-      allow update: if request.auth != null && (isOwner(resource.data.driverId) || isAdmin());
-
-      // Only admins can delete checklists.
-      allow delete: if isAdmin();
-    }
-
-    // Deletion Reports Collection
-    match /deletionReports/{reportId} {
-      // Only admins can read or write deletion reports.
-      allow read, write: if isAdmin();
+    match /{document=**} {
+      // Permite acesso total apenas para o seu usuário específico
+      allow read, write: if request.auth.uid == 'keennlemariem@gmail.com';
     }
   }
 }
