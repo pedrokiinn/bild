@@ -7,13 +7,14 @@ import { getFirestore } from "firebase/firestore";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyDWdh2PxShX7u8SKbbmxdP5zs8AYr31kcI",
+  authDomain: "carcheck-gkeh4.firebaseapp.com",
+  databaseURL: "https://carcheck-gkeh4-default-rtdb.firebaseio.com",
+  projectId: "carcheck-gkeh4",
+  storageBucket: "carcheck-gkeh4.appspot.com",
+  messagingSenderId: "886519139268",
+  appId: "1:886519139268:web:04140f3c22c85be986f291",
+  measurementId: "G-YB09K8E6X3"
 };
 
 // Initialize Firebase
