@@ -1,58 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Função para verificar se um usuário é administrador
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // Função para verificar se o usuário está logado
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    // Regras para a coleção 'users'
-    match /users/{userId} {
-      // PERMITIR CADASTRO: Um usuário pode criar seu próprio documento de perfil.
-      allow create: if request.auth.uid == userId;
-
-      // PERMITIR LOGIN E BUSCA DE PERFIL: Qualquer usuário logado pode ler perfis.
-      allow read: if isSignedIn();
-
-      // PERMITIR ATUALIZAÇÃO: Apenas o dono do perfil ou um admin pode atualizar.
-      allow update: if request.auth.uid == userId || isAdmin();
-      
-      // PERMITIR EXCLUSÃO: Apenas administradores podem excluir usuários.
-      allow delete: if isAdmin();
-    }
-
-    // Regras para a coleção 'vehicles'
-    match /vehicles/{vehicleId} {
-      // QUALQUER USUÁRIO LOGADO PODE VER: Necessário para o checklist.
-      allow read: if isSignedIn();
-      
-      // APENAS ADMINS PODEM MODIFICAR:
-      allow write: if isAdmin();
-    }
-
-    // Regras para a coleção 'checklists'
-    match /checklists/{checklistId} {
-        // QUALQUER USUÁRIO LOGADO PODE LER E CRIAR
-        allow read, create: if isSignedIn();
-
-        // APENAS O MOTORISTA DO CHECKLIST OU UM ADMIN PODEM ATUALIZAR
-        allow update: if (isSignedIn() && resource.data.driverId == request.auth.uid) || isAdmin();
-        
-        // APENAS ADMINS PODEM DELETAR
-        allow delete: if isAdmin();
-    }
-    
-    // Regras para a coleção 'deletionReports'
-    match /deletionReports/{reportId} {
-        // APENAS ADMINS PODEM ACESSAR
-        allow read, write: if isAdmin();
+    match /{document=**} {
+      // PERIGO: Permite que qualquer um leia e escreva. Apenas para testes.
+      allow read, write: if true;
     }
   }
 }
