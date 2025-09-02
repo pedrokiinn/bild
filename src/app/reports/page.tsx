@@ -2,8 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { DeletionReport, User } from '@/types';
-import { getDeletionReports, deleteReport } from '@/lib/data';
-import { getCurrentUser } from '@/lib/auth';
+import { getDeletionReports, deleteReport, getUserById } from '@/lib/data';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Trash2, FileText, UserX, Shield, Clock, Loader2, Calendar } from 'lucide-react';
+import { Trash2, FileText, UserX, Shield, Loader2, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
@@ -22,14 +21,13 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getAuth } from 'firebase/auth';
 
 
-function PasswordConfirmationDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (password: string) => void, isSaving: boolean }) {
-    const [password, setPassword] = useState('');
-
+function PasswordConfirmationDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: () => void, isSaving: boolean }) {
+    
     const handleConfirm = () => {
-        onConfirm(password);
-        setPassword('');
+        onConfirm();
     }
 
     return (
@@ -38,22 +36,12 @@ function PasswordConfirmationDialog({ isOpen, onOpenChange, onConfirm, isSaving 
                 <DialogHeader>
                     <DialogTitle>Confirmar Exclusão de Relatório</DialogTitle>
                     <DialogDescription>
-                        Para sua segurança, por favor, insira sua senha de administrador para confirmar a exclusão deste relatório.
+                       Tem certeza de que deseja excluir este relatório? Esta ação é irreversível.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    <Label htmlFor="password">Senha</Label>
-                    <Input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="mt-2"
-                    />
-                </div>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancelar</Button>
-                    <Button variant="destructive" onClick={handleConfirm} disabled={isSaving || !password}>
+                    <Button variant="destructive" onClick={handleConfirm} disabled={isSaving}>
                         {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         Confirmar Exclusão
                     </Button>
@@ -73,13 +61,17 @@ function ReportsContent() {
     const [reportToDelete, setReportToDelete] = useState<string | null>(null);
 
     const { toast } = useToast();
+    const auth = getAuth();
 
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [fetchedReports, me] = await Promise.all([getDeletionReports(), getCurrentUser()]);
+            const [fetchedReports, me] = await Promise.all([
+                getDeletionReports(), 
+                auth.currentUser ? getUserById(auth.currentUser.uid) : Promise.resolve(null)
+            ]);
             setReports(fetchedReports);
-            setCurrentUser(me);
+            setCurrentUser(me || null);
         } catch (e) {
             console.error("Erro ao carregar relatórios:", e);
             toast({ title: "Erro", description: "Falha ao carregar relatórios.", variant: "destructive" });
@@ -97,15 +89,9 @@ function ReportsContent() {
         setIsConfirmOpen(true);
     };
 
-    const handleDeleteReport = async (password: string) => {
+    const handleDeleteReport = async () => {
         if (!reportToDelete || !currentUser) return;
         
-        // Basic password check - in a real app, this would be more secure
-        if (password !== currentUser.password) {
-            toast({ title: "Erro", description: "Senha incorreta.", variant: "destructive" });
-            return;
-        }
-
         setIsSaving(true);
         try {
             await deleteReport(reportToDelete);

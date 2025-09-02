@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { DailyChecklist, Vehicle, User } from '@/types';
 import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
-import { getCurrentUser } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, User as UserIcon } from 'lucide-react';
@@ -26,6 +25,8 @@ import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getAuth } from 'firebase/auth';
+import { getUserById } from '@/lib/data';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -37,22 +38,26 @@ function HistoryContent() {
     const [isArrivalDialogOpen, setIsArrivalDialogOpen] = useState(false);
     const [selectedChecklist, setSelectedChecklist] = useState<DailyChecklist & { vehicle?: Vehicle } | null>(null);
     
-    // State for deletion dialog
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
     const { toast } = useToast();
+    const auth = getAuth();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [user, loadedChecklists, loadedVehicles] = await Promise.all([
-                getCurrentUser(),
+            const authUser = auth.currentUser;
+            let userProfile: User | null = null;
+            if (authUser) {
+                userProfile = await getUserById(authUser.uid) || null;
+            }
+            setCurrentUser(userProfile);
+
+            const [loadedChecklists, loadedVehicles] = await Promise.all([
                 getChecklists(),
                 getVehicles(),
             ]);
-            
-            setCurrentUser(user);
 
             const checklistsWithVehicleData = loadedChecklists.map(checklist => {
                 const vehicle = loadedVehicles.find(v => v.id === checklist.vehicleId);
@@ -71,7 +76,7 @@ function HistoryContent() {
         } finally {
             setIsLoading(false);
         }
-    }, [toast]);
+    }, [toast, auth]);
 
     useEffect(() => {
         loadData();
@@ -85,7 +90,7 @@ function HistoryContent() {
                 title: "Checklist excluído!",
                 description: "O registro foi removido com sucesso."
             });
-            loadData(); // Recarregar dados
+            loadData(); 
         } catch (error) {
             console.error("Erro ao excluir checklist:", error);
             toast({
@@ -253,18 +258,20 @@ function HistoryContent() {
                                         </div>
                                         <div className="flex justify-end items-center pt-4 border-t border-slate-200/60 gap-1">
                                             <Dialog>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <DialogTrigger asChild>
-                                                            <Button variant="outline" size="icon">
-                                                                <Eye className="w-4 h-4" />
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Ver Dados</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <DialogTrigger asChild>
+                                                                <Button variant="outline" size="icon">
+                                                                    <Eye className="w-4 h-4" />
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Ver Dados</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
                                                 <DialogContent className="sm:max-w-2xl">
                                                     <DialogHeader>
                                                         <DialogTitle>Detalhes do Checklist</DialogTitle>
@@ -273,7 +280,8 @@ function HistoryContent() {
                                                 </DialogContent>
                                             </Dialog>
 
-                                            {checklist.status === 'pending_arrival' && (
+                                            {checklist.status === 'pending_arrival' && checklist.driverId === auth.currentUser?.uid && (
+                                                <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button size="icon" variant="ghost" onClick={() => { setSelectedChecklist(checklist); setIsArrivalDialogOpen(true); }}>
@@ -284,11 +292,13 @@ function HistoryContent() {
                                                         <p>Registrar Chegada</p>
                                                     </TooltipContent>
                                                 </Tooltip>
+                                                </TooltipProvider>
                                             )}
 
                                             <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
 
                                             {currentUser?.role === 'admin' && (
+                                                 <TooltipProvider>
                                                  <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(checklist.id)}>
@@ -299,6 +309,7 @@ function HistoryContent() {
                                                       <p>Excluir Checklist</p>
                                                     </TooltipContent>
                                                 </Tooltip>
+                                                </TooltipProvider>
                                             )}
                                         </div>
                                     </CardContent>
@@ -341,9 +352,7 @@ function HistoryContent() {
 export default function HistoryPage() {
     return (
         <ProtectedRoute>
-            <TooltipProvider>
-                <HistoryContent />
-            </TooltipProvider>
+            <HistoryContent />
         </ProtectedRoute>
     );
 }

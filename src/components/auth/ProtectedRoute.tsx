@@ -1,10 +1,14 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, getCurrentUser } from '@/lib/auth';
+import { User, logout } from '@/lib/auth';
 import { Car, ShieldAlert } from 'lucide-react';
-import { MainLayout } from '../layout/main-layout';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { app } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,33 +20,44 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const router = useRouter();
+  const auth = getAuth(app);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      setIsLoading(true);
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      
-      if (!currentUser) {
-          // The main-layout will handle showing the login screen.
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Usuário está logado no Firebase Auth. Busque o perfil no Firestore.
+        const userDocRef = doc(db, "users", firebaseUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        
+        if (userDocSnap.exists()) {
+          const userProfile = { id: userDocSnap.id, ...userDocSnap.data() } as User;
+          setUser(userProfile);
+          
+          if (requiredRole) {
+            const hasRequiredRole = userProfile.role === 'admin' || userProfile.role === requiredRole;
+            setHasAccess(hasRequiredRole);
+            if (!hasRequiredRole) {
+              router.replace('/dashboard');
+            }
+          } else {
+            setHasAccess(true);
+          }
+        } else {
+          // Perfil não encontrado no Firestore, deslogar para evitar estado inconsistente.
+          await logout();
+          setUser(null);
           setHasAccess(false);
-      } else if (requiredRole) {
-        // Admin has access to everything
-        const hasRequiredRole = currentUser.role === 'admin' || currentUser.role === requiredRole;
-        setHasAccess(hasRequiredRole);
-        if(!hasRequiredRole) {
-          // This should ideally not happen if navigation is controlled, but as a fallback:
-          router.push('/dashboard'); 
         }
       } else {
-        setHasAccess(true);
+        // Usuário não está logado. O main-layout cuidará da tela de login.
+        setUser(null);
+        setHasAccess(false);
       }
-
       setIsLoading(false);
-    };
+    });
 
-    checkAuth();
-  }, [requiredRole, router]);
+    return () => unsubscribe();
+  }, [requiredRole, router, auth]);
 
   if (isLoading) {
     return (
@@ -55,16 +70,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     );
   }
 
-  // The login UI is now handled by MainLayout, so if there's no user,
-  // MainLayout will render the login form, and we shouldn't render anything here.
-  // The check for `hasAccess` is for role-based protection after login.
+  // O main-layout renderizará a tela de login se não houver usuário.
   if (!user) {
-    return null; // MainLayout will render the login screen
+    return null;
   }
 
   if (!hasAccess) {
+    // Renderiza a tela de acesso negado se o usuário estiver logado mas não tiver a role necessária.
     return (
-        // This will be shown inside the MainLayout if the user is logged in but lacks permissions
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
             <div className="text-center space-y-4">
                 <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">

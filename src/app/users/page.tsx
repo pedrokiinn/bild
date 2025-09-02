@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '@/types';
 import { getUsers, updateUserRole, deleteUser } from '@/lib/data';
-import { getCurrentUser } from '@/lib/auth';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { getAuth } from 'firebase/auth';
 
 function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
     const [reason, setReason] = useState('');
@@ -78,23 +78,31 @@ function UsersContent() {
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
     const { toast } = useToast();
+    const auth = getAuth();
 
-    useEffect(() => {
-        loadData();
-    }, []);
 
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [allUsers, me] = await Promise.all([getUsers(), getCurrentUser()]);
+            const allUsers = await getUsers();
             setUsers(allUsers.sort((a, b) => a.name.localeCompare(b.name)));
-            setCurrentUser(me);
+            
+            const authUser = auth.currentUser;
+            if (authUser) {
+                const currentUserProfile = allUsers.find(u => u.id === authUser.uid);
+                setCurrentUser(currentUserProfile || null);
+            }
+
         } catch (e) {
             console.error("Erro ao carregar dados dos usuários:", e);
             toast({ title: "Erro", description: "Falha ao carregar usuários.", variant: "destructive" });
         }
         setIsLoading(false);
     };
+
+    useEffect(() => {
+        loadData();
+    }, []);
 
     const handleRoleChange = async (userId: string, newRole: 'admin' | 'collaborator') => {
         if (!currentUser) return;

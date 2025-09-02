@@ -1,12 +1,66 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // WARNING: These rules are insecure and allow anyone to read and write to your database.
-    // They are intended for initial development and debugging.
-    // You should implement secure rules before deploying to production.
-    match /{document=**} {
-      allow read, write: if true;
+  
+    // Função para verificar se o usuário é um administrador
+    function isAdmin() {
+      // O usuário deve estar logado e seu documento de perfil no Firestore deve ter role == 'admin'
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Função para verificar se o usuário é o dono do recurso
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Coleção de Usuários (users)
+    match /users/{userId} {
+      // Qualquer um pode criar um perfil de usuário (necessário para o cadastro)
+      allow create: if true;
+      
+      // Apenas o próprio usuário ou um admin podem ler os dados de um perfil
+      allow get: if isOwner(userId) || isAdmin();
+      
+      // Apenas o próprio usuário ou um admin podem atualizar um perfil
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Apenas um admin pode deletar um usuário
+      allow delete: if isAdmin();
+      
+      // Qualquer um pode listar usuários (necessário para a busca no login/cadastro)
+      allow list: if true;
+    }
+    
+    // Coleção de Veículos (vehicles)
+    match /vehicles/{vehicleId} {
+      // Qualquer usuário autenticado pode ler a lista de veículos ou um veículo específico
+      allow read: if request.auth != null;
+      
+      // Apenas administradores podem criar, atualizar ou deletar veículos
+      allow write: if isAdmin();
+    }
+    
+    // Coleção de Checklists (checklists)
+    match /checklists/{checklistId} {
+      // Qualquer usuário autenticado pode criar um checklist
+      allow create: if request.auth != null;
+
+      // Qualquer usuário autenticado pode ler a lista de checklists ou um checklist específico
+      allow read: if request.auth != null;
+
+      // Apenas o dono do checklist (driverId) ou um admin podem atualizar
+      allow update: if request.auth != null && (isOwner(resource.data.driverId) || isAdmin());
+      
+      // Apenas um admin pode deletar um checklist
+      allow delete: if isAdmin();
+    }
+    
+    // Coleção de Relatórios de Exclusão (deletionReports)
+    match /deletionReports/{reportId} {
+      // Apenas administradores podem ler e escrever nesta coleção
+      allow read, write: if isAdmin();
     }
   }
 }

@@ -3,6 +3,7 @@ import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport
 import { format } from "date-fns";
 import { db } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 // Helper para converter Timestamps do Firestore para objetos Date nos dados aninhados.
 // Isso é útil para os componentes do lado do cliente que esperam objetos Date.
@@ -34,11 +35,16 @@ export const getUserById = async (id: string): Promise<User | undefined> => {
 }
 
 export const getUserByName = async (name: string): Promise<User | undefined> => {
-    // Firestore queries with `where` can be tricky with permissions and require indexes.
-    // For a small-scale app, fetching all users and filtering on the client-side
-    // is a more robust way to handle login/signup checks without permission errors.
-    const allUsers = await getUsers();
-    return allUsers.find(user => user.name.toLowerCase() === name.toLowerCase());
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("name", "==", name));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        return undefined;
+    }
+    
+    const userDoc = querySnapshot.docs[0];
+    return { id: userDoc.id, ...userDoc.data() } as User;
 }
 
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
@@ -47,18 +53,26 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
 };
 
 export const deleteUser = async (userId: string, reason: string, adminName: string): Promise<void> => {
+    const auth = getAuth();
+    const adminUser = auth.currentUser;
+
+    if (!adminUser) {
+        throw new Error("Ação não autorizada. Administrador não está logado.");
+    }
+    
     const userToDeleteDoc = doc(db, "users", userId);
     const userToDeleteSnap = await getDoc(userToDeleteDoc);
     const userToDelete = userToDeleteSnap.data() as User;
     
     if (!userToDelete) throw new Error("Usuário não encontrado.");
     
-    const adminUser = await getUserByName(adminName);
+    // O ideal seria deletar o usuário do Firebase Auth também, mas isso é uma operação sensível
+    // que requer que o usuário faça login novamente. Por simplicidade, vamos focar em deletar o perfil do Firestore.
 
     const report: Omit<DeletionReport, 'id' | 'timestamp'> & { timestamp: any } = {
         deletedUserId: userId,
         deletedUserName: userToDelete.name || 'N/A',
-        adminId: adminUser?.id || 'N/A',
+        adminId: adminUser.uid,
         adminName,
         reason,
         timestamp: serverTimestamp(),
@@ -66,7 +80,6 @@ export const deleteUser = async (userId: string, reason: string, adminName: stri
     
     const reportCollection = collection(db, "deletionReports");
     
-    // Usar um batch para garantir que ambas as operações (exclusão e criação de relatório) sejam atômicas
     const batch = writeBatch(db);
     batch.delete(userToDeleteDoc);
     batch.set(doc(reportCollection), report);
@@ -165,6 +178,15 @@ export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<Da
 
 export const saveChecklist = async (checklistData: any): Promise<any> => {
   const { id, ...dataToSave } = checklistData;
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+      throw new Error("Usuário não autenticado.");
+  }
+
+  // Adiciona o driverId para referência de propriedade
+  dataToSave.driverId = user.uid;
 
   // Converte os timestamps numéricos de volta para objetos Timestamp do Firestore antes de salvar
   if (dataToSave.departureTimestamp) {
@@ -264,5 +286,3 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
         isProblem: (value: string) => value === 'missing',
     },
 ];
-
-    

@@ -1,3 +1,4 @@
+
 import { Timestamp } from 'firebase/firestore';
 
 export interface Vehicle {
@@ -15,6 +16,7 @@ export type ChecklistStatus = 'completed' | 'pending_arrival' | 'problem';
 export interface DailyChecklist {
   id: string;
   vehicleId: string;
+  driverId: string; // Adicionado para rastrear o dono do checklist
   driverName: string;
   departureTimestamp: Timestamp;
   arrivalTimestamp?: Timestamp;
@@ -29,10 +31,10 @@ export interface DailyChecklist {
 }
 
 export interface User {
-  id: string;
+  id: string; // Corresponderá ao UID do Firebase Auth
   name: string;
   role: 'admin' | 'collaborator';
-  password?: string;
+  // O campo password não é mais necessário aqui, será gerenciado pelo Firebase Auth
 }
 
 export interface DeletionReport {

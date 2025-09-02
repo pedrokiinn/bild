@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -24,6 +24,8 @@ import { Logo } from '../Logo';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { app } from '@/lib/firebase';
 import {
   Card,
   CardContent,
@@ -70,18 +72,9 @@ const navigationItems = [
     }
 ];
 
-function NavigationMenu() {
+function NavigationMenu({ user }: { user: User | null }) {
     const pathname = usePathname();
-    const [user, setUser] = React.useState<User | null>(null);
     const { isMobile, setOpenMobile } = useSidebar();
-
-     React.useEffect(() => {
-        const checkUser = async () => {
-            const currentUser = await getCurrentUser();
-            setUser(currentUser);
-        };
-        checkUser();
-    }, []);
 
     const getFilteredNavigation = () => {
         if (!user) return [];
@@ -120,7 +113,7 @@ function NavigationMenu() {
     );
 }
 
-function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: () => void, onSwitchToRegister: () => void }) {
+function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (user: User) => void, onSwitchToRegister: () => void }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -130,8 +123,8 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: () 
         e.preventDefault();
         setIsLoading(true);
         try {
-            await login(username, password);
-            onLoginSuccess();
+            const user = await login(username, password);
+            onLoginSuccess(user);
         } catch (error: any) {
             toast({
                 title: "Falha no Login",
@@ -157,11 +150,11 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: () 
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="login-username">Usuário</Label>
-                        <Input id="login-username" value={username} onChange={(e) => setUsername(e.target.value)} required className="bg-yellow-100/50 focus:bg-yellow-100/70" />
+                        <Input id="login-username" value={username} onChange={(e) => setUsername(e.target.value)} required placeholder="Ex: PedroNobre" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="login-password">Senha</Label>
-                        <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="bg-yellow-100/50 focus:bg-yellow-100/70" />
+                        <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
                     </div>
                     <Button type="submit" className="w-full bg-green-500 hover:bg-green-600" disabled={isLoading}>
                         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -227,7 +220,7 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
             <CardContent>
                 <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="register-username">Colaborador</Label>
+                        <Label htmlFor="register-username">Nome de Usuário</Label>
                         <Input id="register-username" value={username} onChange={(e) => setUsername(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
@@ -260,28 +253,30 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
 function LayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [user, setUser] = React.useState<User | null>(null);
-    const [isLoading, setIsLoading] = React.useState(true);
-    const [authView, setAuthView] = React.useState<'login' | 'register'>('login');
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [authView, setAuthView] = useState<'login' | 'register'>('login');
+    const auth = getAuth(app);
 
-    const checkUser = async () => {
-        setIsLoading(true);
-        try {
-            const currentUser = await getCurrentUser();
-            setUser(currentUser);
-        } catch (error) {
-            setUser(null);
-        } finally {
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                // Usuário está logado no Firebase Auth. Agora, buscamos o perfil no Firestore.
+                const userProfile = await getCurrentUser();
+                setUser(userProfile);
+            } else {
+                // Usuário não está logado.
+                setUser(null);
+            }
             setIsLoading(false);
-        }
-    };
+        });
 
-    React.useEffect(() => {
-        checkUser();
-    }, []);
+        // Limpar o listener quando o componente for desmontado
+        return () => unsubscribe();
+    }, [auth]);
 
-    const handleAuthSuccess = () => {
-        checkUser();
+    const handleAuthSuccess = (loggedInUser: User) => {
+        setUser(loggedInUser);
         router.refresh();
     }
     
@@ -299,7 +294,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <Car className="w-12 h-12 text-primary animate-pulse" />
+                <div className="text-center">
+                    <Car className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
+                    <p className="text-slate-600">Carregando...</p>
+                </div>
             </div>
         )
     }
@@ -314,7 +312,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         </SidebarHeader>
 
                         <SidebarContent className='p-3'>
-                            <NavigationMenu />
+                            <NavigationMenu user={user} />
                         </SidebarContent>
 
                         <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
