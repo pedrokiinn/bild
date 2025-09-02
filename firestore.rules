@@ -1,72 +1,75 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Default deny all unless explicitly allowed
+    // Helper Functions
+    function isAdmin() {
+      // Check if the user's document in Firestore has the 'admin' role.
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isOwner(resourceId) {
+        // Check if the requesting user's ID matches a given resource ID.
+        return request.auth.uid == resourceId;
+    }
+    
+    // Default rule: Deny all reads and writes unless explicitly allowed.
+    // This is a secure default.
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Helper functions
-    function isAdmin() {
-      // Check if the user is authenticated and has the 'admin' role in their user document.
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    function isOwner(userId) {
-        // Check if the authenticated user's ID matches the provided userId.
-        return request.auth != null && request.auth.uid == userId;
-    }
-
     // Users Collection
+    // Defines access control for user documents.
     match /users/{userId} {
-      // Allow anyone to create a user (register).
-      allow create: if true;
+      // Allow anyone to check for existing usernames and create new accounts.
+      // This is crucial for registration and login flows.
+      allow list, create: if true;
       
-      // Allow anyone to query the users collection, but only by name.
-      // This is required for login and to check if a username exists.
-      allow list: if request.query.keys.hasAny(['name']);
-
-      // Allow a user to get their own data, or an admin to get any user's data.
-      allow get: if isOwner(userId) || isAdmin();
-
-      // Allow a user to update their own data, or an admin to update any user.
-      allow update: if isOwner(userId) || isAdmin();
-
+      // Allow a user to read their own data, or an admin to read any user's data.
+      allow get: if request.auth != null && (isOwner(userId) || isAdmin());
+      
+      // Allow a user to update their own data, or an admin to update any user's data.
+      allow update: if request.auth != null && (isOwner(userId) || isAdmin());
+      
       // Only admins can delete users.
       allow delete: if isAdmin();
     }
 
     // Vehicles Collection
+    // Defines access control for vehicle documents.
     match /vehicles/{vehicleId} {
-      // Allow any authenticated user to get a specific vehicle or list all vehicles.
-      allow get, list: if request.auth != null;
-
+      // Allow any authenticated user to read the list and individual vehicles.
+      // This is necessary for the dashboard and checklist pages.
+      allow list, get: if request.auth != null;
+      
       // Only admins can create, update, or delete vehicles.
       allow create, update, delete: if isAdmin();
     }
 
     // Checklists Collection
+    // Defines access control for daily checklist documents.
     match /checklists/{checklistId} {
-      // Allow any authenticated user to get a specific checklist or list all checklists.
-      allow get, list: if request.auth != null;
+      // Any authenticated user can list and get checklists.
+      // Required for the history and dashboard pages.
+      allow list, get: if request.auth != null;
       
       // Any authenticated user can create a checklist.
       allow create: if request.auth != null;
       
-      // The user who created the checklist or an admin can update it.
-      // The resource.data refers to the data *before* the update.
-      allow update: if request.auth.uid == resource.data.driverId || isAdmin();
+      // A checklist can be updated by its creator (driver) or an admin.
+      // Note: Assumes driverId is stored on the checklist document.
+      allow update: if request.auth != null && (get(/databases/$(database)/documents/checklists/$(checklistId)).data.driverName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name || isAdmin());
 
       // Only admins can delete checklists.
       allow delete: if isAdmin();
     }
 
     // Deletion Reports Collection
+    // Access is strictly limited to administrators.
     match /deletionReports/{reportId} {
-        // Only admins can read, write, or delete deletion reports.
-        allow read, write, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
   }
 }
