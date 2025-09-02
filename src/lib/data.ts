@@ -34,14 +34,12 @@ export const getUserById = async (id: string): Promise<User | undefined> => {
 }
 
 export const getUserByName = async (name: string): Promise<User | undefined> => {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("name", "==", name));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-        return undefined;
-    }
-    const docData = querySnapshot.docs[0];
-    return { id: docData.id, ...docData.data() } as User;
+    // Firestore queries require a composite index for this type of query, 
+    // which can be complex to set up. A more scalable solution for a large
+    // number of users would be to use Firebase Authentication.
+    // For this app's scale, fetching all users and filtering client-side is acceptable.
+    const allUsers = await getUsers();
+    return allUsers.find(user => user.name.toLowerCase() === name.toLowerCase());
 }
 
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
@@ -267,3 +265,5 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
         isProblem: (value: string) => value === 'missing',
     },
 ];
+
+    
