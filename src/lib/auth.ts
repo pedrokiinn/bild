@@ -73,9 +73,16 @@ export function register(username: string, password_raw: string): Promise<User> 
             password: password_raw
         };
         
-        const usersCollection = collection(db, "users");
-        const docRef = await addDoc(usersCollection, newUser);
+        try {
+            const usersCollection = collection(db, "users");
+            const docRef = await addDoc(usersCollection, newUser);
+            
+            // Retorna o novo usuário com o ID gerado pelo Firestore
+            resolve({ id: docRef.id, ...newUser });
 
-        resolve({ id: docRef.id, ...newUser });
+        } catch (error) {
+            console.error("Erro ao registrar novo usuário no Firestore:", error);
+            reject(new Error("Não foi possível completar o cadastro. Tente novamente mais tarde."));
+        }
     });
 }
