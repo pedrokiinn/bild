@@ -2,77 +2,11 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper Functions
-    function isAdmin() {
-      // Check if the user making the request has the 'admin' role in their user document.
-      // Assumes the user is authenticated, so request.auth is not null.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    function isOwner(userId) {
-      // Check if the authenticated user's ID matches the provided userId.
-      return request.auth.uid == userId;
-    }
-    
-    // Default rule: Deny all reads and writes unless explicitly allowed below.
-    // This is a security best practice (deny-by-default).
+    // WARNING: These rules are insecure and allow anyone to read and write to your database.
+    // They are intended for initial development and debugging.
+    // You should implement secure rules before deploying to production.
     match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Users Collection
-    // Rules for accessing user documents.
-    match /users/{userId} {
-      // Allow anyone to query the user list (e.g., to check for existing usernames during signup).
-      // Allow anyone to create a new user account.
-      allow list, create: if true;
-      
-      // Allow a user to get their own data.
-      // Admins can also get any user's data.
-      allow get: if request.auth != null && (isOwner(userId) || isAdmin());
-      
-      // Allow a user to update their own data.
-      // Admins can also update any user's data.
-      allow update: if request.auth != null && (isOwner(userId) || isAdmin());
-      
-      // Only admins are allowed to delete user documents.
-      allow delete: if isAdmin();
-    }
-
-    // Vehicles Collection
-    // Rules for vehicle documents.
-    match /vehicles/{vehicleId} {
-      // Any authenticated (logged-in) user can read the list of vehicles and individual vehicle details.
-      // This is necessary for the vehicle selection screen in the checklist process.
-      allow list, get: if request.auth != null;
-      
-      // Only admins can create, update, or delete vehicle records.
-      allow write: if isAdmin();
-    }
-
-    // Checklists Collection
-    // Rules for daily checklist documents.
-    match /checklists/{checklistId} {
-      // Any authenticated user can list and view individual checklists (for the history page).
-      allow list, get: if request.auth != null;
-      
-      // Any authenticated user can create a new checklist.
-      allow create: if request.auth != null;
-      
-      // Allow an update if the user is an admin, OR if the user's ID matches the 'driverId' field in the checklist.
-      // This allows a driver to update their own checklist (e.g., to log arrival).
-      allow update: if request.auth != null && (isOwner(resource.data.driverId) || isAdmin());
-      
-      // Only admins can delete checklist records.
-      allow delete: if isAdmin();
-    }
-
-    // Deletion Reports Collection
-    // This collection contains sensitive audit logs.
-    match /deletionReports/{reportId} {
-      // Only admins can read or write deletion reports.
-      allow read, write: if isAdmin();
+      allow read, write: if true;
     }
   }
 }
