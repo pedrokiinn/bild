@@ -33,8 +33,8 @@ export interface DailyChecklist {
 export interface User {
   id: string; // Corresponderá ao UID do Firebase Auth
   name: string;
+  email: string;
   role: 'admin' | 'collaborator';
-  // O campo password não é mais necessário aqui, será gerenciado pelo Firebase Auth
 }
 
 export interface DeletionReport {

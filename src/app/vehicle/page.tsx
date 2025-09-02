@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from "react";
 import type { Vehicle } from "@/types";
@@ -20,7 +21,6 @@ function VehicleContent() {
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     
-    // State for deletion dialog
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<string | null>(null);
     
@@ -56,7 +56,6 @@ function VehicleContent() {
         try {
             const vehicleToSave: Partial<Vehicle> = editingVehicle ? { ...formData, id: editingVehicle.id } : formData;
             
-            // Remove optional fields if they are empty
             if (vehicleToSave.color === "") delete vehicleToSave.color;
             if (vehicleToSave.mileage === 0) delete vehicleToSave.mileage;
             
@@ -122,7 +121,6 @@ function VehicleContent() {
     return (
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-4xl mx-auto space-y-6">
-                {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">
@@ -142,7 +140,6 @@ function VehicleContent() {
                     </Button>
                 </div>
 
-                {/* Form */}
                 {showForm && (
                     <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                         <CardHeader>
@@ -255,7 +252,6 @@ function VehicleContent() {
                     </Card>
                 )}
 
-                {/* Vehicles List */}
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                     <CardHeader>
                         <CardTitle className="text-lg md:text-xl text-slate-900">
@@ -366,5 +362,3 @@ export default function VehiclePage() {
         </ProtectedRoute>
     );
 }
-
-    

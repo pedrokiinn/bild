@@ -114,7 +114,7 @@ function NavigationMenu({ user }: { user: User | null }) {
 }
 
 function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (user: User) => void, onSwitchToRegister: () => void }) {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
@@ -123,7 +123,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
         e.preventDefault();
         setIsLoading(true);
         try {
-            const user = await login(username, password);
+            const user = await login(email, password);
             onLoginSuccess(user);
         } catch (error: any) {
             toast({
@@ -144,13 +144,13 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                     <ArrowRight className="w-6 h-6" />
                     Acessar sua Conta
                 </CardTitle>
-                <CardDescription>Use seu usuário e senha para continuar.</CardDescription>
+                <CardDescription>Use seu email e senha para continuar.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="login-username">Usuário</Label>
-                        <Input id="login-username" value={username} onChange={(e) => setUsername(e.target.value)} required placeholder="Ex: PedroNobre" />
+                        <Label htmlFor="login-email">Email</Label>
+                        <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="login-password">Senha</Label>
@@ -175,7 +175,8 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
 }
 
 function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSuccess: () => void, onSwitchToLogin: () => void }) {
-    const [username, setUsername] = useState('');
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -193,7 +194,7 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
         }
         setIsLoading(true);
         try {
-            await register(username, password);
+            await register(name, email, password);
             toast({
                 title: "Cadastro realizado!",
                 description: "Você já pode fazer login com suas novas credenciais.",
@@ -220,12 +221,16 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
             <CardContent>
                 <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="register-username">Nome de Usuário</Label>
-                        <Input id="register-username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                        <Label htmlFor="register-name">Nome de Usuário</Label>
+                        <Input id="register-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Seu nome de exibição"/>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="register-email">Email</Label>
+                        <Input id="register-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="register-password">Senha</Label>
-                        <Input id="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        <Input id="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Mínimo 6 caracteres" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="register-confirm-password">Repetir Senha</Label>
@@ -260,17 +265,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                // Usuário está logado no Firebase Auth. Agora, buscamos o perfil no Firestore.
                 const userProfile = await getCurrentUser();
                 setUser(userProfile);
             } else {
-                // Usuário não está logado.
                 setUser(null);
             }
             setIsLoading(false);
         });
 
-        // Limpar o listener quando o componente for desmontado
         return () => unsubscribe();
     }, []);
 
@@ -324,14 +326,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                                             </span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-semibold text-slate-900 text-sm truncate">
+                                            <p className="font-semibold text-slate-900 text-sm truncate" title={user.name}>
                                                 {user.name || 'Usuário'}
                                             </p>
-                                            <div className="flex items-center gap-2">
-                                                <Badge className={user.role === 'admin' ? 'bg-emerald-100 text-emerald-800 text-xs' : 'bg-blue-100 text-blue-800 text-xs'}>
-                                                    {user.role}
-                                                </Badge>
-                                            </div>
+                                            <p className="text-xs text-slate-500 truncate" title={user.email}>{user.email}</p>
                                         </div>
                                     </div>
                                     <Button

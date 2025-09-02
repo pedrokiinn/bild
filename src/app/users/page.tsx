@@ -73,7 +73,6 @@ function UsersContent() {
     const [isSaving, setIsSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     
-    // State for deletion dialog
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
@@ -109,7 +108,6 @@ function UsersContent() {
         const admins = users.filter(u => u.role === 'admin');
         if (currentUser.id === userId && newRole !== 'admin' && admins.length <= 1) {
             toast({ title: "Ação não permitida", description: "Você não pode remover sua própria permissão de administrador, pois é o único existente.", variant: "destructive"});
-            // Revert UI change
             setTimeout(loadData, 100);
             return;
         }
@@ -155,7 +153,7 @@ function UsersContent() {
     };
 
     const filteredUsers = users.filter(u => {
-        return searchTerm === '' || u.name.toLowerCase().includes(searchTerm.toLowerCase());
+        return searchTerm === '' || u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     const renderLoadingSkeleton = () => (
@@ -164,8 +162,9 @@ function UsersContent() {
                 <Card key={index} className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
                     <CardHeader className="flex-row items-center gap-4">
                         <Skeleton className="h-12 w-12 rounded-full" />
-                        <div className="space-y-1">
-                            <Skeleton className="h-6 w-32" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-5 w-32" />
+                            <Skeleton className="h-4 w-40" />
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -198,7 +197,7 @@ function UsersContent() {
                     <div className="relative w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input 
-                            placeholder="Buscar por nome de usuário..."
+                            placeholder="Buscar por nome ou email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-9 text-sm"
@@ -218,6 +217,7 @@ function UsersContent() {
                                     </div>
                                     <div>
                                         <CardTitle className="text-base">{user.name}</CardTitle>
+                                        <p className="text-xs text-slate-500">{user.email}</p>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="flex-1">

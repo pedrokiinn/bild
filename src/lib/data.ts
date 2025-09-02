@@ -4,18 +4,6 @@ import { format } from "date-fns";
 import { db, auth } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp } from "firebase/firestore";
 
-// Helper para converter Timestamps do Firestore para objetos Date nos dados aninhados.
-// Isso é útil para os componentes do lado do cliente que esperam objetos Date.
-const convertTimestamps = (data: any) => {
-  const aninhado = data;
-  for (const key in aninhado) {
-    if (aninhado[key] instanceof Timestamp) {
-      aninhado[key] = aninhado[key].toDate();
-    }
-  }
-  return aninhado;
-};
-
 
 // User Functions
 export const getUsers = async (): Promise<User[]> => {
@@ -31,19 +19,6 @@ export const getUserById = async (id: string): Promise<User | undefined> => {
         return { id: userSnap.id, ...userSnap.data() } as User;
     }
     return undefined;
-}
-
-export const getUserByName = async (name: string): Promise<User | undefined> => {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("name", "==", name));
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-        return undefined;
-    }
-    
-    const userDoc = querySnapshot.docs[0];
-    return { id: userDoc.id, ...userDoc.data() } as User;
 }
 
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
@@ -64,9 +39,6 @@ export const deleteUser = async (userId: string, reason: string, adminName: stri
     
     if (!userToDelete) throw new Error("Usuário não encontrado.");
     
-    // O ideal seria deletar o usuário do Firebase Auth também, mas isso é uma operação sensível
-    // que requer que o usuário faça login novamente. Por simplicidade, vamos focar em deletar o perfil do Firestore.
-
     const report: Omit<DeletionReport, 'id' | 'timestamp'> & { timestamp: any } = {
         deletedUserId: userId,
         deletedUserName: userToDelete.name || 'N/A',

@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, logout } from '@/lib/auth';
+import { User } from '@/lib/auth';
 import { Car, ShieldAlert } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -23,7 +23,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Usuário está logado no Firebase Auth. Busque o perfil no Firestore.
         const userDocRef = doc(db, "users", firebaseUser.uid);
         const userDocSnap = await getDoc(userDocRef);
         
@@ -41,13 +40,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
             setHasAccess(true);
           }
         } else {
-          // Perfil não encontrado no Firestore, deslogar para evitar estado inconsistente.
-          await logout();
+          await auth.signOut();
           setUser(null);
           setHasAccess(false);
         }
       } else {
-        // Usuário não está logado. O main-layout cuidará da tela de login.
         setUser(null);
         setHasAccess(false);
       }
@@ -74,7 +71,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   }
 
   if (!hasAccess) {
-    // Renderiza a tela de acesso negado se o usuário estiver logado mas não tiver a role necessária.
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
             <div className="text-center space-y-4">
