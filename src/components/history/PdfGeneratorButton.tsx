@@ -7,7 +7,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { checklistItemsOptions } from '@/lib/data';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Timestamp } from 'firebase/firestore';
 
 interface PdfGeneratorButtonProps {
     checklist?: DailyChecklist & { vehicle?: Vehicle };
@@ -25,9 +24,7 @@ export default function PdfGeneratorButton({ checklist, vehicle }: PdfGeneratorB
     const generateHTMLForPDF = () => {
         if (!checklist || !vehicle) return "";
 
-        const departureDate = checklist.departureTimestamp instanceof Timestamp 
-        ? checklist.departureTimestamp.toDate() 
-        : new Date(checklist.departureTimestamp);
+        const departureDate = checklist.departureTimestamp.toDate();
 
         const itemsComProblema = Object.entries(checklist.checklistValues || {})
             .filter(([key]) => {

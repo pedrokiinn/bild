@@ -26,7 +26,6 @@ import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Timestamp } from 'firebase/firestore';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -223,9 +222,7 @@ function HistoryContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredChecklists.map(checklist => {
                             const vehicle = checklist.vehicle;
-                            const departureDate = checklist.departureTimestamp instanceof Timestamp 
-                                ? checklist.departureTimestamp.toDate() 
-                                : new Date(checklist.departureTimestamp);
+                            const departureDate = checklist.departureTimestamp.toDate();
 
                             return (
                                 <Card key={checklist.id} className={`bg-white/80 backdrop-blur-sm shadow-lg border-0 transition-all hover:shadow-2xl flex flex-col ${checklist.status === 'problem' ? 'border-l-4 border-destructive' : ''}`}>

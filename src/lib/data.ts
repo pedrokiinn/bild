@@ -82,14 +82,7 @@ export const getDeletionReports = async (): Promise<DeletionReport[]> => {
     const reportsCollection = collection(db, "deletionReports");
     const q = query(reportsCollection, orderBy("timestamp", "desc"));
     const reportSnapshot = await getDocs(q);
-    return reportSnapshot.docs.map(doc => {
-        const data = doc.data();
-        // Converte o timestamp para um número para manter a compatibilidade com a ordenação no cliente
-        if (data.timestamp instanceof Timestamp) {
-            data.timestamp = data.timestamp.toMillis();
-        }
-        return { id: doc.id, ...data } as DeletionReport;
-    });
+    return reportSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DeletionReport));
 }
 
 
@@ -132,20 +125,16 @@ export const deleteVehicle = async (id: string): Promise<void> => {
 }
 
 // Checklist Functions
-export const getChecklists = async (): Promise<any[]> => {
+export const getChecklists = async (): Promise<DailyChecklist[]> => {
     const checklistsCollection = collection(db, "checklists");
     const q = query(checklistsCollection, orderBy("departureTimestamp", "desc"));
     const checklistSnapshot = await getDocs(q);
     
     return checklistSnapshot.docs.map(doc => {
-        const data = doc.data();
         return { 
             id: doc.id, 
-            ...data,
-            // Converter timestamps para datas para os componentes do lado do cliente
-            departureTimestamp: data.departureTimestamp?.toDate().getTime(),
-            arrivalTimestamp: data.arrivalTimestamp?.toDate().getTime(),
-        };
+            ...doc.data()
+        } as DailyChecklist;
     });
 };
 
@@ -154,7 +143,7 @@ export const getChecklistById = async (id:string): Promise<DailyChecklist | unde
     const checklistDoc = doc(db, "checklists", id);
     const checklistSnap = await getDoc(checklistDoc);
      if (checklistSnap.exists()) {
-      return { id: checklistSnap.id, ...convertTimestamps(checklistSnap.data()) } as DailyChecklist;
+      return { id: checklistSnap.id, ...checklistSnap.data() } as DailyChecklist;
     }
     return undefined;
 }
@@ -174,7 +163,7 @@ export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<Da
       return undefined;
   }
   const docData = querySnapshot.docs[0];
-  return { id: docData.id, ...convertTimestamps(docData.data()) } as DailyChecklist;
+  return { id: docData.id, ...docData.data() } as DailyChecklist;
 };
 
 export const saveChecklist = async (checklistData: any): Promise<any> => {

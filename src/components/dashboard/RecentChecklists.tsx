@@ -8,7 +8,6 @@ import { ArrowRight, TrendingUp, TrendingDown, Minus, ClipboardCheck } from 'luc
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Timestamp } from 'firebase/firestore';
 
 interface RecentChecklistsProps {
   checklists: (DailyChecklist & { vehicle?: Vehicle })[];
@@ -48,7 +47,7 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
     const getPreviousChecklistScore = (currentChecklist: DailyChecklist) => {
         const vehicleChecklists = checklists
             .filter(c => c.vehicleId === currentChecklist.vehicleId)
-            .sort((a,b) => (b.departureTimestamp as any) - (a.departureTimestamp as any));
+            .sort((a,b) => b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis());
         
         const currentIndex = vehicleChecklists.findIndex(c => c.id === currentChecklist.id);
         const previousChecklist = vehicleChecklists[currentIndex + 1];
@@ -90,9 +89,7 @@ export default function RecentChecklists({ checklists, vehicles, isLoading }: Re
             {checklists.slice(0, 5).map(checklist => {
                 const currentScore = getScore(checklist);
                 const previousScore = getPreviousChecklistScore(checklist);
-                const departureDate = checklist.departureTimestamp instanceof Timestamp 
-                                ? checklist.departureTimestamp.toDate() 
-                                : new Date(checklist.departureTimestamp);
+                const departureDate = checklist.departureTimestamp.toDate();
 
                 return (
                     <div key={checklist.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors duration-200">

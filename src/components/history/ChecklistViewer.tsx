@@ -8,7 +8,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { checklistItemsOptions } from '@/lib/data';
 import { ScrollArea } from '../ui/scroll-area';
-import { Timestamp } from 'firebase/firestore';
 
 interface ChecklistViewerProps {
     checklist?: DailyChecklist & { vehicle?: Vehicle };
@@ -45,12 +44,10 @@ export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerP
         return <p>Carregando dados do checklist...</p>;
     }
     
-    const departureDate = checklist.departureTimestamp instanceof Timestamp 
-        ? checklist.departureTimestamp.toDate() 
-        : new Date(checklist.departureTimestamp);
+    const departureDate = checklist.departureTimestamp.toDate();
         
     const arrivalDate = checklist.arrivalTimestamp
-        ? (checklist.arrivalTimestamp instanceof Timestamp ? checklist.arrivalTimestamp.toDate() : new Date(checklist.arrivalTimestamp))
+        ? checklist.arrivalTimestamp.toDate()
         : null;
 
     return (
