@@ -34,10 +34,9 @@ export const getUserById = async (id: string): Promise<User | undefined> => {
 }
 
 export const getUserByName = async (name: string): Promise<User | undefined> => {
-    // Firestore queries require a composite index for this type of query, 
-    // which can be complex to set up. A more scalable solution for a large
-    // number of users would be to use Firebase Authentication.
-    // For this app's scale, fetching all users and filtering client-side is acceptable.
+    // Firestore queries with `where` can be tricky with permissions and require indexes.
+    // For a small-scale app, fetching all users and filtering on the client-side
+    // is a more robust way to handle login/signup checks without permission errors.
     const allUsers = await getUsers();
     return allUsers.find(user => user.name.toLowerCase() === name.toLowerCase());
 }
