@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User } from '@/lib/auth';
+import { User } from '@/types';
 import { Car, ShieldAlert } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -40,6 +40,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
             setHasAccess(true);
           }
         } else {
+          // This case can happen if a user is deleted from firestore but still has a valid auth session
           await auth.signOut();
           setUser(null);
           setHasAccess(false);
@@ -65,7 +66,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     );
   }
 
-  // O main-layout renderizará a tela de login se não houver usuário.
+  // The main-layout will render the login screen if there is no user
   if (!user) {
     return null;
   }

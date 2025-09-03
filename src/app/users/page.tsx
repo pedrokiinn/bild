@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { auth } from '@/lib/firebase';
+import { getCurrentUser } from '@/lib/auth';
 
 function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
     const [reason, setReason] = useState('');
@@ -82,15 +83,12 @@ function UsersContent() {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const allUsers = await getUsers();
+            const [allUsers, currentUserProfile] = await Promise.all([
+                getUsers(),
+                getCurrentUser()
+            ]);
             setUsers(allUsers.sort((a, b) => a.name.localeCompare(b.name)));
-            
-            const authUser = auth.currentUser;
-            if (authUser) {
-                const currentUserProfile = allUsers.find(u => u.id === authUser.uid);
-                setCurrentUser(currentUserProfile || null);
-            }
-
+            setCurrentUser(currentUserProfile);
         } catch (e) {
             console.error("Erro ao carregar dados dos usuários:", e);
             toast({ title: "Erro", description: "Falha ao carregar usuários.", variant: "destructive" });

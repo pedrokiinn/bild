@@ -19,9 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { auth } from '@/lib/firebase';
+import { getCurrentUser } from '@/lib/auth';
 
 
 function PasswordConfirmationDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: () => void, isSaving: boolean }) {
@@ -67,7 +66,7 @@ function ReportsContent() {
         try {
             const [fetchedReports, me] = await Promise.all([
                 getDeletionReports(), 
-                auth.currentUser ? getUserById(auth.currentUser.uid) : Promise.resolve(null)
+                getCurrentUser()
             ]);
             setReports(fetchedReports);
             setCurrentUser(me || null);
