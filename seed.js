@@ -84,7 +84,7 @@ async function seedAdminUser() {
                 // Salva o perfil no Firestore com o UID do Auth como ID do documento
                 await db.collection('users').doc(user.uid).set({
                     name: adminUserToSeed.name,
-                    email: adminUserToseed.email,
+                    email: adminUserToSeed.email,
                     role: 'admin' // O primeiro usuário é sempre admin
                 });
                 console.log(`Usuário administrador ${adminUserToSeed.name} criado com sucesso!`);

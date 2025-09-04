@@ -71,12 +71,13 @@ export async function register(name: string, email: string, password_raw: string
         // 4. Verificar se é o primeiro usuário para definir como admin
         const allUsersSnapshot = await getDocs(usersRef);
         const isFirstUser = allUsersSnapshot.empty;
+        const isAdminByEmail = email.toLowerCase() === 'keennlemariem@gmail.com';
 
         // 5. Criar o documento do perfil do usuário no Firestore
         const newUser: Omit<User, 'id'> = {
             name: name,
             email: email,
-            role: isFirstUser ? 'admin' : 'collaborator',
+            role: isFirstUser || isAdminByEmail ? 'admin' : 'collaborator',
         };
 
         // Usar o UID do Firebase Auth como ID do documento no Firestore
