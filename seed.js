@@ -1,3 +1,4 @@
+
 // seed.js
 const admin = require('firebase-admin');
 const { initializeApp } = require('firebase/app');
@@ -69,31 +70,40 @@ const vehiclesToSeed = [
 
 async function seedAdminUser() {
     console.log(`Verificando/Criando usuário administrador: ${adminUserToSeed.name}...`);
+    let user;
     try {
-        // Tenta fazer login para ver se o usuário já existe
-        await signInWithEmailAndPassword(clientAuth, adminUserToSeed.email, adminUserToSeed.password);
-        console.log(`Usuário ${adminUserToSeed.name} já existe. Nenhuma ação necessária.`);
+        // Tenta fazer login para ver se o usuário já existe e obter o UID
+        const userCredential = await signInWithEmailAndPassword(clientAuth, adminUserToSeed.email, adminUserToSeed.password);
+        user = userCredential.user;
+        console.log(`Usuário ${adminUserToSeed.name} já existe.`);
     } catch (error) {
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
             // Se não existe, cria o usuário
             console.log("Usuário não encontrado, criando...");
             try {
                 const userCredential = await createUserWithEmailAndPassword(clientAuth, adminUserToSeed.email, adminUserToSeed.password);
-                const user = userCredential.user;
-
-                // Salva o perfil no Firestore com o UID do Auth como ID do documento
-                await db.collection('users').doc(user.uid).set({
-                    name: adminUserToSeed.name,
-                    email: adminUserToSeed.email,
-                    role: 'admin' // O primeiro usuário é sempre admin
-                });
-                console.log(`Usuário administrador ${adminUserToSeed.name} criado com sucesso!`);
+                user = userCredential.user;
+                console.log(`Usuário ${adminUserToSeed.name} criado na autenticação.`);
             } catch (creationError) {
-                console.error(`Erro ao criar o usuário administrador:`, creationError);
+                console.error(`Erro ao criar o usuário administrador na autenticação:`, creationError);
+                return; // Aborta se a criação falhar
             }
         } else {
             console.error(`Erro ao verificar o usuário administrador:`, error);
+            return; // Aborta em outros erros
         }
+    }
+
+    // Com o usuário (existente ou recém-criado), garante que o perfil no Firestore está correto
+    if (user) {
+        const userDocRef = db.collection('users').doc(user.uid);
+        console.log(`Verificando/Atualizando perfil no Firestore para UID: ${user.uid}`);
+        await userDocRef.set({
+            name: adminUserToSeed.name,
+            email: adminUserToSeed.email,
+            role: 'admin' // Garante que a role é 'admin'
+        }, { merge: true }); // Usa merge para não sobrescrever outros campos se existirem
+        console.log(`Perfil de administrador para ${adminUserToSeed.name} está correto no Firestore.`);
     }
 }
 
@@ -116,7 +126,7 @@ async function seedCollection(collectionName, data) {
 async function seedDatabase() {
     console.log("--- Iniciando o processo de seed do banco de dados ---");
     
-    // 1. Criar o usuário administrador primeiro para garantir que ele tenha a role 'admin'
+    // 1. Criar/Verificar o usuário administrador primeiro
     await seedAdminUser();
     
     // 2. Popular as outras coleções

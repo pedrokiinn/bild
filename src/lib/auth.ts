@@ -53,8 +53,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function register(name: string, email: string, password_raw: string): Promise<User> {
-    // 1. Verificar se o email já existe no Firebase Auth (createUserWithEmailAndPassword já faz isso)
-    // 2. Verificar se o nome de usuário já existe na coleção 'users'
+    // 1. Verificar se o nome de usuário já existe na coleção 'users'
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("name", "==", name));
     const querySnapshot = await getDocs(q);
