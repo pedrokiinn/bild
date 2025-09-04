@@ -1,3 +1,4 @@
+
 // dangerously-delete-all-users.js
 const admin = require('firebase-admin');
 
@@ -9,11 +10,8 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-const ADMIN_EMAIL_TO_KEEP = "keennlemariem@gmail.com";
-
-async function deleteAllUsersExceptAdmin() {
-  console.log("Iniciando a exclusão de TODOS os usuários da Autenticação, exceto o administrador principal...");
-  console.log(`Usuário a ser mantido: ${ADMIN_EMAIL_TO_KEEP}\n`);
+async function deleteAllUsers() {
+  console.log("Iniciando a exclusão de TODOS os usuários da Autenticação...");
 
   try {
     let usersToDelete = [];
@@ -24,12 +22,8 @@ async function deleteAllUsersExceptAdmin() {
       const listUsersResult = await admin.auth().listUsers(1000, pageToken);
       
       listUsersResult.users.forEach(user => {
-        if (user.email.toLowerCase() === ADMIN_EMAIL_TO_KEEP.toLowerCase()) {
-          console.log(`- Preservando o administrador: ${user.email} (UID: ${user.uid})`);
-        } else {
-          console.log(`- Adicionando à lista de exclusão: ${user.email} (UID: ${user.uid})`);
-          usersToDelete.push(user.uid);
-        }
+        console.log(`- Adicionando à lista de exclusão: ${user.email} (UID: ${user.uid})`);
+        usersToDelete.push(user.uid);
       });
 
       pageToken = listUsersResult.pageToken;
@@ -37,7 +31,7 @@ async function deleteAllUsersExceptAdmin() {
     } while (pageToken);
 
     if (usersToDelete.length === 0) {
-      console.log("\nNenhum usuário encontrado para excluir (além do administrador).");
+      console.log("\nNenhum usuário encontrado para excluir.");
       return;
     }
 
@@ -58,14 +52,14 @@ async function deleteAllUsersExceptAdmin() {
     
     console.log("\nProcesso de exclusão da Autenticação concluído.");
     console.log("Os dados associados no Firestore serão limpos pela Cloud Function (se implantada).");
-    console.log("\nPara garantir um estado limpo, execute 'npm run seed' para recriar o usuário administrador, se necessário.");
+    console.log("\nPara recriar o usuário administrador, execute 'npm run seed'.");
 
   } catch (error) {
     console.log('\nOcorreu um erro durante o processo de exclusão:', error);
   }
 }
 
-deleteAllUsersExceptAdmin().catch(error => {
+deleteAllUsers().catch(error => {
     console.error("\nErro inesperado:", error);
     process.exit(1);
 }).then(() => {
