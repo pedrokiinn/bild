@@ -35,7 +35,7 @@ const db = admin.firestore();
 
 const adminUserToSeed = {
     name: "Pedro Nobre",
-    email: "Keennlemariem@gmail.com",
+    email: "keennlemariem@gmail.com",
     password: "Pedro234567"
 };
 
