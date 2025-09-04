@@ -126,10 +126,11 @@ async function seedCollection(collectionName, data) {
 async function seedDatabase() {
     console.log("--- Iniciando o processo de seed do banco de dados ---");
     
-    // 1. Criar/Verificar o usuário administrador primeiro
+    // 1. Criar/Verificar o usuário administrador primeiro.
+    // Esta função agora SEMPRE será executada.
     await seedAdminUser();
     
-    // 2. Popular as outras coleções
+    // 2. Popular as outras coleções, se estiverem vazias.
     await seedCollection('vehicles', vehiclesToSeed);
     
     console.log("\n--- Processo de seed finalizado com sucesso! ---");
