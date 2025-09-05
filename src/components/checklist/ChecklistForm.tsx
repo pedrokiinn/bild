@@ -115,7 +115,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         const newChecklist: Omit<DailyChecklist, 'id' | 'driverId'> = {
             vehicleId: selectedVehicle.id,
             driverName,
-            departureTimestamp: new Date().getTime(),
+            departureTimestamp: new Date(),
             departureMileage: Number(departureMileage),
             checklistItems: checklistItemsToSave,
             checklistValues: itemValues,
