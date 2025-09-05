@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect } from 'react';
-import type { Vehicle, DailyChecklist, User } from '@/types';
+import type { Vehicle, DailyChecklist } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,13 +22,12 @@ interface ChecklistFormProps {
   selectedVehicle: Vehicle;
   checklistItems: ChecklistItemOption[];
   onBack: () => void;
-  user: User | null;
 }
 
-export default function ChecklistForm({ vehicles, selectedVehicle, checklistItems, onBack, user }: ChecklistFormProps) {
+export default function ChecklistForm({ vehicles, selectedVehicle, checklistItems, onBack }: ChecklistFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [driverName, setDriverName] = useState(user?.name || '');
+  const [driverName, setDriverName] = useState('');
   const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage?.toString() || '');
   const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
   const [itemValues, setItemValues] = useState<Record<string, string>>({});
@@ -48,12 +47,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     setItemValues(initialItemValues);
     setItemStates(initialItemStates);
   }, [selectedVehicle, checklistItems]);
-
-  useEffect(() => {
-    if(user?.name){
-      setDriverName(user.name);
-    }
-  }, [user]);
 
   const isAfterCutoff = getHours(new Date()) >= 22;
 
@@ -119,7 +112,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         }, {} as Record<string, 'ok' | 'problem'>);
 
 
-        const newChecklist: Omit<DailyChecklist, 'id'> = {
+        const newChecklist: Omit<DailyChecklist, 'id' | 'driverId'> = {
             vehicleId: selectedVehicle.id,
             driverName,
             departureTimestamp: new Date().getTime(),
@@ -130,7 +123,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             status: hasProblem ? 'problem' : 'pending_arrival',
             date: format(new Date(), 'yyyy-MM-dd'),
             aiDiagnosis: aiDiagnosisResult,
-            driverId: user?.id || 'unknown'
         };
 
         await saveChecklist(newChecklist);

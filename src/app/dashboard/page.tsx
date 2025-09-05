@@ -11,12 +11,10 @@ import VehicleStatus from '@/components/dashboard/VehicleStatus';
 import { subDays, format } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 function DashboardContent() {
     const [data, setData] = useState<{ checklists: (DailyChecklist & { vehicle?: Vehicle })[], vehicles: Vehicle[] }>({ checklists: [], vehicles: [] });
     const [isLoading, setIsLoading] = useState(true);
-    const [todayChecklist, setTodayChecklist] = useState<DailyChecklist | null | undefined>(undefined);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -30,10 +28,6 @@ function DashboardContent() {
                 });
 
                 setData({ checklists: checklistsWithVehicleData, vehicles: vehiclesData });
-
-                const today = format(new Date(), 'yyyy-MM-dd');
-                const todaysCheck = checklistsWithVehicleData.find(checklist => checklist.date === today);
-                setTodayChecklist(todaysCheck);
 
             } catch (error) {
                 console.error("Erro ao carregar dados:", error);
@@ -84,8 +78,6 @@ function DashboardContent() {
         return consecutive;
     };
     
-    const todayChecklistsDone = checklists.filter(c => c.date === format(new Date(), 'yyyy-MM-dd')).length > 0;
-
     return (
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -93,24 +85,19 @@ function DashboardContent() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
-                            Olá! 👋
+                            Dashboard
                         </h1>
                         <p className="text-slate-600 text-base">
-                            {todayChecklistsDone
-                                ? "Checklist de hoje já realizado!" 
-                                : "Ainda há checklists pendentes para hoje."
-                            }
+                            Bem-vindo! Veja um resumo das atividades.
                         </p>
                     </div>
                     
-                    {!todayChecklistsDone && (
-                        <Link href="/checklist" className="w-full md:w-auto">
-                            <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Fazer Checklist
-                            </Button>
-                        </Link>
-                    )}
+                    <Link href="/checklist" className="w-full md:w-auto">
+                        <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Fazer Checklist
+                        </Button>
+                    </Link>
                 </div>
 
                 {/* Stats Cards */}
@@ -198,9 +185,5 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
-    return (
-        <ProtectedRoute>
-            <DashboardContent />
-        </ProtectedRoute>
-    );
+    return <DashboardContent />;
 }

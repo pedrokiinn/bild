@@ -2,29 +2,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Vehicle } from '@/types';
+import { Vehicle } from '@/types';
 import { getVehicles, checklistItemsOptions } from '@/lib/data';
 import ChecklistForm from '@/components/checklist/ChecklistForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import VehicleSelector from '@/components/checklist/VehicleSelector';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { getCurrentUser } from '@/lib/auth';
 
 function ChecklistContent() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
-      const [vehiclesData, userData] = await Promise.all([
-          getVehicles(),
-          getCurrentUser()
-      ]);
+      const vehiclesData = await getVehicles();
       setVehicles(vehiclesData);
-      setCurrentUser(userData);
       setIsLoading(false);
     };
 
@@ -54,18 +47,13 @@ function ChecklistContent() {
         selectedVehicle={selectedVehicle}
         checklistItems={checklistItemsOptions} 
         onBack={() => setSelectedVehicle(null)}
-        user={currentUser}
       />
     </div>
   );
 }
 
 export default function Checklist() {
-    return (
-        <ProtectedRoute>
-            <ChecklistContent />
-        </ProtectedRoute>
-    )
+    return <ChecklistContent />
 }
 
 
