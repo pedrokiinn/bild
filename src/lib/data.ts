@@ -147,21 +147,23 @@ export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<Da
 export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'> & { id?: string }): Promise<any> => {
   const { id, ...dataToSave } = checklistData;
 
-  if (!dataToSave.driverId) {
+  const user = auth.currentUser;
+  if (!user) {
       throw new Error("Usuário não autenticado.");
   }
+  dataToSave.driverId = user.uid;
 
-  // Converte os timestamps numéricos de volta para objetos Timestamp do Firestore antes de salvar
-  if (dataToSave.departureTimestamp) {
+  // Convert JS Dates to Firestore Timestamps before saving
+  if (dataToSave.departureTimestamp && dataToSave.departureTimestamp instanceof Date) {
     dataToSave.departureTimestamp = Timestamp.fromDate(dataToSave.departureTimestamp);
   }
-   if (dataToSave.arrivalTimestamp) {
+   if (dataToSave.arrivalTimestamp && dataToSave.arrivalTimestamp instanceof Date) {
     dataToSave.arrivalTimestamp = Timestamp.fromDate(dataToSave.arrivalTimestamp);
   }
   
   if (id) {
     const checklistDoc = doc(db, "checklists", id);
-    await updateDoc(checklistDoc, dataToSave);
+    await updateDoc(checklistDoc, dataToSave as any);
 
     if (dataToSave.arrivalMileage) {
         const vehicleDoc = doc(db, "vehicles", dataToSave.vehicleId);
@@ -171,10 +173,12 @@ export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'> & 
     return { id, ...checklistData };
   } 
   
-  const docRef = await addDoc(collection(db, "checklists"), dataToSave);
+  const docRef = await addDoc(collection(db, "checklists"), dataToSave as any);
 
-  const vehicleDoc = doc(db, "vehicles", dataToSave.vehicleId);
-  await updateDoc(vehicleDoc, { mileage: dataToSave.departureMileage });
+  if (dataToSave.departureMileage) {
+    const vehicleDoc = doc(db, "vehicles", dataToSave.vehicleId);
+    await updateDoc(vehicleDoc, { mileage: dataToSave.departureMileage });
+  }
   
   return { id: docRef.id, ...checklistData };
 }
@@ -249,3 +253,4 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
         isProblem: (value: string) => value === 'missing',
     },
 ];
+
