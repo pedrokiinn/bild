@@ -1,9 +1,7 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { User } from '@/types';
 import { getUsers, updateUserRole, deleteUser } from '@/lib/data';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,8 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { auth } from '@/lib/firebase';
-import { getCurrentUser } from '@/lib/auth';
 
 function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
     const [reason, setReason] = useState('');
@@ -69,7 +65,6 @@ function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen:
 
 function UsersContent() {
     const [users, setUsers] = useState<User[]>([]);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -83,12 +78,8 @@ function UsersContent() {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [allUsers, currentUserProfile] = await Promise.all([
-                getUsers(),
-                getCurrentUser()
-            ]);
+            const allUsers = await getUsers();
             setUsers(allUsers.sort((a, b) => a.name.localeCompare(b.name)));
-            setCurrentUser(currentUserProfile);
         } catch (e) {
             console.error("Erro ao carregar dados dos usuários:", e);
             toast({ title: "Erro", description: "Falha ao carregar usuários.", variant: "destructive" });
@@ -101,15 +92,6 @@ function UsersContent() {
     }, []);
 
     const handleRoleChange = async (userId: string, newRole: 'admin' | 'collaborator') => {
-        if (!currentUser) return;
-
-        const admins = users.filter(u => u.role === 'admin');
-        if (currentUser.id === userId && newRole !== 'admin' && admins.length <= 1) {
-            toast({ title: "Ação não permitida", description: "Você não pode remover sua própria permissão de administrador, pois é o único existente.", variant: "destructive"});
-            setTimeout(loadData, 100);
-            return;
-        }
-
         try {
             await updateUserRole(userId, newRole);
             toast({ title: "Sucesso", description: "Função do usuário atualizada."});
@@ -121,18 +103,11 @@ function UsersContent() {
     };
 
     const handleDeleteUser = async (reason: string) => {
-        if (!userToDelete || !currentUser || !currentUser.name) return;
-        
-        if (currentUser.id === userToDelete.id) {
-            toast({ title: "Ação não permitida", description: "Você não pode excluir sua própria conta.", variant: "destructive"});
-            setIsDeleteDialogOpen(false);
-            setUserToDelete(null);
-            return;
-        }
+        if (!userToDelete) return;
         
         setIsSaving(true);
         try {
-            await deleteUser(userToDelete.id, reason, currentUser.name);
+            await deleteUser(userToDelete.id, reason, "Admin");
             toast({ title: "Sucesso", description: `Usuário ${userToDelete.name} excluído.`});
             loadData();
         } catch (e: any) {
@@ -223,7 +198,6 @@ function UsersContent() {
                                     <Select
                                         value={user.role}
                                         onValueChange={(newRole: 'admin' | 'collaborator') => handleRoleChange(user.id, newRole)}
-                                        disabled={currentUser?.id === user.id && users.filter(u => u.role === 'admin').length <= 1}
                                     >
                                         <SelectTrigger className="w-full text-xs sm:text-sm mt-1">
                                             <SelectValue />
@@ -247,7 +221,6 @@ function UsersContent() {
                                         variant="destructive"
                                         size="icon"
                                         onClick={() => openDeleteDialog(user)}
-                                        disabled={currentUser?.id === user.id}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
@@ -281,8 +254,6 @@ function UsersContent() {
 
 export default function UsersPage() {
     return (
-        <ProtectedRoute requiredRole="admin">
-            <UsersContent />
-        </ProtectedRoute>
+        <UsersContent />
     );
 }

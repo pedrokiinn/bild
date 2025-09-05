@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from "react";
 import type { Vehicle } from "@/types";
@@ -10,7 +9,6 @@ import { Car, Save, Plus, Edit, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { getVehicles, saveVehicle, deleteVehicle } from "@/lib/data";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ConfirmationDialog from "@/components/shared/ConfirmationDialog";
 
 function VehicleContent() {
@@ -357,8 +355,6 @@ function VehicleContent() {
 
 export default function VehiclePage() {
     return (
-        <ProtectedRoute requiredRole="admin">
-            <VehicleContent />
-        </ProtectedRoute>
+        <VehicleContent />
     );
 }

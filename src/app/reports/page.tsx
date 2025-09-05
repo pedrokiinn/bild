@@ -2,8 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { DeletionReport, User } from '@/types';
-import { getDeletionReports, deleteReport, getUserById } from '@/lib/data';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { getDeletionReports, deleteReport } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,9 +18,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { auth } from '@/lib/firebase';
-import { getCurrentUser } from '@/lib/auth';
-
 
 function PasswordConfirmationDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: () => void, isSaving: boolean }) {
     
@@ -52,7 +48,6 @@ function PasswordConfirmationDialog({ isOpen, onOpenChange, onConfirm, isSaving 
 
 function ReportsContent() {
     const [reports, setReports] = useState<DeletionReport[]>([]);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -64,12 +59,8 @@ function ReportsContent() {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [fetchedReports, me] = await Promise.all([
-                getDeletionReports(), 
-                getCurrentUser()
-            ]);
+            const fetchedReports = await getDeletionReports();
             setReports(fetchedReports);
-            setCurrentUser(me || null);
         } catch (e) {
             console.error("Erro ao carregar relatórios:", e);
             toast({ title: "Erro", description: "Falha ao carregar relatórios.", variant: "destructive" });
@@ -88,7 +79,7 @@ function ReportsContent() {
     };
 
     const handleDeleteReport = async () => {
-        if (!reportToDelete || !currentUser) return;
+        if (!reportToDelete) return;
         
         setIsSaving(true);
         try {
@@ -218,8 +209,6 @@ function ReportsContent() {
 
 export default function ReportsPage() {
     return (
-        <ProtectedRoute requiredRole="admin">
-            <ReportsContent />
-        </ProtectedRoute>
+        <ReportsContent />
     );
 }
