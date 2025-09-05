@@ -144,8 +144,8 @@ export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<Da
   return { id: docData.id, ...docData.data() } as DailyChecklist;
 };
 
-export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'>): Promise<any> => {
-  const { id, ...dataToSave } = checklistData as any;
+export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'> & { id?: string }): Promise<any> => {
+  const { id, ...dataToSave } = checklistData;
 
   if (!dataToSave.driverId) {
       throw new Error("Usuário não autenticado.");
