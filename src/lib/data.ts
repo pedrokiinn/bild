@@ -147,18 +147,16 @@ export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<Da
 export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'> & { id?: string }): Promise<any> => {
   const { id, ...dataToSave } = checklistData;
 
-  const user = auth.currentUser;
-  if (!user) {
-      throw new Error("Usuário não autenticado.");
+  if (!dataToSave.driverId) {
+      throw new Error("ID do motorista não fornecido.");
   }
-  dataToSave.driverId = user.uid;
 
   // Convert JS Dates to Firestore Timestamps before saving
   if (dataToSave.departureTimestamp && dataToSave.departureTimestamp instanceof Date) {
-    dataToSave.departureTimestamp = Timestamp.fromDate(dataToSave.departureTimestamp);
+    (dataToSave as any).departureTimestamp = Timestamp.fromDate(dataToSave.departureTimestamp);
   }
    if (dataToSave.arrivalTimestamp && dataToSave.arrivalTimestamp instanceof Date) {
-    dataToSave.arrivalTimestamp = Timestamp.fromDate(dataToSave.arrivalTimestamp);
+    (dataToSave as any).arrivalTimestamp = Timestamp.fromDate(dataToSave.arrivalTimestamp);
   }
   
   if (id) {
@@ -253,4 +251,3 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
         isProblem: (value: string) => value === 'missing',
     },
 ];
-
