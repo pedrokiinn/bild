@@ -1,11 +1,11 @@
 
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import type { DailyChecklist, Vehicle, User } from '@/types';
+import type { DailyChecklist, Vehicle } from '@/types';
 import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, User as UserIcon } from 'lucide-react';
+import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -23,16 +23,12 @@ import { deleteChecklist as deleteChecklistAction } from '@/lib/data';
 import { ArrivalDialog } from '@/components/history/ArrivalDialog';
 import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { auth } from '@/lib/firebase';
-import { getUserById } from '@/lib/data';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedVehicle, setSelectedVehicle] = useState('all');
     const [isArrivalDialogOpen, setIsArrivalDialogOpen] = useState(false);
@@ -46,13 +42,6 @@ function HistoryContent() {
     const loadData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const authUser = auth.currentUser;
-            let userProfile: User | null = null;
-            if (authUser) {
-                userProfile = await getUserById(authUser.uid) || null;
-            }
-            setCurrentUser(userProfile);
-
             const [loadedChecklists, loadedVehicles] = await Promise.all([
                 getChecklists(),
                 getVehicles(),
@@ -242,7 +231,6 @@ function HistoryContent() {
                                     <CardContent className="flex-1 flex flex-col justify-between">
                                         <div className="space-y-3 text-sm mb-4">
                                             <div className="flex items-center gap-2 text-slate-700">
-                                                <UserIcon className="w-4 h-4 text-muted-foreground" /> 
                                                 <span className="font-medium">Motorista:</span> {checklist.driverName}
                                             </div>
                                             <div className="flex items-center gap-1.5">
@@ -279,7 +267,7 @@ function HistoryContent() {
                                                 </DialogContent>
                                             </Dialog>
 
-                                            {checklist.status === 'pending_arrival' && checklist.driverId === auth.currentUser?.uid && (
+                                            {checklist.status === 'pending_arrival' && (
                                                 <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
@@ -295,21 +283,18 @@ function HistoryContent() {
                                             )}
 
                                             <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
-
-                                            {currentUser?.role === 'admin' && (
-                                                 <TooltipProvider>
-                                                 <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(checklist.id)}>
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                      <p>Excluir Checklist</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                                </TooltipProvider>
-                                            )}
+                                             <TooltipProvider>
+                                             <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(checklist.id)}>
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>Excluir Checklist</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            </TooltipProvider>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -349,9 +334,5 @@ function HistoryContent() {
 }
 
 export default function HistoryPage() {
-    return (
-        <ProtectedRoute>
-            <HistoryContent />
-        </ProtectedRoute>
-    );
+    return <HistoryContent />;
 }
