@@ -53,26 +53,18 @@ export async function logout(): Promise<void> {
 }
 
 export async function register(name: string, email: string, password_raw: string): Promise<User> {
-    // 1. Verificar se o nome de usuário já existe na coleção 'users'
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("name", "==", name));
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-        throw new Error("Este nome de usuário já está em uso.");
-    }
-
     try {
-        // 3. Criar o usuário no Firebase Auth
+        //  Criar o usuário no Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, email, password_raw);
         const firebaseUser = userCredential.user;
 
-        // 4. Verificar se é o primeiro usuário para definir como admin
-        const allUsersSnapshot = await getDocs(usersRef);
-        const isFirstUser = allUsersSnapshot.empty;
+        // Verificar se é o primeiro usuário para definir como admin
+        const usersRef = collection(db, "users");
+        const allUsersSnapshot = await getDocs(query(usersRef));
+        const isFirstUser = allUsersSnapshot.size === 0; // A verificação deve ser antes de adicionar o novo
         const isAdminByEmail = email.toLowerCase() === 'keennlemariem@gmail.com';
 
-        // 5. Criar o documento do perfil do usuário no Firestore
+        // Criar o documento do perfil do usuário no Firestore
         const newUser: Omit<User, 'id'> = {
             name: name,
             email: email,

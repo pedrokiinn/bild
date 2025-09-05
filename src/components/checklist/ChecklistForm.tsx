@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect } from 'react';
-import type { Vehicle, DailyChecklist } from '@/types';
+import type { Vehicle, DailyChecklist, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { diagnoseVehicleProblems } from '@/ai/flows/diagnose-vehicle-problems';
 import type { ChecklistItemOption } from '@/types';
 import ChecklistItem from './ChecklistItem';
+import { getCurrentUser } from '@/lib/auth';
 
 interface ChecklistFormProps {
   vehicles: Vehicle[];
@@ -27,12 +28,24 @@ interface ChecklistFormProps {
 export default function ChecklistForm({ vehicles, selectedVehicle, checklistItems, onBack }: ChecklistFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
   const [driverName, setDriverName] = useState('');
   const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage?.toString() || '');
   const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
   const [itemValues, setItemValues] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        if (currentUser) {
+            setDriverName(currentUser.name);
+        }
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     setDepartureMileage(selectedVehicle?.mileage?.toString() || '');
@@ -67,6 +80,15 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+        toast({
+            title: 'Erro de Autenticação',
+            description: 'Não foi possível identificar o usuário. Por favor, faça login novamente.',
+            variant: 'destructive',
+        });
+        return;
+    }
+
     if (!selectedVehicle?.id || !driverName || !departureMileage) {
       toast({
         title: 'Campos obrigatórios',
@@ -112,8 +134,9 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         }, {} as Record<string, 'ok' | 'problem'>);
 
 
-        const newChecklist: Omit<DailyChecklist, 'id' | 'driverId'> = {
+        const newChecklist: Omit<DailyChecklist, 'id'> = {
             vehicleId: selectedVehicle.id,
+            driverId: user.id,
             driverName,
             departureTimestamp: new Date(),
             departureMileage: Number(departureMileage),
@@ -208,7 +231,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" className="w-full md:w-auto ml-auto" disabled={isSaving}>
+          <Button type="submit" className="w-full md:w-auto ml-auto" disabled={isSaving || !user}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? 'Salvando...' : 'Registrar Saída'}
           </Button>

@@ -26,10 +26,8 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
     await updateDoc(userDoc, { role: newRole });
 };
 
-export const deleteUser = async (userId: string, reason: string, adminName: string): Promise<void> => {
-    const adminUser = auth.currentUser;
-
-    if (!adminUser) {
+export const deleteUser = async (userId: string, reason: string, adminId: string, adminName: string): Promise<void> => {
+    if (!adminId) {
         throw new Error("Ação não autorizada. Administrador não está logado.");
     }
     
@@ -42,7 +40,7 @@ export const deleteUser = async (userId: string, reason: string, adminName: stri
     const report: Omit<DeletionReport, 'id' | 'timestamp'> & { timestamp: any } = {
         deletedUserId: userId,
         deletedUserName: userToDelete.name || 'N/A',
-        adminId: adminUser.uid,
+        adminId: adminId,
         adminName,
         reason,
         timestamp: serverTimestamp(),
@@ -146,23 +144,19 @@ export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<Da
   return { id: docData.id, ...docData.data() } as DailyChecklist;
 };
 
-export const saveChecklist = async (checklistData: any): Promise<any> => {
-  const { id, ...dataToSave } = checklistData;
-  const user = auth.currentUser;
+export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'>): Promise<any> => {
+  const { id, ...dataToSave } = checklistData as any;
 
-  if (!user) {
+  if (!dataToSave.driverId) {
       throw new Error("Usuário não autenticado.");
   }
 
-  // Adiciona o driverId para referência de propriedade
-  dataToSave.driverId = user.uid;
-
   // Converte os timestamps numéricos de volta para objetos Timestamp do Firestore antes de salvar
   if (dataToSave.departureTimestamp) {
-    dataToSave.departureTimestamp = Timestamp.fromMillis(dataToSave.departureTimestamp);
+    dataToSave.departureTimestamp = Timestamp.fromDate(dataToSave.departureTimestamp);
   }
    if (dataToSave.arrivalTimestamp) {
-    dataToSave.arrivalTimestamp = Timestamp.fromMillis(dataToSave.arrivalTimestamp);
+    dataToSave.arrivalTimestamp = Timestamp.fromDate(dataToSave.arrivalTimestamp);
   }
   
   if (id) {
