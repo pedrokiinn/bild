@@ -204,7 +204,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="driverName">Nome do Motorista</Label>
-              <Input id="driverName" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Seu nome completo" disabled={isSaving}/>
+              <Input id="driverName" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Carregando..." disabled/>
             </div>
             <div>
               <Label htmlFor="departureMileage">Quilometragem de Saída (km)</Label>
