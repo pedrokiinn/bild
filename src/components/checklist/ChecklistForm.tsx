@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
-import { format, getHours } from 'date-fns';
+import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { saveChecklist } from '@/lib/data';
 import { useRouter } from 'next/navigation';
@@ -60,8 +60,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     setItemValues(initialItemValues);
     setItemStates(initialItemStates);
   }, [selectedVehicle, checklistItems]);
-
-  const isAfterCutoff = getHours(new Date()) >= 22;
 
   const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -165,25 +163,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         setIsSaving(false);
     }
   };
-
-  if (isAfterCutoff) {
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Prazo Excedido</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Fora do horário</AlertTitle>
-                <AlertDescription>
-                    Não é possível criar novos checklists após as 22:00.
-                </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      );
-  }
 
   return (
     <form onSubmit={handleSubmit}>
