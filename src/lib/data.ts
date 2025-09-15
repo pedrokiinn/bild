@@ -2,7 +2,7 @@
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format } from "date-fns";
 import { db, auth } from './firebase';
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp, deleteField } from "firebase/firestore";
 
 
 // User Functions
@@ -26,8 +26,9 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
     await updateDoc(userDoc, { role: newRole });
 };
 
-export const deleteUser = async (userId: string, reason: string, adminId: string, adminName: string): Promise<void> => {
-    if (!adminId) {
+export const deleteUser = async (userId: string, reason: string, adminName: string): Promise<void> => {
+    const adminUser = auth.currentUser;
+    if (!adminUser) {
         throw new Error("Ação não autorizada. Administrador não está logado.");
     }
     
@@ -37,11 +38,14 @@ export const deleteUser = async (userId: string, reason: string, adminId: string
     
     if (!userToDelete) throw new Error("Usuário não encontrado.");
     
+    // We need to call a function to delete the user from auth, this will be handled by a cloud function trigger.
+    // For now we just create the report and delete the firestore user document.
+
     const report: Omit<DeletionReport, 'id' | 'timestamp'> & { timestamp: any } = {
         deletedUserId: userId,
         deletedUserName: userToDelete.name || 'N/A',
-        adminId: adminId,
-        adminName,
+        adminId: adminUser.uid,
+        adminName: adminName,
         reason,
         timestamp: serverTimestamp(),
     };
@@ -49,7 +53,7 @@ export const deleteUser = async (userId: string, reason: string, adminId: string
     const reportCollection = collection(db, "deletionReports");
     
     const batch = writeBatch(db);
-    batch.delete(userToDeleteDoc);
+    batch.delete(userToDeleteDoc); // This will trigger the onUserDeleted cloud function
     batch.set(doc(reportCollection), report);
 
     await batch.commit();
@@ -154,25 +158,29 @@ export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'> & 
       throw new Error("ID do motorista não fornecido.");
   }
 
-  // Convert JS Dates to Firestore Timestamps before saving
-  const departureTimestamp = dataToSave.departureTimestamp instanceof Date
-    ? Timestamp.fromDate(dataToSave.departureTimestamp)
-    : dataToSave.departureTimestamp;
-    
-  const arrivalTimestamp = dataToSave.arrivalTimestamp instanceof Date
-    ? Timestamp.fromDate(dataToSave.arrivalTimestamp)
-    : dataToSave.arrivalTimestamp;
+  // Firestore does not support `undefined`. Create a clean object.
+  const finalData: Record<string, any> = { ...dataToSave };
 
-  const finalData = {
-      ...dataToSave,
-      departureTimestamp,
-      arrivalTimestamp,
-  };
-
+  // Convert JS Dates to Firestore Timestamps
+  if (dataToSave.departureTimestamp instanceof Date) {
+    finalData.departureTimestamp = Timestamp.fromDate(dataToSave.departureTimestamp);
+  }
+  
+  if (dataToSave.arrivalTimestamp instanceof Date) {
+    finalData.arrivalTimestamp = Timestamp.fromDate(dataToSave.arrivalTimestamp);
+  } else if (dataToSave.arrivalTimestamp === undefined) {
+    // If it's undefined, we need to make sure it's not in the object for `addDoc`
+    // or use `deleteField()` for `updateDoc`.
+    delete finalData.arrivalTimestamp;
+  }
 
   if (id) {
     const checklistDoc = doc(db, "checklists", id);
-    await updateDoc(checklistDoc, finalData as any);
+    // If arrivalTimestamp is explicitly being set to undefined, we should delete it from the document
+    if (checklistData.arrivalTimestamp === undefined) {
+        finalData.arrivalTimestamp = deleteField();
+    }
+    await updateDoc(checklistDoc, finalData);
 
     if (finalData.arrivalMileage) {
         const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
@@ -182,7 +190,7 @@ export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'> & 
     return { id, ...checklistData };
   } 
   
-  const docRef = await addDoc(collection(db, "checklists"), finalData as any);
+  const docRef = await addDoc(collection(db, "checklists"), finalData);
 
   if (finalData.departureMileage) {
     const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
