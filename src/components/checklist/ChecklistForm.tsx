@@ -29,6 +29,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
   const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage?.toString() || '');
   const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
   const [itemValues, setItemValues] = useState<Record<string, string>>({});
@@ -37,8 +38,10 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
 
   useEffect(() => {
     const fetchUser = async () => {
+        setIsUserLoading(true);
         const currentUser = await getCurrentUser();
         setUser(currentUser);
+        setIsUserLoading(false);
     };
     fetchUser();
   }, []);
@@ -166,13 +169,15 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     }
   };
 
+  const isFormDisabled = isSaving || isUserLoading;
+
   return (
     <form onSubmit={handleSubmit}>
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Registro de Saída</CardTitle>
-            <Button variant="ghost" size="sm" onClick={onBack}>
+            <Button variant="ghost" size="sm" onClick={onBack} disabled={isFormDisabled}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Trocar Veículo
             </Button>
@@ -185,7 +190,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="departureMileage">Quilometragem de Saída (km)</Label>
-              <Input id="departureMileage" value={departureMileage} onChange={handleMileageChange} placeholder="Ex: 15000" disabled={isSaving} />
+              <Input id="departureMileage" value={departureMileage} onChange={handleMileageChange} placeholder="Ex: 15000" disabled={isFormDisabled} />
             </div>
           </div>
           <div>
@@ -197,20 +202,20 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
                   item={item}
                   value={itemValues[item.key]}
                   onChange={(value) => handleItemChange(item.key, value)}
-                  disabled={isSaving}
+                  disabled={isFormDisabled}
                 />
               ))}
             </div>
           </div>
           <div>
             <Label htmlFor="notes">Observações</Label>
-            <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Alguma observação adicional? Descreva aqui." disabled={isSaving}/>
+            <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Alguma observação adicional? Descreva aqui." disabled={isFormDisabled}/>
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" className="w-full md:w-auto ml-auto" disabled={isSaving}>
+          <Button type="submit" className="w-full md:w-auto ml-auto" disabled={isFormDisabled}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSaving ? 'Salvando...' : 'Registrar Saída'}
+            {isUserLoading ? 'Carregando usuário...' : isSaving ? 'Salvando...' : 'Registrar Saída'}
           </Button>
         </CardFooter>
       </Card>

@@ -5,13 +5,25 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     signOut,
+    onAuthStateChanged,
 } from "firebase/auth";
 import { auth, db } from './firebase';
 import { collection, doc, getDoc, query, where, getDocs, setDoc } from "firebase/firestore";
 import type { User } from "@/types";
 
+// Function to get the Firebase user, waiting for auth state to be confirmed
+const getFirebaseUser = (): Promise<import('firebase/auth').User | null> => {
+    return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe();
+            resolve(user);
+        });
+    });
+};
+
+
 export async function getCurrentUser(): Promise<User | null> {
-    const firebaseUser = auth.currentUser;
+    const firebaseUser = await getFirebaseUser();
     if (!firebaseUser || !firebaseUser.uid) {
         return null;
     }
@@ -23,6 +35,8 @@ export async function getCurrentUser(): Promise<User | null> {
         return { id: userDocSnap.id, ...userDocSnap.data() } as User;
     }
 
+    // This might happen if user exists in Auth but not in Firestore.
+    // In a production app, you might want to create the Firestore doc here.
     return null;
 }
 
