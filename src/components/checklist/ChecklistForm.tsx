@@ -87,10 +87,10 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         return;
     }
 
-    if (!selectedVehicle?.id || !driverName || !departureMileage) {
+    if (!selectedVehicle?.id || !departureMileage) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Por favor, preencha o veículo, nome do motorista e quilometragem.',
+        description: 'Por favor, preencha a quilometragem.',
         variant: 'destructive',
       });
       return;
@@ -141,7 +141,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         const newChecklist: Omit<DailyChecklist, 'id'> = {
             vehicleId: selectedVehicle.id,
             driverId: user.id,
-            driverName,
+            driverName: user.name,
             departureTimestamp: new Date(),
             departureMileage: Number(departureMileage),
             checklistItems: checklistItemsToSave,
@@ -187,10 +187,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="driverName">Nome do Motorista</Label>
-              <Input id="driverName" value={driverName || 'Carregando...'} placeholder="Carregando..." readOnly disabled/>
-            </div>
             <div>
               <Label htmlFor="departureMileage">Quilometragem de Saída (km)</Label>
               <Input id="departureMileage" value={departureMileage} onChange={handleMileageChange} placeholder="Ex: 15000" disabled={isSaving} />
