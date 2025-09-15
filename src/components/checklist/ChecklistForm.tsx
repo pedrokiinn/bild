@@ -186,7 +186,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="departureMileage">Quilometragem de Saída (km)</Label>
               <Input id="departureMileage" value={departureMileage} onChange={handleMileageChange} placeholder="Ex: 15000" disabled={isSaving} />
