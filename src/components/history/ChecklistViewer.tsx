@@ -3,15 +3,17 @@
 import { DailyChecklist, Vehicle, ChecklistItemOption } from '@/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CheckCircle2, AlertCircle, Sparkles, User, Car as CarIcon, Calendar, Gauge, FileText } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Sparkles, User, Car as CarIcon, Calendar, Gauge, FileText, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { checklistItemsOptions } from '@/lib/data';
 import { ScrollArea } from '../ui/scroll-area';
+import { Button } from '../ui/button';
 
 interface ChecklistViewerProps {
     checklist?: DailyChecklist & { vehicle?: Vehicle };
     vehicle?: Vehicle;
+    onArrivalClick?: () => void;
 }
 
 const getOptionLabel = (itemKey: string, value: string) => {
@@ -39,7 +41,7 @@ const getOptionColor = (itemKey: string, value: string) => {
 };
 
 
-export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerProps) {
+export default function ChecklistViewer({ checklist, vehicle, onArrivalClick }: ChecklistViewerProps) {
     if (!checklist) {
         return <p>Carregando dados do checklist...</p>;
     }
@@ -50,9 +52,28 @@ export default function ChecklistViewer({ checklist, vehicle }: ChecklistViewerP
         ? checklist.arrivalTimestamp.toDate()
         : null;
 
+    const isPendingArrival = checklist.status === 'pending_arrival';
+
     return (
         <ScrollArea className="max-h-[70vh] pr-4">
             <div className="space-y-6 p-1">
+                {isPendingArrival && onArrivalClick && (
+                    <Card className='bg-amber-50 border-amber-200'>
+                        <CardContent className='pt-6'>
+                            <div className='flex items-center justify-between'>
+                                <div>
+                                    <h3 className='font-bold text-amber-800'>Ação Necessária</h3>
+                                    <p className='text-sm text-amber-700'>Este veículo ainda está em rota. Registre a chegada.</p>
+                                </div>
+                                <Button onClick={onArrivalClick} className='bg-amber-500 hover:bg-amber-600'>
+                                    <Clock className='w-4 h-4 mr-2'/>
+                                    Registrar Chegada
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+                
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2">

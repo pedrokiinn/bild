@@ -99,6 +99,10 @@ function HistoryContent() {
         setIsDeleteDialogOpen(true);
     };
 
+    const handleArrivalClick = (checklist: DailyChecklist & { vehicle?: Vehicle }) => {
+        setSelectedChecklist(checklist);
+        setIsArrivalDialogOpen(true);
+    };
 
     const handleArrivalSave = async (arrivalMileage: number) => {
         if (!selectedChecklist) return;
@@ -271,7 +275,11 @@ function HistoryContent() {
                                                     <DialogHeader>
                                                         <DialogTitle>Detalhes do Checklist</DialogTitle>
                                                     </DialogHeader>
-                                                    <ChecklistViewer checklist={checklist} vehicle={vehicle} />
+                                                    <ChecklistViewer 
+                                                        checklist={checklist} 
+                                                        vehicle={vehicle} 
+                                                        onArrivalClick={() => handleArrivalClick(checklist)}
+                                                    />
                                                 </DialogContent>
                                             </Dialog>
 
@@ -279,7 +287,7 @@ function HistoryContent() {
                                                 <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button size="icon" variant="ghost" onClick={() => { setSelectedChecklist(checklist); setIsArrivalDialogOpen(true); }}>
+                                                        <Button size="icon" variant="ghost" onClick={() => handleArrivalClick(checklist)}>
                                                             <Clock className="w-4 h-4" />
                                                         </Button>
                                                     </TooltipTrigger>
