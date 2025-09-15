@@ -109,9 +109,12 @@ export const getChecklists = async (): Promise<DailyChecklist[]> => {
     const checklistSnapshot = await getDocs(q);
     
     return checklistSnapshot.docs.map(doc => {
+        const data = doc.data();
         return { 
             id: doc.id, 
-            ...doc.data()
+            ...data,
+            departureTimestamp: data.departureTimestamp,
+            arrivalTimestamp: data.arrivalTimestamp || undefined,
         } as DailyChecklist;
     });
 };
@@ -152,30 +155,38 @@ export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'> & 
   }
 
   // Convert JS Dates to Firestore Timestamps before saving
-  if (dataToSave.departureTimestamp && dataToSave.departureTimestamp instanceof Date) {
-    (dataToSave as any).departureTimestamp = Timestamp.fromDate(dataToSave.departureTimestamp);
-  }
-   if (dataToSave.arrivalTimestamp && dataToSave.arrivalTimestamp instanceof Date) {
-    (dataToSave as any).arrivalTimestamp = Timestamp.fromDate(dataToSave.arrivalTimestamp);
-  }
-  
+  const departureTimestamp = dataToSave.departureTimestamp instanceof Date
+    ? Timestamp.fromDate(dataToSave.departureTimestamp)
+    : dataToSave.departureTimestamp;
+    
+  const arrivalTimestamp = dataToSave.arrivalTimestamp instanceof Date
+    ? Timestamp.fromDate(dataToSave.arrivalTimestamp)
+    : dataToSave.arrivalTimestamp;
+
+  const finalData = {
+      ...dataToSave,
+      departureTimestamp,
+      arrivalTimestamp,
+  };
+
+
   if (id) {
     const checklistDoc = doc(db, "checklists", id);
-    await updateDoc(checklistDoc, dataToSave as any);
+    await updateDoc(checklistDoc, finalData as any);
 
-    if (dataToSave.arrivalMileage) {
-        const vehicleDoc = doc(db, "vehicles", dataToSave.vehicleId);
-        await updateDoc(vehicleDoc, { mileage: dataToSave.arrivalMileage });
+    if (finalData.arrivalMileage) {
+        const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
+        await updateDoc(vehicleDoc, { mileage: finalData.arrivalMileage });
     }
 
     return { id, ...checklistData };
   } 
   
-  const docRef = await addDoc(collection(db, "checklists"), dataToSave as any);
+  const docRef = await addDoc(collection(db, "checklists"), finalData as any);
 
-  if (dataToSave.departureMileage) {
-    const vehicleDoc = doc(db, "vehicles", dataToSave.vehicleId);
-    await updateDoc(vehicleDoc, { mileage: dataToSave.departureMileage });
+  if (finalData.departureMileage) {
+    const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
+    await updateDoc(vehicleDoc, { mileage: finalData.departureMileage });
   }
   
   return { id: docRef.id, ...checklistData };

@@ -5,7 +5,7 @@ import type { DailyChecklist, Vehicle } from '@/types';
 import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock } from 'lucide-react';
+import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -24,6 +24,7 @@ import { ArrivalDialog } from '@/components/history/ArrivalDialog';
 import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import MonthlyReportDialog from '@/components/history/MonthlyReportDialog';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -33,6 +34,7 @@ function HistoryContent() {
     const [selectedVehicle, setSelectedVehicle] = useState('all');
     const [isArrivalDialogOpen, setIsArrivalDialogOpen] = useState(false);
     const [selectedChecklist, setSelectedChecklist] = useState<DailyChecklist & { vehicle?: Vehicle } | null>(null);
+    const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<string | null>(null);
@@ -104,7 +106,7 @@ function HistoryContent() {
         try {
             const updatedChecklistData = {
                 ...selectedChecklist,
-                arrivalTimestamp: new Date().getTime(),
+                arrivalTimestamp: new Date(),
                 arrivalMileage: arrivalMileage,
                 status: selectedChecklist.status === 'problem' ? 'problem' : 'completed',
             };
@@ -177,14 +179,20 @@ function HistoryContent() {
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-7xl mx-auto">
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl mb-6">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900">
-                            <Calendar className="w-6 h-6 text-primary" />
-                            Histórico de Checklists
-                        </CardTitle>
-                        <p className="text-slate-600 text-sm md:text-base">
-                            Veja, gerencie e exporte todos os checklists realizados.
-                        </p>
+                     <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900">
+                                <Calendar className="w-6 h-6 text-primary" />
+                                Histórico de Checklists
+                            </CardTitle>
+                            <p className="text-slate-600 text-sm md:text-base mt-1">
+                                Veja, gerencie e exporte todos os checklists realizados.
+                            </p>
+                        </div>
+                        <Button onClick={() => setIsReportDialogOpen(true)}>
+                            <FileText className="w-4 h-4 mr-2" />
+                            Gerar Relatório Mensal
+                        </Button>
                     </CardHeader>
                 </Card>
 
@@ -322,6 +330,12 @@ function HistoryContent() {
                 checklist={selectedChecklist}
             />
         )}
+        <MonthlyReportDialog
+            isOpen={isReportDialogOpen}
+            onClose={() => setIsReportDialogOpen(false)}
+            vehicles={vehicles}
+            checklists={checklists}
+        />
         <ConfirmationDialog
             isOpen={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}

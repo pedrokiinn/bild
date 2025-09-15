@@ -107,23 +107,29 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     setIsSaving(true);
     try {
         const hasProblem = Object.values(itemStates).includes('problem');
-        const problemNotes = Object.entries(itemStates)
-            .filter(([, state]) => state === 'problem')
-            .map(([item]) => item)
-            .join(', ');
-
-        let fullNotes = notes;
-        if(problemNotes){
-            fullNotes = `Itens com problema: ${problemNotes}. ${notes}`;
-        }
-
+        
         let aiDiagnosisResult = '';
         if (hasProblem) {
-            const diagnosis = await diagnoseVehicleProblems({
-                vehicleInfo: `${selectedVehicle?.brand} ${selectedVehicle?.model} ${selectedVehicle?.year}`,
-                checklistResponses: fullNotes,
-            });
-            aiDiagnosisResult = diagnosis.potentialProblems;
+            const problemItems = Object.entries(itemStates)
+                .filter(([, state]) => state === 'problem')
+                .map(([itemTitle]) => itemTitle)
+                .join(', ');
+
+            const detailedNotes = `Itens com problema: ${problemItems}. Observações adicionais: ${notes || 'Nenhuma'}`;
+            
+            // Only call AI if there are substantial notes to analyze
+            if (notes.trim().length > 5 || problemItems.length > 0) {
+                 try {
+                    const diagnosis = await diagnoseVehicleProblems({
+                        vehicleInfo: `${selectedVehicle?.brand} ${selectedVehicle?.model} ${selectedVehicle?.year}`,
+                        checklistResponses: detailedNotes,
+                    });
+                    aiDiagnosisResult = diagnosis.potentialProblems;
+                 } catch (aiError) {
+                    console.error("AI Diagnosis failed, but saving checklist anyway:", aiError);
+                    aiDiagnosisResult = "Diagnóstico da IA falhou, mas os problemas foram registrados.";
+                 }
+            }
         }
 
         const checklistItemsToSave = checklistItems.reduce((acc, item) => {
