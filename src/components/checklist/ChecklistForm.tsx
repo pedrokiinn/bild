@@ -29,7 +29,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [driverName, setDriverName] = useState('');
   const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage?.toString() || '');
   const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
   const [itemValues, setItemValues] = useState<Record<string, string>>({});
@@ -40,9 +39,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     const fetchUser = async () => {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
-        if (currentUser) {
-            setDriverName(currentUser.name);
-        }
     };
     fetchUser();
   }, []);
@@ -212,7 +208,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" className="w-full md:w-auto ml-auto" disabled={isSaving || !user}>
+          <Button type="submit" className="w-full md:w-auto ml-auto" disabled={isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? 'Salvando...' : 'Registrar Saída'}
           </Button>
