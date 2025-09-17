@@ -1,11 +1,11 @@
 
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { DailyChecklist, Vehicle } from '@/types';
 import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText } from 'lucide-react';
+import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText, User } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -32,6 +32,7 @@ function HistoryContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedVehicle, setSelectedVehicle] = useState('all');
+    const [selectedDriver, setSelectedDriver] = useState('all');
     const [isArrivalDialogOpen, setIsArrivalDialogOpen] = useState(false);
     const [selectedChecklist, setSelectedChecklist] = useState<DailyChecklist & { vehicle?: Vehicle } | null>(null);
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -71,6 +72,16 @@ function HistoryContent() {
     useEffect(() => {
         loadData();
     }, [loadData]);
+    
+    const drivers = useMemo(() => {
+        const driverMap = new Map<string, string>();
+        checklists.forEach(c => {
+            if (c.driverId && c.driverName) {
+                driverMap.set(c.driverId, c.driverName);
+            }
+        });
+        return Array.from(driverMap, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+    }, [checklists]);
 
     const handleDelete = async () => {
         if (!itemToDelete) return;
@@ -141,8 +152,9 @@ function HistoryContent() {
             c.vehicle?.brand.toLowerCase().includes(searchTerm.toLowerCase());
         
         const vehicleMatch = selectedVehicle === 'all' || c.vehicleId === selectedVehicle;
+        const driverMatch = selectedDriver === 'all' || c.driverId === selectedDriver;
 
-        return searchMatch && vehicleMatch;
+        return searchMatch && vehicleMatch && driverMatch;
     });
 
     const renderSkeleton = () => (
@@ -183,7 +195,7 @@ function HistoryContent() {
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-7xl mx-auto">
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl mb-6">
-                     <CardHeader className="flex flex-row items-center justify-between">
+                     <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div>
                             <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900">
                                 <Calendar className="w-6 h-6 text-primary" />
@@ -204,12 +216,23 @@ function HistoryContent() {
                     <div className="relative w-full md:flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input 
-                            placeholder="Buscar por motorista, placa ou modelo..."
+                            placeholder="Buscar por placa ou modelo..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-9 text-sm"
                         />
                     </div>
+                     <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+                        <SelectTrigger className="w-full md:w-[250px] text-sm">
+                            <SelectValue placeholder="Filtrar por motorista" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos os motoristas</SelectItem>
+                            {drivers.map(d => (
+                                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
                         <SelectTrigger className="w-full md:w-[250px] text-sm">
                             <SelectValue placeholder="Filtrar por veículo" />
@@ -243,6 +266,7 @@ function HistoryContent() {
                                     <CardContent className="flex-1 flex flex-col justify-between">
                                         <div className="space-y-3 text-sm mb-4">
                                             <div className="flex items-center gap-2 text-slate-700">
+                                                <User className="w-4 h-4 text-muted-foreground" /> 
                                                 <span className="font-medium">Motorista:</span> {checklist.driverName}
                                             </div>
                                             <div className="flex items-center gap-1.5">
@@ -358,3 +382,5 @@ function HistoryContent() {
 export default function HistoryPage() {
     return <HistoryContent />;
 }
+
+    

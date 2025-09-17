@@ -145,30 +145,16 @@ export default function ChecklistViewer({ checklist, vehicle, onArrivalClick }: 
                     </CardContent>
                 </Card>
 
-                {(checklist.notes || checklist.aiDiagnosis) && (
+                {checklist.notes && (
                      <Card>
                         <CardHeader>
                             <CardTitle className="text-lg flex items-center gap-2 text-amber-600">
                                  <AlertCircle className="w-5 h-5" />
-                                 Anotações e Diagnósticos
+                                 Anotações do Motorista
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                             {checklist.notes && (
-                                <div>
-                                   <h4 className="font-semibold text-slate-700 mb-2">Observações do Motorista:</h4>
-                                   <p className="text-sm text-slate-600 bg-slate-100 p-3 rounded-md border border-slate-200">{checklist.notes}</p>
-                                </div>
-                            )}
-                             {checklist.aiDiagnosis && (
-                                <div>
-                                   <h4 className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                                       <Sparkles className="w-5 h-5 text-blue-500"/>
-                                       Diagnóstico (IA):
-                                    </h4>
-                                   <p className="text-sm text-slate-600 bg-blue-50 p-3 rounded-md border-l-4 border-blue-500">{checklist.aiDiagnosis}</p>
-                                </div>
-                            )}
+                            <p className="text-sm text-slate-600 bg-slate-100 p-3 rounded-md border border-slate-200">{checklist.notes}</p>
                         </CardContent>
                     </Card>
                 )}
@@ -176,3 +162,5 @@ export default function ChecklistViewer({ checklist, vehicle, onArrivalClick }: 
         </ScrollArea>
     );
 }
+
+    
