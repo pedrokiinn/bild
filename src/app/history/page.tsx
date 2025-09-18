@@ -119,11 +119,12 @@ function HistoryContent() {
         if (!selectedChecklist) return;
 
         try {
+            const hasProblem = Object.values(selectedChecklist.checklistItems).includes('problem');
             const updatedChecklistData = {
                 ...selectedChecklist,
                 arrivalTimestamp: new Date(),
                 arrivalMileage: arrivalMileage,
-                status: selectedChecklist.status === 'problem' ? 'problem' : 'completed',
+                status: hasProblem ? 'problem' : 'completed',
             };
             
             await saveChecklist(updatedChecklistData);
@@ -251,9 +252,11 @@ function HistoryContent() {
                         {filteredChecklists.map(checklist => {
                             const vehicle = checklist.vehicle;
                             const departureDate = checklist.departureTimestamp.toDate();
+                            const isPending = !checklist.arrivalTimestamp;
+                            const hasProblems = Object.values(checklist.checklistItems).includes('problem');
 
                             return (
-                                <Card key={checklist.id} className={`bg-white/80 backdrop-blur-sm shadow-lg border-0 transition-all hover:shadow-2xl flex flex-col ${checklist.status === 'problem' ? 'border-l-4 border-destructive' : ''}`}>
+                                <Card key={checklist.id} className={`bg-white/80 backdrop-blur-sm shadow-lg border-0 transition-all hover:shadow-2xl flex flex-col ${hasProblems && !isPending ? 'border-l-4 border-destructive' : ''}`}>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-base font-bold">
                                             <Car className="w-5 h-5 text-primary" />
@@ -270,9 +273,16 @@ function HistoryContent() {
                                                 <span className="font-medium">Motorista:</span> {checklist.driverName}
                                             </div>
                                             <div className="flex items-center gap-1.5">
-                                                <span className="font-medium text-slate-700">Status:</span> {getStatusBadge(checklist.status)}
+                                                <span className="font-medium text-slate-700">Status:</span> 
+                                                {isPending ? (
+                                                    <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50"><Clock className="w-3 h-3 mr-1.5" />Em Rota</Badge>
+                                                ) : hasProblems ? (
+                                                    <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1.5" />Problemas</Badge>
+                                                ) : (
+                                                    <Badge variant="outline" className="text-emerald-600 border-emerald-300 bg-emerald-50"><CheckCircle2 className="w-3 h-3 mr-1.5" />Finalizado</Badge>
+                                                )}
                                             </div>
-                                            {checklist.status === 'problem' && (
+                                            {hasProblems && (
                                                 <p className="flex items-center gap-2 text-destructive font-semibold p-2 bg-destructive/10 rounded-md text-xs">
                                                     <AlertTriangle className="w-4 h-4" /> 
                                                     Atenção: Checklist com problemas!
@@ -307,7 +317,7 @@ function HistoryContent() {
                                                 </DialogContent>
                                             </Dialog>
 
-                                            {checklist.status === 'pending_arrival' && (
+                                            {isPending && (
                                                 <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>

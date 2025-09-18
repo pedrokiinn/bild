@@ -146,7 +146,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             checklistItems: checklistItemsToSave,
             checklistValues: itemValues,
             notes: notes,
-            status: hasProblem ? 'problem' : 'pending_arrival',
+            status: 'pending_arrival',
             date: format(new Date(), 'yyyy-MM-dd'),
             aiDiagnosis: aiDiagnosisResult,
         };
