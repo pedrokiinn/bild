@@ -1,15 +1,16 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { DailyChecklist, Vehicle } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Car, Search, Printer, ArrowLeft } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { Car, Search, Printer, ArrowLeft, Calendar } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, isWithinInterval, getYear, getMonth, setYear, setMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { checklistItemsOptions } from '@/lib/data';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface MonthlyReportDialogProps {
   isOpen: boolean;
@@ -26,10 +27,10 @@ const getOptionLabel = (itemKey: string, value: string) => {
 };
 
 
-const generateMonthlyPDF = (vehicle: Vehicle, monthlyChecklists: (DailyChecklist & { vehicle?: Vehicle })[]) => {
+const generateMonthlyPDF = (vehicle: Vehicle, monthlyChecklists: (DailyChecklist & { vehicle?: Vehicle })[], selectedDate: Date) => {
     if (!vehicle || monthlyChecklists.length === 0) return;
 
-    const monthName = format(new Date(), "MMMM 'de' yyyy", { locale: ptBR });
+    const monthName = format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR });
 
     const checklistsHTML = monthlyChecklists.map(c => {
         const problemItems = Object.entries(c.checklistValues ?? {})
@@ -93,20 +94,25 @@ const generateMonthlyPDF = (vehicle: Vehicle, monthlyChecklists: (DailyChecklist
 
 export default function MonthlyReportDialog({ isOpen, onClose, vehicles, checklists }: MonthlyReportDialogProps) {
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     const handleClose = () => {
         setSelectedVehicle(null);
+        setSelectedDate(new Date());
         onClose();
     };
 
-    const now = new Date();
-    const startOfCurrentMonth = startOfMonth(now);
-    const endOfCurrentMonth = endOfMonth(now);
+    const months = Array.from({ length: 12 }, (_, i) => ({ value: i, label: format(new Date(0, i), 'MMMM', { locale: ptBR }) }));
+    const currentYear = getYear(new Date());
+    const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+    const startOfSelectedMonth = startOfMonth(selectedDate);
+    const endOfSelectedMonth = endOfMonth(selectedDate);
 
     const monthlyChecklists = selectedVehicle 
         ? checklists.filter(c => 
             c.vehicleId === selectedVehicle.id &&
-            isWithinInterval(c.departureTimestamp.toDate(), { start: startOfCurrentMonth, end: endOfCurrentMonth })
+            isWithinInterval(c.departureTimestamp.toDate(), { start: startOfSelectedMonth, end: endOfSelectedMonth })
           ).sort((a,b) => b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis())
         : [];
 
@@ -114,42 +120,72 @@ export default function MonthlyReportDialog({ isOpen, onClose, vehicles, checkli
         return acc + (c.status === 'problem' ? 1 : 0);
     }, 0);
 
-
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-2xl" onInteractOutside={handleClose}>
+            <DialogContent className="sm:max-w-3xl" onInteractOutside={handleClose}>
                 {!selectedVehicle ? (
                     <>
                         <DialogHeader>
                             <DialogTitle>Gerar Relatório Mensal</DialogTitle>
                             <DialogDescription>
-                                Selecione um veículo para ver o relatório de inspeções do mês atual.
+                                Selecione o período e o veículo para gerar o relatório de inspeções.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="py-4">
-                             {vehicles.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {vehicles.map(vehicle => (
-                                    <Button
-                                        key={vehicle.id}
-                                        variant="outline"
-                                        className="h-auto p-4 flex items-center justify-start gap-4 text-left"
-                                        onClick={() => setSelectedVehicle(vehicle)}
+                        <div className="py-4 space-y-6">
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <div className="flex-1">
+                                    <label className="text-sm font-medium">Mês</label>
+                                    <Select
+                                        value={String(getMonth(selectedDate))}
+                                        onValueChange={(value) => setSelectedDate(prev => setMonth(prev, Number(value)))}
                                     >
-                                        <Car className="w-5 h-5 text-primary flex-shrink-0"/>
-                                        <div>
-                                            <p className="font-semibold">{vehicle.brand} {vehicle.model}</p>
-                                            <p className="text-xs text-muted-foreground">{vehicle.license_plate}</p>
-                                        </div>
-                                    </Button>
-                                ))}
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                            ) : (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <Search className="w-12 h-12 mx-auto mb-4"/>
-                                    <p>Nenhum veículo cadastrado para gerar relatórios.</p>
+                                <div className="flex-1">
+                                    <label className="text-sm font-medium">Ano</label>
+                                    <Select
+                                        value={String(getYear(selectedDate))}
+                                        onValueChange={(value) => setSelectedDate(prev => setYear(prev, Number(value)))}
+                                    >
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                            )}
+                            </div>
+                            <div className="border-t pt-4">
+                                 <h3 className="text-base font-medium mb-2">Selecione o Veículo</h3>
+                                 {vehicles.length > 0 ? (
+                                    <ScrollArea className="h-[40vh]">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-4">
+                                    {vehicles.map(vehicle => (
+                                        <Button
+                                            key={vehicle.id}
+                                            variant="outline"
+                                            className="h-auto p-4 flex items-center justify-start gap-4 text-left"
+                                            onClick={() => setSelectedVehicle(vehicle)}
+                                        >
+                                            <Car className="w-5 h-5 text-primary flex-shrink-0"/>
+                                            <div>
+                                                <p className="font-semibold">{vehicle.brand} {vehicle.model}</p>
+                                                <p className="text-xs text-muted-foreground">{vehicle.license_plate}</p>
+                                            </div>
+                                        </Button>
+                                    ))}
+                                    </div>
+                                    </ScrollArea>
+                                ) : (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        <Search className="w-12 h-12 mx-auto mb-4"/>
+                                        <p>Nenhum veículo cadastrado para gerar relatórios.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </>
                 ) : (
@@ -157,7 +193,7 @@ export default function MonthlyReportDialog({ isOpen, onClose, vehicles, checkli
                         <DialogHeader>
                              <div className="flex items-center justify-between">
                                  <DialogTitle className="text-xl">
-                                    Relatório de {format(now, "MMMM", { locale: ptBR })} - {selectedVehicle.brand} {selectedVehicle.model}
+                                    Relatório de {format(selectedDate, "MMMM", { locale: ptBR })} - {selectedVehicle.brand} {selectedVehicle.model}
                                  </DialogTitle>
                                  <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle(null)}>
                                      <ArrowLeft className="w-4 h-4 mr-2" />
@@ -165,7 +201,7 @@ export default function MonthlyReportDialog({ isOpen, onClose, vehicles, checkli
                                  </Button>
                              </div>
                             <DialogDescription>
-                                Um resumo de todas as inspeções realizadas neste mês para o veículo selecionado.
+                                Um resumo de todas as inspeções realizadas no período selecionado para o veículo.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg">
@@ -173,7 +209,7 @@ export default function MonthlyReportDialog({ isOpen, onClose, vehicles, checkli
                                <span className="text-sm font-semibold">{monthlyChecklists.length} inspeções no mês</span>
                                <span className={`text-sm font-semibold ${totalProblems > 0 ? 'text-destructive' : 'text-emerald-600'}`}>{totalProblems} com problemas</span>
                            </div>
-                           <Button onClick={() => generateMonthlyPDF(selectedVehicle, monthlyChecklists)} disabled={monthlyChecklists.length === 0}>
+                           <Button onClick={() => generateMonthlyPDF(selectedVehicle, monthlyChecklists, selectedDate)} disabled={monthlyChecklists.length === 0}>
                                <Printer className="w-4 h-4 mr-2"/>
                                Salvar PDF
                            </Button>
@@ -206,7 +242,7 @@ export default function MonthlyReportDialog({ isOpen, onClose, vehicles, checkli
                             )) : (
                                 <div className="text-center py-16 text-muted-foreground">
                                     <Search className="w-12 h-12 mx-auto mb-4"/>
-                                    <p>Nenhum checklist encontrado para este veículo no mês atual.</p>
+                                    <p>Nenhum checklist encontrado para este veículo no período selecionado.</p>
                                 </div>
                             )}
                             </div>
