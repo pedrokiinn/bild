@@ -136,11 +136,11 @@ function HistoryContent() {
             setIsArrivalDialogOpen(false);
             setSelectedChecklist(null);
             loadData();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erro ao salvar chegada:", error);
             toast({
                 title: "Erro ao salvar",
-                description: "Não foi possível registrar a chegada.",
+                description: error.message || "Não foi possível registrar a chegada.",
                 variant: 'destructive',
             });
         }
@@ -252,11 +252,11 @@ function HistoryContent() {
                         {filteredChecklists.map(checklist => {
                             const vehicle = checklist.vehicle;
                             const departureDate = checklist.departureTimestamp.toDate();
-                            const isPending = !checklist.arrivalTimestamp;
+                            const isPending = checklist.status === 'pending_arrival';
                             const hasProblems = Object.values(checklist.checklistItems).includes('problem');
 
                             return (
-                                <Card key={checklist.id} className={`bg-white/80 backdrop-blur-sm shadow-lg border-0 transition-all hover:shadow-2xl flex flex-col ${hasProblems && !isPending ? 'border-l-4 border-destructive' : ''}`}>
+                                <Card key={checklist.id} className={`bg-white/80 backdrop-blur-sm shadow-lg border-0 transition-all hover:shadow-2xl flex flex-col ${checklist.status === 'problem' ? 'border-l-4 border-destructive' : ''}`}>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-base font-bold">
                                             <Car className="w-5 h-5 text-primary" />
@@ -282,10 +282,10 @@ function HistoryContent() {
                                                     <Badge variant="outline" className="text-emerald-600 border-emerald-300 bg-emerald-50"><CheckCircle2 className="w-3 h-3 mr-1.5" />Finalizado</Badge>
                                                 )}
                                             </div>
-                                            {hasProblems && (
+                                            {hasProblems && !isPending && (
                                                 <p className="flex items-center gap-2 text-destructive font-semibold p-2 bg-destructive/10 rounded-md text-xs">
                                                     <AlertTriangle className="w-4 h-4" /> 
-                                                    Atenção: Checklist com problemas!
+                                                    Checklist finalizado com problemas!
                                                 </p>
                                             )}
                                         </div>
@@ -392,5 +392,3 @@ function HistoryContent() {
 export default function HistoryPage() {
     return <HistoryContent />;
 }
-
-    

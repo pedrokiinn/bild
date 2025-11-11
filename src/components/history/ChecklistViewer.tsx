@@ -162,5 +162,3 @@ export default function ChecklistViewer({ checklist, vehicle, onArrivalClick }: 
         </ScrollArea>
     );
 }
-
-    

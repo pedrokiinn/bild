@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { saveChecklist } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { diagnoseVehicleProblems } from '@/ai/flows/diagnose-vehicle-problems';
 import type { ChecklistItemOption } from '@/types';
 import ChecklistItem from './ChecklistItem';
 import { getCurrentUser } from '@/lib/auth';
@@ -105,32 +104,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     
     setIsSaving(true);
     try {
-        const hasProblem = Object.values(itemStates).includes('problem');
-        
-        let aiDiagnosisResult = '';
-        if (hasProblem) {
-            const problemItems = Object.entries(itemStates)
-                .filter(([, state]) => state === 'problem')
-                .map(([itemTitle]) => itemTitle)
-                .join(', ');
-
-            const detailedNotes = `Itens com problema: ${problemItems}. Observações adicionais: ${notes || 'Nenhuma'}`;
-            
-            // Only call AI if there are substantial notes to analyze
-            if (notes.trim().length > 5 || problemItems.length > 0) {
-                 try {
-                    const diagnosis = await diagnoseVehicleProblems({
-                        vehicleInfo: `${selectedVehicle?.brand} ${selectedVehicle?.model} ${selectedVehicle?.year}`,
-                        checklistResponses: detailedNotes,
-                    });
-                    aiDiagnosisResult = diagnosis.potentialProblems;
-                 } catch (aiError) {
-                    console.error("AI Diagnosis failed, but saving checklist anyway:", aiError);
-                    aiDiagnosisResult = "Diagnóstico da IA falhou, mas os problemas foram registrados.";
-                 }
-            }
-        }
-
         const checklistItemsToSave = checklistItems.reduce((acc, item) => {
             acc[item.title] = itemStates[item.title] || 'ok';
             return acc;
@@ -148,7 +121,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             notes: notes,
             status: 'pending_arrival',
             date: format(new Date(), 'yyyy-MM-dd'),
-            aiDiagnosis: aiDiagnosisResult,
         };
 
         await saveChecklist(newChecklist);

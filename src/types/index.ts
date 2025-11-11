@@ -27,7 +27,6 @@ export interface DailyChecklist {
   notes?: string;
   status: ChecklistStatus;
   date: string; // YYYY-MM-DD
-  aiDiagnosis?: string;
 }
 
 export interface User {

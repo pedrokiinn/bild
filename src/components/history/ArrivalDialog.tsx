@@ -1,5 +1,6 @@
+
 'use client';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,6 +27,14 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setArrivalMileage("");
+      setError("");
+      setIsSaving(false);
+    }
+  }, [isOpen]);
+  
   const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (/^\d*$/.test(value)) {
@@ -43,8 +52,11 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
         return;
     }
     setIsSaving(true);
-    await onSave(Number(arrivalMileage));
-    setIsSaving(false);
+    try {
+      await onSave(Number(arrivalMileage));
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (

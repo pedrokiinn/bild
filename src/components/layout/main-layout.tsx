@@ -220,8 +220,8 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
             <CardContent>
                 <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="register-name">Nome de Usuário</Label>
-                        <Input id="register-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Seu nome de exibição"/>
+                        <Label htmlFor="register-name">Nome Completo</Label>
+                        <Input id="register-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Seu nome completo"/>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="register-email">Email</Label>

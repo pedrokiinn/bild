@@ -125,13 +125,6 @@ export default function PdfGeneratorButton({ checklist, vehicle }: PdfGeneratorB
                     </div>
                     ` : ''}
 
-                     ${checklist.aiDiagnosis ? `
-                    <div class="section-block">
-                         <div class="section-title">Diagnóstico (IA)</div>
-                         <div class="notes" style="background-color: #eff6ff; border-color: #93c5fd;">${checklist.aiDiagnosis}</div>
-                    </div>
-                    ` : ''}
-
                     <div class="footer">
                         Relatório gerado por CarCheck em ${new Date().toLocaleString('pt-BR')}
                     </div>
