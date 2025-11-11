@@ -59,32 +59,27 @@ async function deleteAllUsers() {
   }
 }
 
-async function deleteCollection(collectionPath, batchSize) {
+async function deleteCollection(collectionPath) {
     const collectionRef = db.collection(collectionPath);
-    const query = collectionRef.orderBy('__name__').limit(batchSize);
+    let query = collectionRef.limit(100);
 
-    return new Promise((resolve, reject) => {
-        deleteQueryBatch(query, resolve).catch(reject);
-    });
-}
+    while (true) {
+        const snapshot = await query.get();
+        if (snapshot.size === 0) {
+            break;
+        }
 
-async function deleteQueryBatch(query, resolve) {
-    const snapshot = await query.get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => {
+            console.log(`- Deletando documento: ${doc.ref.path}`);
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
 
-    if (snapshot.size === 0) {
-        return resolve();
+        // A próxima query começa depois do último documento do lote
+        const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+        query = collectionRef.startAfter(lastVisible).limit(100);
     }
-
-    const batch = db.batch();
-    snapshot.docs.forEach((doc) => {
-        console.log(`- Deletando documento: ${doc.ref.path}`);
-        batch.delete(doc.ref);
-    });
-    await batch.commit();
-
-    process.nextTick(() => {
-        deleteQueryBatch(query, resolve);
-    });
 }
 
 async function clearCollections() {
@@ -95,12 +90,7 @@ async function clearCollections() {
     
     for (const collectionName of collectionsToClear) {
         console.log(`\nLimpando a coleção: '${collectionName}'...`);
-        const snapshot = await db.collection(collectionName).limit(1).get();
-        if(snapshot.empty) {
-            console.log(`Coleção '${collectionName}' já está vazia.`);
-            continue;
-        }
-        await deleteCollection(collectionName, 50);
+        await deleteCollection(collectionName);
         console.log(`Coleção '${collectionName}' foi limpa.`);
     }
 
