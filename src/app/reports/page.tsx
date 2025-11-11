@@ -1,8 +1,8 @@
 
 'use client';
 import React, { useState, useEffect } from 'react';
-import { DeletionReport, User } from '@/types';
-import { getDeletionReports, deleteReport } from '@/lib/data';
+import { DeletionReport } from '@/types';
+import { getDeletionReports, deleteReport, deleteAllReports } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,46 +12,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Trash2, FileText, UserX, Shield, Loader2, Calendar } from 'lucide-react';
+import { Trash2, FileText, UserX, Shield, Loader2, Calendar, ShieldX } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-function PasswordConfirmationDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: () => void, isSaving: boolean }) {
-    
-    const handleConfirm = () => {
-        onConfirm();
-    }
-
-    return (
-         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Confirmar Exclusão de Relatório</DialogTitle>
-                    <DialogDescription>
-                       Tem certeza de que deseja excluir este relatório? Esta ação é irreversível.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancelar</Button>
-                    <Button variant="destructive" onClick={handleConfirm} disabled={isSaving}>
-                        {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Confirmar Exclusão
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 
 function ReportsContent() {
     const [reports, setReports] = useState<DeletionReport[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [isSingleDeleteOpen, setIsSingleDeleteOpen] = useState(false);
+    const [isClearAllOpen, setIsClearAllOpen] = useState(false);
     const [reportToDelete, setReportToDelete] = useState<string | null>(null);
 
     const { toast } = useToast();
@@ -73,9 +48,9 @@ function ReportsContent() {
         loadData();
     }, []);
 
-    const openConfirmationDialog = (reportId: string) => {
+    const openSingleDeleteDialog = (reportId: string) => {
         setReportToDelete(reportId);
-        setIsConfirmOpen(true);
+        setIsSingleDeleteOpen(true);
     };
 
     const handleDeleteReport = async () => {
@@ -90,8 +65,22 @@ function ReportsContent() {
             toast({ title: "Erro", description: "Falha ao excluir o relatório.", variant: "destructive" });
         } finally {
             setIsSaving(false);
-            setIsConfirmOpen(false);
+            setIsSingleDeleteOpen(false);
             setReportToDelete(null);
+        }
+    }
+
+    const handleClearAll = async () => {
+        setIsSaving(true);
+        try {
+            await deleteAllReports();
+            toast({ title: "Sucesso", description: "Todos os relatórios foram excluídos." });
+            loadData();
+        } catch (e) {
+            toast({ title: "Erro", description: "Falha ao limpar o histórico de relatórios.", variant: "destructive" });
+        } finally {
+            setIsSaving(false);
+            setIsClearAllOpen(false);
         }
     }
 
@@ -124,14 +113,26 @@ function ReportsContent() {
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-7xl mx-auto space-y-6">
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900">
-                            <FileText className="w-6 h-6 text-primary" />
-                            Relatórios de Exclusão de Usuários
-                        </CardTitle>
-                        <p className="text-slate-600 text-sm md:text-base">
-                            Histórico de todas as contas de usuários removidas do sistema.
-                        </p>
+                    <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900">
+                                <FileText className="w-6 h-6 text-primary" />
+                                Relatórios de Exclusão de Usuários
+                            </CardTitle>
+                            <p className="text-slate-600 text-sm md:text-base mt-1">
+                                Histórico de todas as contas de usuários removidas do sistema.
+                            </p>
+                        </div>
+                        {reports.length > 0 && (
+                            <Button
+                                variant="destructive"
+                                onClick={() => setIsClearAllOpen(true)}
+                                disabled={isLoading || isSaving}
+                            >
+                                <ShieldX className="w-4 h-4 mr-2" />
+                                Limpar Histórico
+                            </Button>
+                        )}
                     </CardHeader>
                 </Card>
 
@@ -175,7 +176,8 @@ function ReportsContent() {
                                     <Button
                                         variant="destructive"
                                         size="icon"
-                                        onClick={() => openConfirmationDialog(report.id)}
+                                        onClick={() => openSingleDeleteDialog(report.id)}
+                                        disabled={isSaving}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
@@ -197,10 +199,20 @@ function ReportsContent() {
                     </div>
                 )}
             </div>
-             <PasswordConfirmationDialog
-                isOpen={isConfirmOpen}
-                onOpenChange={setIsConfirmOpen}
+             <ConfirmationDialog
+                isOpen={isSingleDeleteOpen}
+                onOpenChange={setIsSingleDeleteOpen}
                 onConfirm={handleDeleteReport}
+                title="Excluir Relatório"
+                description="Tem certeza de que deseja excluir este relatório? Esta ação é irreversível."
+                isSaving={isSaving}
+            />
+            <ConfirmationDialog
+                isOpen={isClearAllOpen}
+                onOpenChange={setIsClearAllOpen}
+                onConfirm={handleClearAll}
+                title="Limpar todo o histórico?"
+                description="Tem certeza de que deseja excluir TODOS os relatórios? Esta ação é irreversível."
                 isSaving={isSaving}
             />
         </div>

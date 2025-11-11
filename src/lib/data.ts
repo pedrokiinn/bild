@@ -73,6 +73,22 @@ export const deleteReport = async (reportId: string): Promise<void> => {
     await deleteDoc(reportDoc);
 }
 
+export const deleteAllReports = async (): Promise<void> => {
+    const reportsCollection = collection(db, "deletionReports");
+    const reportSnapshot = await getDocs(reportsCollection);
+    
+    if (reportSnapshot.empty) {
+        return;
+    }
+    
+    const batch = writeBatch(db);
+    reportSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+};
+
 
 // Vehicle Functions
 export const getVehicles = async (): Promise<Vehicle[]> => {

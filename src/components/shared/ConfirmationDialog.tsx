@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -11,6 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Button } from "../ui/button";
+import { Loader2 } from "lucide-react";
 
 interface ConfirmationDialogProps {
     isOpen: boolean;
@@ -18,6 +21,7 @@ interface ConfirmationDialogProps {
     onConfirm: () => void;
     title: string;
     description: string;
+    isSaving?: boolean;
 }
 
 export default function ConfirmationDialog({
@@ -25,7 +29,8 @@ export default function ConfirmationDialog({
     onOpenChange,
     onConfirm,
     title,
-    description
+    description,
+    isSaving = false
 }: ConfirmationDialogProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
@@ -37,8 +42,11 @@ export default function ConfirmationDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Excluir</AlertDialogAction>
+          <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
+          <Button onClick={onConfirm} variant="destructive" disabled={isSaving}>
+            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            Confirmar Exclusão
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
