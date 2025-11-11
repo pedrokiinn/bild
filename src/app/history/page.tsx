@@ -146,7 +146,9 @@ function HistoryContent() {
         }
     };
     
-    const filteredChecklists = checklists.filter(c => {
+    const filteredChecklists = checklists
+      .filter(c => !!c.departureTimestamp) // <-- FIX: Ensure checklist has a departure timestamp
+      .filter(c => {
         const searchMatch = searchTerm === '' ||
             c.driverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.vehicle?.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -392,3 +394,5 @@ function HistoryContent() {
 export default function HistoryPage() {
     return <HistoryContent />;
 }
+
+    

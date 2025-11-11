@@ -110,3 +110,5 @@ runAllDeletions().catch(error => {
     console.error("\nErro inesperado durante a execução geral:", error);
     process.exit(1);
 });
+
+    
