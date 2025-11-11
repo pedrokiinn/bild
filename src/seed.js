@@ -63,6 +63,14 @@ const vehiclesToSeed = [
         license_plate: "QWE-9101",
         color: "Branco",
         mileage: 500
+    },
+    {
+        brand: "Volkswagen",
+        model: "SAVEIRO ALUGADA",
+        year: 2024,
+        license_plate: "TCT1A72",
+        color: "Branco",
+        mileage: 27288
     }
 ];
 
