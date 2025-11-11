@@ -63,10 +63,16 @@ async function deleteCollection(collectionPath) {
     const collectionRef = db.collection(collectionPath);
     let query = collectionRef.limit(100);
 
-    while (true) {
+    return new Promise((resolve, reject) => {
+        deleteQueryBatch(query, resolve, reject);
+    });
+}
+
+async function deleteQueryBatch(query, resolve, reject) {
+    try {
         const snapshot = await query.get();
         if (snapshot.size === 0) {
-            break;
+            return resolve();
         }
 
         const batch = db.batch();
@@ -76,14 +82,19 @@ async function deleteCollection(collectionPath) {
         });
         await batch.commit();
 
-        // A próxima query começa depois do último documento do lote
-        const lastVisible = snapshot.docs[snapshot.docs.length - 1];
-        query = collectionRef.startAfter(lastVisible).limit(100);
+        process.nextTick(() => {
+            deleteQueryBatch(query, resolve, reject);
+        });
+
+    } catch(err) {
+        console.error("Erro no lote de exclusão:", err);
+        reject();
     }
 }
 
+
 async function clearCollections() {
-    console.log("\nIniciando a limpeza de TODAS as coleções do Firestore (exceto 'users')...");
+    console.log("\nIniciando a limpeza de TODAS as coleções do Firestore...");
     
     // Adicione aqui as coleções que você quer limpar
     const collectionsToClear = ['vehicles', 'checklists', 'deletionReports']; 
@@ -110,5 +121,3 @@ runAllDeletions().catch(error => {
     console.error("\nErro inesperado durante a execução geral:", error);
     process.exit(1);
 });
-
-    
