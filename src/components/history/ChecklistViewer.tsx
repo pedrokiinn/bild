@@ -1,14 +1,15 @@
 
 'use client';
-import { DailyChecklist, Vehicle, ChecklistItemOption } from '@/types';
+import { DailyChecklist, Vehicle } from '@/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CheckCircle2, AlertCircle, Sparkles, User, Car as CarIcon, Calendar, Gauge, FileText, Clock } from 'lucide-react';
+import { CheckCircle2, AlertCircle, User, Car as CarIcon, Calendar, Gauge, FileText, Clock, Camera } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { checklistItemsOptions } from '@/lib/data';
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '../ui/button';
+import Image from 'next/image';
 
 interface ChecklistViewerProps {
     checklist?: DailyChecklist & { vehicle?: Vehicle };
@@ -38,6 +39,13 @@ const getOptionColor = (itemKey: string, value: string) => {
     };
 
     return colorClasses[option.color as keyof typeof colorClasses] || "bg-gray-100 text-gray-800";
+};
+
+const photoLabels: Record<string, string> = {
+    front: "Frente",
+    rear: "Traseira",
+    left: "Lateral Esquerda",
+    right: "Lateral Direita"
 };
 
 
@@ -118,6 +126,32 @@ export default function ChecklistViewer({ checklist, vehicle, onArrivalClick }: 
                         )}
                     </CardContent>
                 </Card>
+
+                {checklist.photos && Object.keys(checklist.photos).length > 0 && (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2 text-primary">
+                                <Camera className="w-5 h-5" />
+                                Fotos do Veículo
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {Object.entries(checklist.photos).map(([key, url]) => (
+                               <div key={key}>
+                                    <a href={url} target="_blank" rel="noopener noreferrer">
+                                        <div className="relative aspect-video group">
+                                            <Image src={url} alt={photoLabels[key] || 'Foto do veículo'} layout="fill" objectFit="cover" className="rounded-lg"/>
+                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                                                <span className="text-white text-sm font-semibold">{photoLabels[key]}</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
+
 
                 <Card>
                     <CardHeader>

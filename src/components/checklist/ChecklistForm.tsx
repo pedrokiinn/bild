@@ -1,21 +1,22 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Vehicle, DailyChecklist, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Loader2, Camera, Trash2, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { saveChecklist } from '@/lib/data';
 import { useRouter } from 'next/navigation';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import type { ChecklistItemOption } from '@/types';
 import ChecklistItem from './ChecklistItem';
 import { getCurrentUser } from '@/lib/auth';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import Image from 'next/image';
 
 interface ChecklistFormProps {
   vehicles: Vehicle[];
@@ -23,6 +24,14 @@ interface ChecklistFormProps {
   checklistItems: ChecklistItemOption[];
   onBack: () => void;
 }
+
+type PhotoType = 'front' | 'rear' | 'left' | 'right';
+const photoLabels: Record<PhotoType, string> = {
+    front: "Frente",
+    rear: "Traseira",
+    left: "Lateral Esquerda",
+    right: "Lateral Direita"
+};
 
 export default function ChecklistForm({ vehicles, selectedVehicle, checklistItems, onBack }: ChecklistFormProps) {
   const router = useRouter();
@@ -34,6 +43,13 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   const [itemValues, setItemValues] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [currentPhotoType, setCurrentPhotoType] = useState<PhotoType | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -47,7 +63,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
 
   useEffect(() => {
     setDepartureMileage(selectedVehicle?.mileage?.toString() || '');
-    // Set initial values for checklist items
     const initialItemValues: Record<string, string> = {};
     const initialItemStates: Record<string, 'ok' | 'problem'> = {};
     checklistItems.forEach(item => {
@@ -57,7 +72,60 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     });
     setItemValues(initialItemValues);
     setItemStates(initialItemStates);
+    setPhotos({}); // Reset photos on vehicle change
   }, [selectedVehicle, checklistItems]);
+
+  const startCamera = async (type: PhotoType) => {
+      setCurrentPhotoType(type);
+      setIsCameraOpen(true);
+      try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+          if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+          }
+      } catch (error) {
+          console.error("Error accessing camera:", error);
+          toast({
+              title: "Câmera não acessível",
+              description: "Por favor, permita o acesso à câmera no seu navegador.",
+              variant: "destructive",
+          });
+          setIsCameraOpen(false);
+      }
+  };
+
+  const stopCamera = () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach(track => track.stop());
+          videoRef.current.srcObject = null;
+      }
+      setIsCameraOpen(false);
+      setCurrentPhotoType(null);
+  };
+  
+  const takePicture = () => {
+    if (videoRef.current && canvasRef.current && currentPhotoType) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setPhotos(prev => ({ ...prev, [currentPhotoType]: dataUrl }));
+        stopCamera();
+    }
+  };
+  
+  const removePicture = (type: PhotoType) => {
+    setPhotos(prev => {
+        const newPhotos = {...prev};
+        delete newPhotos[type];
+        return newPhotos;
+    });
+  }
 
   const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -118,6 +186,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             departureMileage: Number(departureMileage),
             checklistItems: checklistItemsToSave,
             checklistValues: itemValues,
+            photos: photos,
             notes: notes,
             status: 'pending_arrival',
             date: format(new Date(), 'yyyy-MM-dd'),
@@ -144,53 +213,107 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   const isFormDisabled = isSaving || isUserLoading;
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Registro de Saída</CardTitle>
-            <Button variant="ghost" size="sm" onClick={onBack} disabled={isFormDisabled}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Trocar Veículo
-            </Button>
-          </div>
-          <CardDescription>
-            Veículo: <span className="font-semibold text-primary">{selectedVehicle.brand} {selectedVehicle.model} ({selectedVehicle.license_plate})</span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-4">
+    <>
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Registro de Saída</CardTitle>
+              <Button variant="ghost" size="sm" onClick={onBack} disabled={isFormDisabled}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Trocar Veículo
+              </Button>
+            </div>
+            <CardDescription>
+              Veículo: <span className="font-semibold text-primary">{selectedVehicle.brand} {selectedVehicle.model} ({selectedVehicle.license_plate})</span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <Label htmlFor="departureMileage">Quilometragem de Saída (km)</Label>
+                <Input id="departureMileage" value={departureMileage} onChange={handleMileageChange} placeholder="Ex: 15000" disabled={isFormDisabled} />
+              </div>
+            </div>
+
+             <div>
+                <Label>Fotos do Veículo</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                    {(Object.keys(photoLabels) as PhotoType[]).map((type) => (
+                        <div key={type}>
+                            {photos[type] ? (
+                                <div className="relative group aspect-video">
+                                    <Image src={photos[type]} alt={`Foto da ${photoLabels[type]}`} layout="fill" objectFit="cover" className="rounded-lg" />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => removePicture(type)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full aspect-video flex flex-col items-center justify-center gap-2"
+                                    onClick={() => startCamera(type)}
+                                >
+                                    <Camera className="w-6 h-6" />
+                                    <span className="text-xs">{photoLabels[type]}</span>
+                                </Button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             <div>
-              <Label htmlFor="departureMileage">Quilometragem de Saída (km)</Label>
-              <Input id="departureMileage" value={departureMileage} onChange={handleMileageChange} placeholder="Ex: 15000" disabled={isFormDisabled} />
+              <Label>Itens do Checklist</Label>
+              <div className="space-y-8 rounded-md border p-6">
+                {checklistItems.map(item => (
+                  <ChecklistItem
+                    key={item.key}
+                    item={item}
+                    value={itemValues[item.key]}
+                    onChange={(value) => handleItemChange(item.key, value)}
+                    disabled={isFormDisabled}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <Label>Itens do Checklist</Label>
-            <div className="space-y-8 rounded-md border p-6">
-              {checklistItems.map(item => (
-                <ChecklistItem
-                  key={item.key}
-                  item={item}
-                  value={itemValues[item.key]}
-                  onChange={(value) => handleItemChange(item.key, value)}
-                  disabled={isFormDisabled}
-                />
-              ))}
+            <div>
+              <Label htmlFor="notes">Observações</Label>
+              <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Alguma observação adicional? Descreva aqui." disabled={isFormDisabled}/>
             </div>
-          </div>
-          <div>
-            <Label htmlFor="notes">Observações</Label>
-            <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Alguma observação adicional? Descreva aqui." disabled={isFormDisabled}/>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button type="submit" className="w-full md:w-auto ml-auto" disabled={isFormDisabled}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isUserLoading ? 'Carregando usuário...' : isSaving ? 'Salvando...' : 'Registrar Saída'}
-          </Button>
-        </CardFooter>
-      </Card>
-    </form>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full md:w-auto ml-auto" disabled={isFormDisabled}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isUserLoading ? 'Carregando usuário...' : isSaving ? 'Salvando...' : 'Registrar Saída'}
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
+
+      <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+          <DialogContent className="max-w-3xl p-0" onInteractOutside={stopCamera}>
+              <DialogHeader className="p-4">
+                  <DialogTitle>Tirar foto da {photoLabels[currentPhotoType!]}</DialogTitle>
+              </DialogHeader>
+              <div className="relative">
+                  <video ref={videoRef} className="w-full h-auto" autoPlay playsInline muted />
+                   <canvas ref={canvasRef} className="hidden" />
+              </div>
+              <div className="flex justify-center p-4 bg-background/80">
+                  <Button onClick={takePicture} size="lg" className="rounded-full w-16 h-16">
+                      <Camera className="w-8 h-8"/>
+                  </Button>
+              </div>
+          </DialogContent>
+      </Dialog>
+    </>
   );
 }
