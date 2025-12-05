@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { DailyChecklist, Vehicle } from '@/types';
@@ -30,24 +31,80 @@ const generateMonthlyPDF = (vehicle: Vehicle, monthlyChecklists: (DailyChecklist
     if (!vehicle || monthlyChecklists.length === 0) return;
 
     const monthName = format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR });
+    const photoLabels: Record<string, string> = {
+      front: "Frente",
+      rear: "Traseira",
+      left: "Lateral Esquerda",
+      right: "Lateral Direita"
+    };
 
     const checklistsHTML = monthlyChecklists.map(c => {
-        const problemItems = Object.entries(c.checklistValues ?? {})
-            .filter(([key]) => checklistItemsOptions.find(opt => opt.key === key)?.isProblem(c.checklistValues?.[key] || ''))
+        const problemItemsHTML = Object.entries(c.checklistValues ?? {})
+            .filter(([key, value]) => checklistItemsOptions.find(opt => opt.key === key)?.isProblem(value))
             .map(([key, value]) => `<li>${checklistItemsOptions.find(opt => opt.key === key)?.title}: <strong>${getOptionLabel(key, value)}</strong></li>`)
             .join('');
+        
+        const allItemsHTML = checklistItemsOptions.map(itemConfig => {
+            const value = c.checklistValues?.[itemConfig.key];
+            const isProblem = value ? itemConfig.isProblem(value) : false;
+            return `
+                <div class="list-item">
+                    <span>${itemConfig.title}</span>
+                    <span class="${isProblem ? 'problem-text' : 'ok-text'}">${isProblem ? 'PROBLEMA' : 'OK'}</span>
+                </div>
+            `;
+        }).join('');
+
+        const photosHTML = c.photos && Object.keys(c.photos).length > 0 ? `
+            <div class="section-block">
+                <div class="section-title">Fotos</div>
+                <div class="photos-grid">
+                    ${Object.entries(c.photos).map(([key, url]) => `
+                        <div class="photo-item">
+                            <img src="${url}" alt="${photoLabels[key] || key}" />
+                            <span>${photoLabels[key] || key}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
 
         return `
             <div class="checklist-entry">
-                <div class="checklist-header">
-                    <h4>Checklist de ${format(c.departureTimestamp.toDate(), "dd/MM/yyyy 'às' HH:mm")}</h4>
-                    <span>Motorista: ${c.driverName}</span>
+                <div class="section-block">
+                    <div class="section-title">Viagem</div>
+                    <div class="info-grid">
+                        <div class="info-item"><span>Motorista:</span> <span>${c.driverName}</span></div>
+                        <div class="info-item"><span>Data:</span> <span>${format(c.departureTimestamp.toDate(), "dd/MM/yyyy")}</span></div>
+                        <div class="info-item"><span>Saída:</span> <span>${format(c.departureTimestamp.toDate(), "HH:mm")}</span></div>
+                        <div class="info-item"><span>Chegada:</span> <span>${c.arrivalTimestamp ? format(c.arrivalTimestamp.toDate(), "HH:mm") : 'Em Rota'}</span></div>
+                        <div class="info-item"><span>KM Saída:</span> <span>${c.departureMileage?.toLocaleString('pt-BR')} km</span></div>
+                        <div class="info-item"><span>KM Chegada:</span> <span>${c.arrivalMileage?.toLocaleString('pt-BR') || 'N/A'}</span></div>
+                    </div>
                 </div>
-                ${problemItems.length > 0 ? `<p><strong>Problemas Encontrados:</strong></p><ul class="problems-list">${problemItems}</ul>` : '<p>Nenhum problema encontrado.</p>'}
-                ${c.notes ? `<div class="notes"><strong>Observações:</strong> ${c.notes}</div>` : ''}
+
+                ${problemItemsHTML.length > 0 ? `
+                <div class="section-block">
+                    <div class="section-title">Problemas Encontrados</div>
+                    <ul class="problems-list">${problemItemsHTML}</ul>
+                </div>` : ''}
+
+                <div class="section-block">
+                    <div class="section-title">Itens Verificados</div>
+                    ${allItemsHTML}
+                </div>
+                
+                ${c.notes ? `
+                <div class="section-block">
+                    <div class="section-title">Observações do Motorista</div>
+                    <div class="notes">${c.notes}</div>
+                </div>
+                ` : ''}
+
+                ${photosHTML}
             </div>
         `;
-    }).join('');
+    }).join('<div class="page-break"></div>');
 
     const htmlContent = `
         <!DOCTYPE html>
@@ -55,29 +112,50 @@ const generateMonthlyPDF = (vehicle: Vehicle, monthlyChecklists: (DailyChecklist
         <head>
             <title>Relatório Mensal - ${vehicle.brand} ${vehicle.model}</title>
             <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333; }
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                body { font-family: 'Inter', sans-serif; color: #333; }
                 .container { max-width: 800px; margin: auto; padding: 20px; }
-                .title { font-size: 28px; font-weight: bold; color: #333; text-align: center; }
-                .subtitle { font-size: 18px; color: #555; text-align: center; margin-bottom: 20px; }
-                .vehicle-info { background: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-                .checklist-entry { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-                .checklist-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-                .problems-list { list-style-type: none; padding-left: 0; }
-                .problems-list li { background: #fff5f5; color: #c53030; padding: 5px; border-radius: 4px; margin-bottom: 5px; }
-                .notes { background: #fefcbf; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 14px; }
-                footer { margin-top: 30px; text-align: center; font-size: 12px; color: #888; }
+                .header { text-align: center; margin-bottom: 20px; }
+                .title { font-size: 24px; font-weight: bold; color: #333; }
+                .subtitle { font-size: 16px; color: #555; }
+                .vehicle-info { background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+                .checklist-entry { border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+                .section-block { margin-bottom: 20px; }
+                .section-title { font-size: 14px; font-weight: 600; color: #1e3a8a; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; font-size: 13px; }
+                .info-item { display: flex; justify-content: space-between; }
+                .info-item span:first-child { color: #6b7280; }
+                .info-item span:last-child { font-weight: 600; }
+                .problems-list { list-style-type: none; padding-left: 0; margin: 0; }
+                .problems-list li { background: #fee2e2; color: #b91c1c; padding: 6px 10px; border-radius: 4px; margin-bottom: 5px; font-size: 13px; }
+                .list-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+                .list-item:last-child { border-bottom: none; }
+                .ok-text { color: #16a34a; font-weight: bold; }
+                .problem-text { color: #dc2626; font-weight: bold; }
+                .notes { background: #fefce8; border-left: 3px solid #facc15; padding: 10px; border-radius: 4px; font-size: 13px; }
+                .photos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                .photo-item { text-align: center; }
+                .photo-item img { width: 100%; border-radius: 6px; border: 1px solid #e5e7eb; }
+                .photo-item span { font-size: 12px; color: #6b7280; margin-top: 5px; display: block; }
+                .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #888; }
+                .page-break { page-break-before: always; }
+                @media print {
+                  .page-break { page-break-before: always; }
+                }
             </style>
         </head>
         <body>
             <div class="container">
-                <h1 class="title">Relatório Mensal de Inspeções</h1>
-                <h2 class="subtitle">${monthName}</h2>
+                <div class="header">
+                    <h1 class="title">Relatório Mensal de Inspeções</h1>
+                    <h2 class="subtitle">${monthName}</h2>
+                </div>
                 <div class="vehicle-info">
-                    <h3>Veículo: ${vehicle.brand} ${vehicle.model}</h3>
+                    <h3>${vehicle.brand} ${vehicle.model}</h3>
                     <p>Placa: ${vehicle.license_plate} | Ano: ${vehicle.year}</p>
                 </div>
                 ${checklistsHTML}
-                <footer>Relatório gerado por G3 Checklist em ${format(new Date(), "dd/MM/yyyy")}</footer>
+                <div class="footer">Relatório gerado por G3 Checklist em ${format(new Date(), "dd/MM/yyyy")}</div>
             </div>
         </body>
         </html>
