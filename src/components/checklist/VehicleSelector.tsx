@@ -31,7 +31,7 @@ export default function VehicleSelector({ vehicles, onSelect }: VehicleSelectorP
                             Você precisa cadastrar um veículo antes de fazer o checklist
                         </p>
                         <Link href="/vehicle">
-                            <Button className="bg-gradient-to-r from-primary to-primary/90">
+                            <Button>
                                 <Plus className="w-4 h-4 mr-2" />
                                 Cadastrar Veículo
                             </Button>
@@ -48,7 +48,7 @@ export default function VehicleSelector({ vehicles, onSelect }: VehicleSelectorP
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
-                                        <Car className="w-6 h-6 text-white" />
+                                        <Car className="w-6 h-6 text-primary-foreground" />
                                     </div>
                                     <div className="text-left">
                                         <h3 className="font-semibold text-slate-900">

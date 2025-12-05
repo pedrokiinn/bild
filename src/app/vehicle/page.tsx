@@ -131,7 +131,7 @@ function VehicleContent() {
                     
                     <Button
                         onClick={() => setShowForm(!showForm)}
-                        className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-semibold px-4 py-2 text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                        className="text-primary-foreground font-semibold px-4 py-2 text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         {showForm ? "Cancelar" : "Novo Veículo"}
@@ -230,7 +230,6 @@ function VehicleContent() {
                                     <Button
                                         type="submit"
                                         disabled={isSaving}
-                                        className="bg-gradient-to-r from-primary to-primary/90"
                                     >
                                         {isSaving ? (
                                             <>
@@ -286,7 +285,6 @@ function VehicleContent() {
                                 </p>
                                 <Button
                                     onClick={() => setShowForm(true)}
-                                    className="bg-gradient-to-r from-primary to-primary/90"
                                 >
                                     <Plus className="w-4 h-4 mr-2" />
                                     Cadastrar Veículo
@@ -299,7 +297,7 @@ function VehicleContent() {
                                         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                             <div className="flex items-start gap-4">
                                                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shrink-0">
-                                                    <Car className="w-7 h-7 text-white" />
+                                                    <Car className="w-7 h-7 text-primary-foreground" />
                                                 </div>
                                                 <div>
                                                     <h3 className="text-lg font-bold text-slate-900 mb-1">

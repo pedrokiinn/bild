@@ -154,7 +154,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                         <Label htmlFor="login-password">Senha</Label>
                         <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
                     </div>
-                    <Button type="submit" className="w-full bg-green-500 hover:bg-green-600" disabled={isLoading}>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
                         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         Entrar
                     </Button>
@@ -234,7 +234,7 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
                         <Label htmlFor="register-confirm-password">Repetir Senha</Label>
                         <Input id="register-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                     </div>
-                    <Button type="submit" className="w-full bg-green-500 hover:bg-green-600" disabled={isLoading}>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
                         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         Cadastrar
                     </Button>
