@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo } from 'react';
 import { DailyChecklist, Vehicle } from '@/types';
@@ -78,7 +77,7 @@ const generateMonthlyPDF = (vehicle: Vehicle, monthlyChecklists: (DailyChecklist
                     <p>Placa: ${vehicle.license_plate} | Ano: ${vehicle.year}</p>
                 </div>
                 ${checklistsHTML}
-                <footer>Relatório gerado por CarCheck em ${format(new Date(), "dd/MM/yyyy")}</footer>
+                <footer>Relatório gerado por G3 Checklist em ${format(new Date(), "dd/MM/yyyy")}</footer>
             </div>
         </body>
         </html>

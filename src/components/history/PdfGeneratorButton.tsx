@@ -1,4 +1,3 @@
-
 'use client';
 import { DailyChecklist, Vehicle } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -126,7 +125,7 @@ export default function PdfGeneratorButton({ checklist, vehicle }: PdfGeneratorB
                     ` : ''}
 
                     <div class="footer">
-                        Relatório gerado por CarCheck em ${new Date().toLocaleString('pt-BR')}
+                        Relatório gerado por G3 Checklist em ${new Date().toLocaleString('pt-BR')}
                     </div>
                 </div>
             </body>

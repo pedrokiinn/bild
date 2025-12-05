@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -351,7 +350,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                                 <SidebarTrigger>
                                     <Menu className="w-5 h-5" />
                                 </SidebarTrigger>
-                                <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'CarCheck'}</h1>
+                                <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'G3 Checklist'}</h1>
                             </div>
                         </header>
 

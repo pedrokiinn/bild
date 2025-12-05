@@ -7,7 +7,7 @@ export function Logo({ className }: { className?: string }) {
             <Car className="w-6 h-6 text-primary-foreground" />
         </div>
         <div>
-            <h2 className="font-bold text-foreground text-lg">CarCheck</h2>
+            <h2 className="font-bold text-foreground text-lg">G3 Checklist</h2>
             <p className="text-xs text-muted-foreground font-medium">Inspeção Diária</p>
         </div>
     </div>
