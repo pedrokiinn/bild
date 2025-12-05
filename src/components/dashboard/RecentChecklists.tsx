@@ -23,14 +23,14 @@ const getScore = (checklist: DailyChecklist) => {
 }
 
 const getScoreColor = (score: number) => {
-    if (score >= 90) return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    if (score >= 90) return "bg-primary/10 text-primary border-primary/20";
     if (score >= 70) return "bg-yellow-100 text-yellow-800 border-yellow-200";
     return "bg-red-100 text-red-800 border-red-200";
 };
 
 const getScoreIcon = (current: number, previous?: number) => {
     if (previous === undefined) return <Minus className="w-3 h-3" />;
-    if (current > previous) return <TrendingUp className="w-3 h-3 text-emerald-600" />;
+    if (current > previous) return <TrendingUp className="w-3 h-3 text-primary" />;
     if (current < previous) return <TrendingDown className="w-3 h-3 text-red-600" />;
     return <Minus className="w-3 h-3" />;
 };
