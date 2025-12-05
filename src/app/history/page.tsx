@@ -184,7 +184,7 @@ function HistoryContent() {
     const getStatusBadge = (status: DailyChecklist['status']) => {
         switch (status) {
             case 'completed':
-                return <Badge variant="outline" className="text-emerald-600 border-emerald-300 bg-emerald-50"><CheckCircle2 className="w-3 h-3 mr-1.5" />Finalizado</Badge>;
+                return <Badge variant="outline" className="text-primary border-primary/20 bg-primary/10"><CheckCircle2 className="w-3 h-3 mr-1.5" />Finalizado</Badge>;
             case 'problem':
                 return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1.5" />Problemas</Badge>;
             case 'pending_arrival':
@@ -281,7 +281,7 @@ function HistoryContent() {
                                                 ) : hasProblems ? (
                                                     <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1.5" />Problemas</Badge>
                                                 ) : (
-                                                    <Badge variant="outline" className="text-emerald-600 border-emerald-300 bg-emerald-50"><CheckCircle2 className="w-3 h-3 mr-1.5" />Finalizado</Badge>
+                                                    <Badge variant="outline" className="text-primary border-primary/20 bg-primary/10"><CheckCircle2 className="w-3 h-3 mr-1.5" />Finalizado</Badge>
                                                 )}
                                             </div>
                                             {hasProblems && !isPending && (

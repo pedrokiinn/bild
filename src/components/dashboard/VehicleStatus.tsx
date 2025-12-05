@@ -1,3 +1,4 @@
+
 'use client';
 import { DailyChecklist, Vehicle } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -48,19 +49,19 @@ export default function VehicleStatus({ vehicles, checklists, isLoading }: Vehic
 
           return (
             <div key={vehicle.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
-              <div className={`p-2 rounded-full ${hasProblem ? 'bg-red-100' : 'bg-emerald-100'}`}>
-                <Car className={`h-4 w-4 ${hasProblem ? 'text-red-600' : 'text-emerald-600'}`} />
+              <div className={`p-2 rounded-full ${hasProblem ? 'bg-red-100' : 'bg-primary/10'}`}>
+                <Car className={`h-4 w-4 ${hasProblem ? 'text-red-600' : 'text-primary'}`} />
               </div>
               <div className="flex-1">
                 <p className="font-medium text-sm">{vehicle.brand} {vehicle.model}</p>
                 <p className="text-xs text-muted-foreground">{vehicle.license_plate}</p>
               </div>
               <div className="flex items-center gap-1.5 text-xs font-medium">
-                  {status === 'completed' && <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />}
+                  {status === 'completed' && <CheckCircle className="h-3.5 w-3.5 text-primary" />}
                   {status === 'problem' && <AlertTriangle className="h-3.5 w-3.5 text-red-500" />}
                   {status === 'pending_arrival' && <Clock className="h-3.5 w-3.5 text-amber-500" />}
                   <span className={
-                      status === 'completed' ? 'text-emerald-600' :
+                      status === 'completed' ? 'text-primary' :
                       status === 'problem' ? 'text-red-600' :
                       status === 'pending_arrival' ? 'text-amber-600' :
                       'text-slate-500'

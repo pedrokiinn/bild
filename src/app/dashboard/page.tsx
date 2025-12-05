@@ -93,7 +93,7 @@ function DashboardContent() {
                     </div>
                     
                     <Link href="/checklist" className="w-full md:w-auto">
-                        <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
+                        <Button className="w-full text-primary-foreground font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
                             <Plus className="w-4 h-4 mr-2" />
                             Fazer Checklist
                         </Button>
@@ -114,7 +114,7 @@ function DashboardContent() {
                         title="Média Semanal"
                         value={`${getWeeklyAverage()}%`}
                         icon={TrendingUp}
-                        gradient="from-emerald-500 to-teal-600"
+                        gradient="from-primary to-orange-400"
                         description="Pontuação média"
                         isLoading={isLoading}
                     />
@@ -158,7 +158,7 @@ function DashboardContent() {
                             <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-4">Ações Rápidas</h3>
                             <div className="space-y-3">
                                 <Link href="/checklist" className="block">
-                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all duration-300">
+                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all duration-300">
                                         <ClipboardCheck className="w-4 h-4 mr-3" />
                                         Novo Checklist
                                     </Button>
