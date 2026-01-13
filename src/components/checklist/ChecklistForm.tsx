@@ -36,8 +36,6 @@ const photoLabels: Record<PhotoType, string> = {
 export default function ChecklistForm({ vehicles, selectedVehicle, checklistItems, onBack }: ChecklistFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
-  const [isUserLoading, setIsUserLoading] = useState(true);
   const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage?.toString() || '');
   const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
   const [itemValues, setItemValues] = useState<Record<string, string>>({});
@@ -50,16 +48,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-
-  useEffect(() => {
-    const fetchUser = async () => {
-        setIsUserLoading(true);
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-        setIsUserLoading(false);
-    };
-    fetchUser();
-  }, []);
 
   useEffect(() => {
     setDepartureMileage(selectedVehicle?.mileage?.toString() || '');
@@ -144,12 +132,17 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
+    
+    const user = await getCurrentUser();
+
     if (!user) {
         toast({
             title: 'Erro de Autenticação',
-            description: 'Não foi possível identificar o usuário. Por favor, faça login novamente.',
+            description: 'Sessão expirada. Por favor, faça login novamente para continuar.',
             variant: 'destructive',
         });
+        setIsSaving(false);
         return;
     }
 
@@ -159,6 +152,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         description: 'Por favor, preencha a quilometragem.',
         variant: 'destructive',
       });
+      setIsSaving(false);
       return;
     }
     if(Number(departureMileage) < (selectedVehicle?.mileage ?? 0)) {
@@ -167,10 +161,10 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             description: `A quilometragem de saída (${departureMileage} km) não pode ser menor que a última registrada (${selectedVehicle?.mileage} km).`,
             variant: 'destructive',
         });
+        setIsSaving(false);
         return;
     }
     
-    setIsSaving(true);
     try {
         const checklistItemsToSave = checklistItems.reduce((acc, item) => {
             acc[item.title] = itemStates[item.title] || 'ok';
@@ -210,7 +204,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     }
   };
 
-  const isFormDisabled = isSaving || isUserLoading;
+  const isFormDisabled = isSaving;
 
   return (
     <>
@@ -292,7 +286,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
           <CardFooter>
             <Button type="submit" className="w-full md:w-auto ml-auto" disabled={isFormDisabled}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isUserLoading ? 'Carregando usuário...' : isSaving ? 'Salvando...' : 'Registrar Saída'}
+              {isSaving ? 'Salvando...' : 'Registrar Saída'}
             </Button>
           </CardFooter>
         </Card>
