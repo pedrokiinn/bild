@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import type { Vehicle, DailyChecklist, User } from '@/types';
+import type { Vehicle, DailyChecklist, User, FuelType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,8 @@ import ChecklistItem from './ChecklistItem';
 import { getCurrentUser } from '@/lib/auth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from 'next/image';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ChecklistFormProps {
   vehicles: Vehicle[];
@@ -48,6 +50,12 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // New state for refueling
+  const [wasRefueled, setWasRefueled] = useState(false);
+  const [refuelingAmount, setRefuelingAmount] = useState('');
+  const [refuelingLiters, setRefuelingLiters] = useState('');
+  const [fuelType, setFuelType] = useState<FuelType | ''>('');
+
 
   useEffect(() => {
     setDepartureMileage(selectedVehicle?.mileage?.toString() || '');
@@ -61,6 +69,12 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     setItemValues(initialItemValues);
     setItemStates(initialItemStates);
     setPhotos({}); // Reset photos on vehicle change
+
+    // Reset refueling state
+    setWasRefueled(false);
+    setRefuelingAmount('');
+    setRefuelingLiters('');
+    setFuelType('');
   }, [selectedVehicle, checklistItems]);
 
   const startCamera = async (type: PhotoType) => {
@@ -132,8 +146,17 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
     
+    if (!selectedVehicle?.id || !departureMileage) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Por favor, preencha a quilometragem.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSaving(true);
     const user = await getCurrentUser();
 
     if (!user) {
@@ -146,15 +169,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
         return;
     }
 
-    if (!selectedVehicle?.id || !departureMileage) {
-      toast({
-        title: 'Campos obrigatórios',
-        description: 'Por favor, preencha a quilometragem.',
-        variant: 'destructive',
-      });
-      setIsSaving(false);
-      return;
-    }
     if(Number(departureMileage) < (selectedVehicle?.mileage ?? 0)) {
         toast({
             title: 'Quilometragem inválida',
@@ -185,6 +199,21 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             status: 'pending_arrival',
             date: format(new Date(), 'yyyy-MM-dd'),
         };
+
+        if (wasRefueled) {
+            if (!refuelingAmount || !refuelingLiters || !fuelType) {
+                 toast({
+                    title: 'Dados de abastecimento incompletos',
+                    description: 'Por favor, preencha todos os campos de abastecimento.',
+                    variant: 'destructive',
+                });
+                setIsSaving(false);
+                return;
+            }
+            newChecklist.refuelingAmount = parseFloat(refuelingAmount.replace(',', '.'));
+            newChecklist.refuelingLiters = parseFloat(refuelingLiters.replace(',', '.'));
+            newChecklist.fuelType = fuelType as FuelType;
+        }
 
         await saveChecklist(newChecklist);
 
@@ -278,6 +307,57 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
                 ))}
               </div>
             </div>
+
+            {/* Refueling Section */}
+            <div>
+              <Label>Abastecimento</Label>
+              <div className="space-y-4 rounded-md border p-6">
+                <div className="flex items-center justify-between">
+                    <div className='space-y-1'>
+                        <Label htmlFor="was-refueled" className="text-base font-semibold text-slate-900">
+                            Houve abastecimento?
+                        </Label>
+                        <p className="text-sm text-slate-600 mt-1">
+                            Marque se o veículo foi abastecido.
+                        </p>
+                    </div>
+                    <Switch
+                        id="was-refueled"
+                        checked={wasRefueled}
+                        onCheckedChange={setWasRefueled}
+                        disabled={isFormDisabled}
+                    />
+                </div>
+
+                {wasRefueled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                       <div className="space-y-2">
+                           <Label htmlFor="refueling-amount">Valor (R$)</Label>
+                           <Input id="refueling-amount" value={refuelingAmount} onChange={(e) => setRefuelingAmount(e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 150,00" type="text" inputMode="decimal" disabled={isFormDisabled} />
+                       </div>
+                       <div className="space-y-2">
+                           <Label htmlFor="refueling-liters">Litros</Label>
+                           <Input id="refueling-liters" value={refuelingLiters} onChange={(e) => setRefuelingLiters(e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 30,5" type="text" inputMode="decimal" disabled={isFormDisabled} />
+                       </div>
+                       <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="fuel-type">Tipo de Combustível</Label>
+                             <Select value={fuelType} onValueChange={(value: FuelType) => setFuelType(value)} disabled={isFormDisabled}>
+                                <SelectTrigger id="fuel-type">
+                                    <SelectValue placeholder="Selecione o tipo de combustível" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="gasolina">Gasolina</SelectItem>
+                                    <SelectItem value="etanol">Etanol</SelectItem>
+                                    <SelectItem value="diesel">Diesel</SelectItem>
+                                    <SelectItem value="gnv">GNV</SelectItem>
+                                </SelectContent>
+                            </Select>
+                       </div>
+                    </div>
+                )}
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="notes">Observações</Label>
               <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Alguma observação adicional? Descreva aqui." disabled={isFormDisabled}/>

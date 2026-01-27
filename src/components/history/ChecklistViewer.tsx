@@ -3,7 +3,7 @@
 import { DailyChecklist, Vehicle } from '@/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CheckCircle2, AlertCircle, User, Car as CarIcon, Calendar, Gauge, FileText, Clock, Camera } from 'lucide-react';
+import { CheckCircle2, AlertCircle, User, Car as CarIcon, Calendar, Gauge, FileText, Clock, Camera, Fuel } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { checklistItemsOptions } from '@/lib/data';
@@ -148,6 +148,31 @@ export default function ChecklistViewer({ checklist, vehicle, onArrivalClick }: 
                                     </a>
                                 </div>
                             ))}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {checklist.refuelingAmount && checklist.refuelingLiters && checklist.fuelType && (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2 text-primary">
+                                <Fuel className="w-5 h-5" />
+                                Abastecimento Registrado
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg">
+                                <span className="text-xs font-medium text-muted-foreground">Valor</span>
+                                <span className="font-semibold text-base">R$ {checklist.refuelingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg">
+                                <span className="text-xs font-medium text-muted-foreground">Litros</span>
+                                <span className="font-semibold text-base">{checklist.refuelingLiters.toLocaleString('pt-BR')} L</span>
+                            </div>
+                            <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg">
+                                <span className="text-xs font-medium text-muted-foreground">Combustível</span>
+                                <span className="font-semibold text-base capitalize">{checklist.fuelType}</span>
+                            </div>
                         </CardContent>
                     </Card>
                 )}

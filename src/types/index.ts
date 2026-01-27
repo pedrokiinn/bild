@@ -13,6 +13,8 @@ export interface Vehicle {
 
 export type ChecklistStatus = 'completed' | 'pending_arrival' | 'problem';
 
+export type FuelType = 'gasolina' | 'etanol' | 'diesel' | 'gnv';
+
 export interface DailyChecklist {
   id: string;
   vehicleId: string;
@@ -33,6 +35,11 @@ export interface DailyChecklist {
   notes?: string;
   status: ChecklistStatus;
   date: string; // YYYY-MM-DD
+
+  // New fields for refueling
+  refuelingAmount?: number;
+  refuelingLiters?: number;
+  fuelType?: FuelType;
 }
 
 export interface User {
