@@ -16,7 +16,7 @@ import {
     useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight, Fuel } from 'lucide-react';
 import { User, getCurrentUser, login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
 import { Input } from '../ui/input';
@@ -49,6 +49,11 @@ const navigationItems = [
         title: "Histórico",
         url: "/history",
         icon: Calendar,
+    },
+    {
+        title: "Consumo",
+        url: "/consumption",
+        icon: Fuel,
     },
     {
         title: "Meus Veículos",
