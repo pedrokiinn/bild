@@ -190,7 +190,7 @@ export default function MonthlyReportDialog({ isOpen, onClose, vehicles, checkli
         ? checklists.filter(c => 
             c.vehicleId === selectedVehicle.id &&
             isWithinInterval(c.departureTimestamp.toDate(), { start: startOfSelectedMonth, end: endOfSelectedMonth })
-          ).sort((a,b) => b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis())
+          ).sort((a,b) => a.departureTimestamp.toMillis() - b.departureTimestamp.toMillis())
         : [];
 
     const totalProblems = monthlyChecklists.reduce((acc, c) => {
