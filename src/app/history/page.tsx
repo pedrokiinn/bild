@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { DailyChecklist, Vehicle } from '@/types';
+import type { DailyChecklist, Vehicle, FuelType } from '@/types';
 import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -115,18 +115,24 @@ function HistoryContent() {
         setIsArrivalDialogOpen(true);
     };
 
-    const handleArrivalSave = async (arrivalMileage: number) => {
+    const handleArrivalSave = async (arrivalMileage: number, fuelingData?: { amount: number; liters: number; type: FuelType }) => {
         if (!selectedChecklist) return;
 
         try {
             const hasProblem = Object.values(selectedChecklist.checklistItems).includes('problem');
-            const updatedChecklistData = {
+            const updatedChecklistData: any = {
                 ...selectedChecklist,
                 arrivalTimestamp: new Date(),
                 arrivalMileage: arrivalMileage,
                 status: hasProblem ? 'problem' : 'completed',
             };
             
+            if (fuelingData) {
+                updatedChecklistData.refuelingAmount = fuelingData.amount;
+                updatedChecklistData.refuelingLiters = fuelingData.liters;
+                updatedChecklistData.fuelType = fuelingData.type;
+            }
+
             await saveChecklist(updatedChecklistData);
 
             toast({
