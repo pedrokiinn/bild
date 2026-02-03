@@ -1,13 +1,13 @@
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import type { Vehicle, DailyChecklist, User, FuelType } from '@/types';
+import type { Vehicle, DailyChecklist, User, FuelType, Refueling } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, ArrowLeft, Loader2, Camera, Trash2, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Loader2, Camera, Trash2, X, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { saveChecklist } from '@/lib/data';
@@ -17,6 +17,7 @@ import ChecklistItem from './ChecklistItem';
 import { getCurrentUser } from '@/lib/auth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from 'next/image';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface ChecklistFormProps {
   vehicles: Vehicle[];
@@ -33,6 +34,12 @@ const photoLabels: Record<PhotoType, string> = {
     right: "Lateral Direita"
 };
 
+type RefuelingInput = {
+    amount: string;
+    liters: string;
+    type: FuelType | '';
+}
+
 export default function ChecklistForm({ vehicles, selectedVehicle, checklistItems, onBack }: ChecklistFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -47,6 +54,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   const [currentPhotoType, setCurrentPhotoType] = useState<PhotoType | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [refuelings, setRefuelings] = useState<RefuelingInput[]>([]);
 
   useEffect(() => {
     setDepartureMileage(selectedVehicle?.mileage?.toString() || '');
@@ -60,6 +68,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     setItemValues(initialItemValues);
     setItemStates(initialItemStates);
     setPhotos({}); // Reset photos on vehicle change
+    setRefuelings([]); // Reset refuelings on vehicle change
   }, [selectedVehicle, checklistItems]);
 
   const startCamera = async (type: PhotoType) => {
@@ -129,6 +138,21 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     }
   }
 
+  const handleAddRefueling = () => {
+    setRefuelings([...refuelings, { amount: '', liters: '', type: '' }]);
+  };
+
+  const handleRemoveRefueling = (index: number) => {
+    const newRefuelings = refuelings.filter((_, i) => i !== index);
+    setRefuelings(newRefuelings);
+  };
+
+  const handleRefuelingChange = (index: number, field: keyof RefuelingInput, value: string) => {
+    const newRefuelings = [...refuelings];
+    newRefuelings[index][field] = value as any; // any to bypass strict type on FuelType | ''
+    setRefuelings(newRefuelings);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -170,6 +194,27 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             return acc;
         }, {} as Record<string, 'ok' | 'problem'>);
 
+        const numericRefuelings: Refueling[] = [];
+        for (const r of refuelings) {
+            if (!r.amount && !r.liters && !r.type) {
+                continue;
+            }
+
+            if (!r.amount || !r.liters || !r.type) {
+                toast({
+                    title: 'Abastecimento incompleto',
+                    description: "Preencha todos os campos de cada abastecimento ou remova os registros em branco.",
+                    variant: 'destructive',
+                });
+                setIsSaving(false);
+                return;
+            }
+            numericRefuelings.push({
+                amount: parseFloat(r.amount.replace(',', '.')),
+                liters: parseFloat(r.liters.replace(',', '.')),
+                type: r.type,
+            });
+        }
 
         const newChecklist: Omit<DailyChecklist, 'id'> = {
             vehicleId: selectedVehicle.id,
@@ -183,6 +228,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             notes: notes,
             status: 'pending_arrival',
             date: format(new Date(), 'yyyy-MM-dd'),
+            refuelings: numericRefuelings
         };
 
         await saveChecklist(newChecklist);
@@ -261,6 +307,53 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
                         </div>
                     ))}
                 </div>
+            </div>
+
+            <div>
+              <Label>Abastecimentos na Saída</Label>
+              <div className="space-y-4 rounded-md border p-4 mt-2">
+                <div className="flex items-center justify-end">
+                    <Button variant="outline" size="sm" onClick={handleAddRefueling} disabled={isSaving}>
+                        <Plus className="w-4 h-4 mr-2" /> Adicionar
+                    </Button>
+                </div>
+                
+                {refuelings.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum abastecimento registrado na saída.</p>
+                )}
+
+                {refuelings.map((refueling, index) => (
+                  <div key={index} className="space-y-4 p-4 border rounded-lg relative bg-slate-50/50">
+                      <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 text-muted-foreground hover:bg-red-100 hover:text-destructive" onClick={() => handleRemoveRefueling(index)}>
+                          <Trash2 className="w-4 h-4"/>
+                      </Button>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor={`refueling-amount-${index}`}>Valor (R$)</Label>
+                            <Input id={`refueling-amount-${index}`} value={refueling.amount} onChange={(e) => handleRefuelingChange(index, 'amount', e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 150,00" type="text" inputMode="decimal" disabled={isSaving} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor={`refueling-liters-${index}`}>Litros</Label>
+                            <Input id={`refueling-liters-${index}`} value={refueling.liters} onChange={(e) => handleRefuelingChange(index, 'liters', e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 30,5" type="text" inputMode="decimal" disabled={isSaving} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                            <Label htmlFor={`fuel-type-${index}`}>Tipo de Combustível</Label>
+                            <Select value={refueling.type} onValueChange={(value: FuelType) => handleRefuelingChange(index, 'type', value)} disabled={isSaving}>
+                                <SelectTrigger id={`fuel-type-${index}`}>
+                                    <SelectValue placeholder="Selecione o tipo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="gasolina">Gasolina</SelectItem>
+                                    <SelectItem value="etanol">Etanol</SelectItem>
+                                    <SelectItem value="diesel">Diesel</SelectItem>
+                                    <SelectItem value="gnv">GNV</SelectItem>
+                                </SelectContent>
+                            </Select>
+                      </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div>

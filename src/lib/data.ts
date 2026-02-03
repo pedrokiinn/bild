@@ -276,6 +276,17 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
         isProblem: (value: string) => ['low', 'needs_refill'].includes(value),
     },
     {
+        key: "oil_validity",
+        title: "Validade do Óleo",
+        description: "Verifique a etiqueta. A troca é recomendada a cada 5.000 km.",
+        options: [
+            { value: "ok", label: "Em dia", color: "green" },
+            { value: "near_due", label: "Próximo ao vencimento", color: "orange" },
+            { value: "due", label: "Vencido", color: "red" }
+        ],
+        isProblem: (value: string) => ['near_due', 'due'].includes(value),
+    },
+    {
         key: "documentation",
         title: "Documentação",
         description: "Documento do veículo e CNH",
