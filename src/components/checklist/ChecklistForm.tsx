@@ -313,7 +313,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
               <Label>Abastecimentos na Saída</Label>
               <div className="space-y-4 rounded-md border p-4 mt-2">
                 <div className="flex items-center justify-end">
-                    <Button variant="outline" size="sm" onClick={handleAddRefueling} disabled={isSaving}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddRefueling} disabled={isSaving}>
                         <Plus className="w-4 h-4 mr-2" /> Adicionar
                     </Button>
                 </div>
@@ -324,7 +324,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
 
                 {refuelings.map((refueling, index) => (
                   <div key={index} className="space-y-4 p-4 border rounded-lg relative bg-slate-50/50">
-                      <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 text-muted-foreground hover:bg-red-100 hover:text-destructive" onClick={() => handleRemoveRefueling(index)}>
+                      <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 text-muted-foreground hover:bg-red-100 hover:text-destructive" onClick={() => handleRemoveRefueling(index)}>
                           <Trash2 className="w-4 h-4"/>
                       </Button>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
