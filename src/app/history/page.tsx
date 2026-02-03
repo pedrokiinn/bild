@@ -5,7 +5,7 @@ import type { DailyChecklist, Vehicle, FuelType } from '@/types';
 import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText, User } from 'lucide-react';
+import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText, User, Fuel } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -110,7 +110,7 @@ function HistoryContent() {
         setIsDeleteDialogOpen(true);
     };
 
-    const handleArrivalClick = (checklist: DailyChecklist & { vehicle?: Vehicle }) => {
+    const openArrivalDialog = (checklist: DailyChecklist & { vehicle?: Vehicle }) => {
         setSelectedChecklist(checklist);
         setIsArrivalDialogOpen(true);
     };
@@ -119,29 +119,38 @@ function HistoryContent() {
         if (!selectedChecklist) return;
 
         try {
-            const hasProblem = Object.values(selectedChecklist.checklistItems).includes('problem');
-            const updatedChecklistData: any = {
-                ...selectedChecklist,
-                arrivalTimestamp: new Date(),
-                arrivalMileage: arrivalMileage,
-                status: hasProblem ? 'problem' : 'completed',
-            };
-            
-            if (fuelingData) {
-                updatedChecklistData.refuelingAmount = fuelingData.amount;
-                updatedChecklistData.refuelingLiters = fuelingData.liters;
-                updatedChecklistData.fuelType = fuelingData.type;
+            const updatedChecklist = { ...selectedChecklist };
+            const isNewArrival = updatedChecklist.status === 'pending_arrival';
+
+            if (isNewArrival) {
+                const hasProblem = Object.values(updatedChecklist.checklistItems).includes('problem');
+                updatedChecklist.status = hasProblem ? 'problem' : 'completed';
+                // The backend will convert this to a Timestamp
+                (updatedChecklist.arrivalTimestamp as any) = new Date();
+                updatedChecklist.arrivalMileage = arrivalMileage;
             }
 
-            await saveChecklist(updatedChecklistData);
+            if (fuelingData) {
+                updatedChecklist.refuelingAmount = fuelingData.amount;
+                updatedChecklist.refuelingLiters = fuelingData.liters;
+                updatedChecklist.fuelType = fuelingData.type;
+            } else {
+                delete updatedChecklist.refuelingAmount;
+                delete updatedChecklist.refuelingLiters;
+                delete updatedChecklist.fuelType;
+            }
+
+            await saveChecklist(updatedChecklist);
 
             toast({
-                title: "Chegada registrada!",
-                description: "A chegada do veículo foi salva com sucesso."
+                title: "Checklist Atualizado!",
+                description: "As informações de chegada/abastecimento foram salvas com sucesso."
             });
+            
             setIsArrivalDialogOpen(false);
             setSelectedChecklist(null);
             loadData();
+
         } catch (error: any) {
             console.error("Erro ao salvar chegada:", error);
             toast({
@@ -153,7 +162,7 @@ function HistoryContent() {
     };
     
     const filteredChecklists = checklists
-      .filter(c => !!c.departureTimestamp) // <-- FIX: Ensure checklist has a departure timestamp
+      .filter(c => !!c.departureTimestamp)
       .filter(c => {
         const searchMatch = searchTerm === '' ||
             c.driverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -186,19 +195,6 @@ function HistoryContent() {
             ))}
         </div>
     );
-
-    const getStatusBadge = (status: DailyChecklist['status']) => {
-        switch (status) {
-            case 'completed':
-                return <Badge variant="outline" className="text-primary border-primary/20 bg-primary/10"><CheckCircle2 className="w-3 h-3 mr-1.5" />Finalizado</Badge>;
-            case 'problem':
-                return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1.5" />Problemas</Badge>;
-            case 'pending_arrival':
-                return <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50"><Clock className="w-3 h-3 mr-1.5" />Em Rota</Badge>;
-            default:
-                return <Badge variant="secondary">Pendente</Badge>;
-        }
-    };
 
     return (
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
@@ -320,29 +316,28 @@ function HistoryContent() {
                                                     <ChecklistViewer 
                                                         checklist={checklist} 
                                                         vehicle={vehicle} 
-                                                        onArrivalClick={() => handleArrivalClick(checklist)}
+                                                        onArrivalClick={() => openArrivalDialog(checklist)}
                                                     />
                                                 </DialogContent>
                                             </Dialog>
 
-                                            {isPending && (
-                                                <TooltipProvider>
+                                            <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button size="icon" variant="ghost" onClick={() => handleArrivalClick(checklist)}>
-                                                            <Clock className="w-4 h-4" />
+                                                        <Button size="icon" variant="ghost" onClick={() => openArrivalDialog(checklist)}>
+                                                            <Fuel className="w-4 h-4" />
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>Registrar Chegada</p>
+                                                        <p>{isPending ? 'Registrar Chegada' : 'Editar Abastecimento'}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
-                                                </TooltipProvider>
-                                            )}
-
+                                            </TooltipProvider>
+                                            
                                             <PdfGeneratorButton checklist={checklist} vehicle={vehicle} />
-                                             <TooltipProvider>
-                                             <Tooltip>
+
+                                            <TooltipProvider>
+                                                <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(checklist.id)}>
                                                         <Trash2 className="w-4 h-4" />

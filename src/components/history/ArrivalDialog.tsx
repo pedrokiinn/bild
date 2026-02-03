@@ -34,19 +34,24 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
   const [refuelingAmount, setRefuelingAmount] = useState('');
   const [refuelingLiters, setRefuelingLiters] = useState('');
   const [fuelType, setFuelType] = useState<FuelType | ''>('');
+  
+  const isEditing = !!checklist?.arrivalMileage;
 
 
   useEffect(() => {
-    if (isOpen) {
-      setArrivalMileage("");
+    if (isOpen && checklist) {
+      setArrivalMileage(checklist.arrivalMileage?.toString() || "");
+      
+      const hasFuelData = checklist.refuelingAmount != null && checklist.refuelingLiters != null;
+      setWasRefueled(hasFuelData);
+      setRefuelingAmount(checklist.refuelingAmount?.toString() || '');
+      setRefuelingLiters(checklist.refuelingLiters?.toString() || '');
+      setFuelType(checklist.fuelType || '');
+
       setError("");
       setIsSaving(false);
-      setWasRefueled(false);
-      setRefuelingAmount('');
-      setRefuelingLiters('');
-      setFuelType('');
     }
-  }, [isOpen]);
+  }, [isOpen, checklist]);
   
   const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -61,7 +66,8 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
   };
   
   const handleSave = async () => {
-    if (error || !arrivalMileage) {
+    if (error || (!isEditing && !arrivalMileage)) {
+        setError("A quilometragem de chegada é obrigatória.");
         return;
     }
 
@@ -81,6 +87,7 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
 
     setIsSaving(true);
     try {
+      // Pass the current mileage value, which is disabled if editing, or the new one if arriving.
       await onSave(Number(arrivalMileage), fuelingData);
     } finally {
       setIsSaving(false);
@@ -91,9 +98,12 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Registrar Chegada</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Abastecimento' : 'Registrar Chegada'}</DialogTitle>
           <DialogDescription>
-            Confirme a quilometragem e o abastecimento (se houver) na chegada do veículo.
+             {isEditing 
+                ? 'Edite as informações de abastecimento desta viagem.' 
+                : 'Confirme a quilometragem e o abastecimento (se houver) na chegada do veículo.'
+            }
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
@@ -106,12 +116,14 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
                 {checklist.vehicle?.brand} {checklist.vehicle?.model} ({checklist.vehicle?.license_plate})
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="arrival-time" className="text-right">
-                Horário
-              </Label>
-              <Input id="arrival-time" value={new Date().toLocaleTimeString('pt-BR')} disabled className="col-span-3" />
-            </div>
+            {!isEditing && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="arrival-time" className="text-right">
+                  Horário
+                </Label>
+                <Input id="arrival-time" value={new Date().toLocaleTimeString('pt-BR')} disabled className="col-span-3" />
+              </div>
+            )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="arrival-mileage" className="text-right">
                 KM Chegada
@@ -122,6 +134,7 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
                 onChange={handleMileageChange}
                 className="col-span-3"
                 placeholder={`Maior que ${checklist.departureMileage}`}
+                disabled={isSaving || isEditing}
               />
             </div>
           </div>
@@ -129,7 +142,7 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
           <div className="space-y-4 rounded-md border p-4">
             <div className="flex items-center justify-between">
                 <Label htmlFor="was-refueled" className="font-semibold text-slate-900">
-                    Houve abastecimento na chegada?
+                    Houve abastecimento?
                 </Label>
                 <Switch
                     id="was-refueled"
@@ -170,9 +183,9 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSaving}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={!!error && !wasRefueled || !arrivalMileage || isSaving}>
+          <Button onClick={handleSave} disabled={(isSaving || (!isEditing && !arrivalMileage)) || (isEditing && !wasRefueled && !checklist.refuelingAmount)}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSaving ? "Salvando..." : "Salvar Chegada"}
+            {isSaving ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
       </DialogContent>
