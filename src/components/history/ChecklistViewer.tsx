@@ -152,30 +152,45 @@ export default function ChecklistViewer({ checklist, vehicle, onArrivalClick }: 
                     </Card>
                 )}
 
-                {checklist.refuelingAmount && checklist.refuelingLiters && checklist.fuelType && (
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2 text-primary">
-                                <Fuel className="w-5 h-5" />
-                                Abastecimento Registrado
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg">
-                                <span className="text-xs font-medium text-muted-foreground">Valor</span>
-                                <span className="font-semibold text-base">R$ {checklist.refuelingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                            </div>
-                            <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg">
-                                <span className="text-xs font-medium text-muted-foreground">Litros</span>
-                                <span className="font-semibold text-base">{checklist.refuelingLiters.toLocaleString('pt-BR')} L</span>
-                            </div>
-                            <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg">
-                                <span className="text-xs font-medium text-muted-foreground">Combustível</span>
-                                <span className="font-semibold text-base capitalize">{checklist.fuelType}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                {checklist.refuelings && checklist.refuelings.length > 0 && (() => {
+                    const totalAmount = checklist.refuelings!.reduce((sum, r) => sum + r.amount, 0);
+                    const totalLiters = checklist.refuelings!.reduce((sum, r) => sum + r.liters, 0);
+
+                    return (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2 text-primary">
+                                    <Fuel className="w-5 h-5" />
+                                    Abastecimento(s) Registrado(s)
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div className="flex flex-col gap-1 p-3 bg-slate-100 rounded-lg">
+                                        <span className="text-xs font-medium text-muted-foreground">Valor Total</span>
+                                        <span className="font-semibold text-base">R$ {totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1 p-3 bg-slate-100 rounded-lg">
+                                        <span className="text-xs font-medium text-muted-foreground">Litros Totais</span>
+                                        <span className="font-semibold text-base">{totalLiters.toLocaleString('pt-BR')} L</span>
+                                    </div>
+                                </div>
+                                {checklist.refuelings!.length > 1 && (
+                                    <div className="space-y-2">
+                                        <h4 className="text-sm font-semibold text-muted-foreground">Detalhes:</h4>
+                                        {checklist.refuelings!.map((refueling, index) => (
+                                            <div key={index} className="grid grid-cols-3 gap-2 p-2 bg-slate-50 rounded-md text-xs">
+                                                <span>Valor: <span className="font-medium">R$ {refueling.amount.toFixed(2)}</span></span>
+                                                <span>Litros: <span className="font-medium">{refueling.liters} L</span></span>
+                                                <span className="capitalize">Tipo: <span className="font-medium">{refueling.type}</span></span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    );
+                })()}
 
 
                 <Card>

@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { DailyChecklist, Vehicle, FuelType } from '@/types';
+import type { DailyChecklist, Vehicle, Refueling } from '@/types';
 import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -115,30 +115,28 @@ function HistoryContent() {
         setIsArrivalDialogOpen(true);
     };
 
-    const handleArrivalSave = async (arrivalMileage: number, fuelingData?: { amount: number; liters: number; type: FuelType }) => {
+    const handleArrivalSave = async (arrivalMileage: number, refuelings: Refueling[]) => {
         if (!selectedChecklist) return;
 
         try {
-            const updatedChecklist = { ...selectedChecklist };
+            const updatedChecklist: Partial<DailyChecklist> & { id: string } = { ...selectedChecklist };
             const isNewArrival = updatedChecklist.status === 'pending_arrival';
 
             if (isNewArrival) {
-                const hasProblem = Object.values(updatedChecklist.checklistItems).includes('problem');
+                const hasProblem = Object.values(updatedChecklist.checklistItems!).includes('problem');
                 updatedChecklist.status = hasProblem ? 'problem' : 'completed';
                 // The backend will convert this to a Timestamp
                 (updatedChecklist.arrivalTimestamp as any) = new Date();
                 updatedChecklist.arrivalMileage = arrivalMileage;
             }
 
-            if (fuelingData) {
-                updatedChecklist.refuelingAmount = fuelingData.amount;
-                updatedChecklist.refuelingLiters = fuelingData.liters;
-                updatedChecklist.fuelType = fuelingData.type;
-            } else {
-                delete updatedChecklist.refuelingAmount;
-                delete updatedChecklist.refuelingLiters;
-                delete updatedChecklist.fuelType;
-            }
+            updatedChecklist.refuelings = refuelings;
+
+            // Remove old fields for data hygiene
+            delete (updatedChecklist as any).refuelingAmount;
+            delete (updatedChecklist as any).refuelingLiters;
+            delete (updatedChecklist as any).fuelType;
+
 
             await saveChecklist(updatedChecklist);
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -67,7 +68,8 @@ function ConsumptionContent() {
             .map(c => {
                 const vehicle = vehicleMap.get(c.vehicleId);
                 const distance = c.arrivalMileage! - c.departureMileage;
-                const liters = c.refuelingLiters || 0;
+                const liters = c.refuelings?.reduce((sum, r) => sum + r.liters, 0) || 0;
+                const cost = c.refuelings?.reduce((sum, r) => sum + r.amount, 0) || 0;
                 const efficiency = liters > 0 && distance > 0 ? distance / liters : null;
                 
                 return {
@@ -77,7 +79,7 @@ function ConsumptionContent() {
                     startDate: c.departureTimestamp.toDate(),
                     distance,
                     liters,
-                    cost: c.refuelingAmount || 0,
+                    cost,
                     efficiency,
                 };
             })

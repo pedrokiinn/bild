@@ -12,41 +12,44 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DailyChecklist, Vehicle, FuelType } from "@/types";
-import { Loader2 } from "lucide-react";
-import { Switch } from "../ui/switch";
+import { DailyChecklist, Vehicle, FuelType, Refueling } from "@/types";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 interface ArrivalDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (arrivalMileage: number, fuelingData?: { amount: number; liters: number; type: FuelType }) => Promise<void>;
+  onSave: (arrivalMileage: number, refuelings: Refueling[]) => Promise<void>;
   checklist: DailyChecklist & { vehicle?: Vehicle };
+}
+
+type RefuelingInput = {
+    amount: string;
+    liters: string;
+    type: FuelType | '';
 }
 
 export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDialogProps) {
   const [arrivalMileage, setArrivalMileage] = useState("");
+  const [refuelings, setRefuelings] = useState<RefuelingInput[]>([]);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
-  // Fueling state
-  const [wasRefueled, setWasRefueled] = useState(false);
-  const [refuelingAmount, setRefuelingAmount] = useState('');
-  const [refuelingLiters, setRefuelingLiters] = useState('');
-  const [fuelType, setFuelType] = useState<FuelType | ''>('');
   
   const isEditing = !!checklist?.arrivalMileage;
-
 
   useEffect(() => {
     if (isOpen && checklist) {
       setArrivalMileage(checklist.arrivalMileage?.toString() || "");
       
-      const hasFuelData = checklist.refuelingAmount != null && checklist.refuelingLiters != null;
-      setWasRefueled(hasFuelData);
-      setRefuelingAmount(checklist.refuelingAmount?.toString() || '');
-      setRefuelingLiters(checklist.refuelingLiters?.toString() || '');
-      setFuelType(checklist.fuelType || '');
+      if (checklist.refuelings && checklist.refuelings.length > 0) {
+        setRefuelings(checklist.refuelings.map(r => ({
+          amount: String(r.amount),
+          liters: String(r.liters),
+          type: r.type,
+        })));
+      } else {
+        setRefuelings([]);
+      }
 
       setError("");
       setIsSaving(false);
@@ -64,6 +67,21 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
       }
     }
   };
+
+  const handleAddRefueling = () => {
+    setRefuelings([...refuelings, { amount: '', liters: '', type: '' }]);
+  };
+
+  const handleRemoveRefueling = (index: number) => {
+    const newRefuelings = refuelings.filter((_, i) => i !== index);
+    setRefuelings(newRefuelings);
+  };
+
+  const handleRefuelingChange = (index: number, field: keyof RefuelingInput, value: string) => {
+    const newRefuelings = [...refuelings];
+    newRefuelings[index][field] = value as any; // any to bypass strict type on FuelType | ''
+    setRefuelings(newRefuelings);
+  };
   
   const handleSave = async () => {
     if (error || (!isEditing && !arrivalMileage)) {
@@ -71,24 +89,24 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
         return;
     }
 
-    let fuelingData: { amount: number; liters: number; type: FuelType } | undefined = undefined;
-    if (wasRefueled) {
-        if (!refuelingAmount || !refuelingLiters || !fuelType) {
-            setError("Preencha todos os campos de abastecimento ou desative a opção.");
-            return;
+    const numericRefuelings: Refueling[] = [];
+    for (const r of refuelings) {
+        if (!r.amount || !r.liters || !r.type) {
+             setError("Preencha todos os campos de cada abastecimento ou remova os abastecimentos incompletos.");
+             return;
         }
-        fuelingData = {
-            amount: parseFloat(refuelingAmount.replace(',', '.')),
-            liters: parseFloat(refuelingLiters.replace(',', '.')),
-            type: fuelType
-        };
+        numericRefuelings.push({
+            amount: parseFloat(r.amount.replace(',', '.')),
+            liters: parseFloat(r.liters.replace(',', '.')),
+            type: r.type,
+        });
     }
+
     setError("");
 
     setIsSaving(true);
     try {
-      // Pass the current mileage value, which is disabled if editing, or the new one if arriving.
-      await onSave(Number(arrivalMileage), fuelingData);
+      await onSave(Number(arrivalMileage), numericRefuelings);
     } finally {
       setIsSaving(false);
     }
@@ -101,12 +119,12 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
           <DialogTitle>{isEditing ? 'Editar Abastecimento' : 'Registrar Chegada'}</DialogTitle>
           <DialogDescription>
              {isEditing 
-                ? 'Edite as informações de abastecimento desta viagem.' 
+                ? 'Adicione ou edite as informações de abastecimento desta viagem.' 
                 : 'Confirme a quilometragem e o abastecimento (se houver) na chegada do veículo.'
             }
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto pr-2">
           <div className="space-y-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="vehicle" className="text-right">
@@ -140,32 +158,38 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
           </div>
           
           <div className="space-y-4 rounded-md border p-4">
-            <div className="flex items-center justify-between">
-                <Label htmlFor="was-refueled" className="font-semibold text-slate-900">
-                    Houve abastecimento?
+             <div className="flex items-center justify-between">
+                <Label className="font-semibold text-slate-900">
+                    Abastecimentos
                 </Label>
-                <Switch
-                    id="was-refueled"
-                    checked={wasRefueled}
-                    onCheckedChange={setWasRefueled}
-                    disabled={isSaving}
-                />
+                <Button variant="outline" size="sm" onClick={handleAddRefueling} disabled={isSaving}>
+                    <Plus className="w-4 h-4 mr-2" /> Adicionar
+                </Button>
             </div>
+            
+            {refuelings.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum abastecimento registrado.</p>
+            )}
 
-            {wasRefueled && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
+            {refuelings.map((refueling, index) => (
+              <div key={index} className="space-y-4 p-4 border rounded-lg relative bg-slate-50/50">
+                  <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 text-muted-foreground hover:bg-red-100 hover:text-destructive" onClick={() => handleRemoveRefueling(index)}>
+                      <Trash2 className="w-4 h-4"/>
+                  </Button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                         <Label htmlFor={`refueling-amount-${index}`}>Valor (R$)</Label>
+                         <Input id={`refueling-amount-${index}`} value={refueling.amount} onChange={(e) => handleRefuelingChange(index, 'amount', e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 150,00" type="text" inputMode="decimal" disabled={isSaving} />
+                     </div>
+                     <div className="space-y-2">
+                         <Label htmlFor={`refueling-liters-${index}`}>Litros</Label>
+                         <Input id={`refueling-liters-${index}`} value={refueling.liters} onChange={(e) => handleRefuelingChange(index, 'liters', e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 30,5" type="text" inputMode="decimal" disabled={isSaving} />
+                     </div>
+                  </div>
                    <div className="space-y-2">
-                       <Label htmlFor="refueling-amount">Valor (R$)</Label>
-                       <Input id="refueling-amount" value={refuelingAmount} onChange={(e) => setRefuelingAmount(e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 150,00" type="text" inputMode="decimal" disabled={isSaving} />
-                   </div>
-                   <div className="space-y-2">
-                       <Label htmlFor="refueling-liters">Litros</Label>
-                       <Input id="refueling-liters" value={refuelingLiters} onChange={(e) => setRefuelingLiters(e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 30,5" type="text" inputMode="decimal" disabled={isSaving} />
-                   </div>
-                   <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="fuel-type">Tipo de Combustível</Label>
-                         <Select value={fuelType} onValueChange={(value: FuelType) => setFuelType(value)} disabled={isSaving}>
-                            <SelectTrigger id="fuel-type">
+                        <Label htmlFor={`fuel-type-${index}`}>Tipo de Combustível</Label>
+                         <Select value={refueling.type} onValueChange={(value: FuelType) => handleRefuelingChange(index, 'type', value)} disabled={isSaving}>
+                            <SelectTrigger id={`fuel-type-${index}`}>
                                 <SelectValue placeholder="Selecione o tipo" />
                             </SelectTrigger>
                             <SelectContent>
@@ -176,14 +200,14 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
                             </SelectContent>
                         </Select>
                    </div>
-                </div>
-            )}
+              </div>
+            ))}
           </div>
           {error && <p className="text-center text-sm text-destructive">{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSaving}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={(isSaving || (!isEditing && !arrivalMileage)) || (isEditing && !wasRefueled && !checklist.refuelingAmount)}>
+          <Button onClick={handleSave} disabled={isSaving || (!isEditing && !arrivalMileage)}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? "Salvando..." : "Salvar"}
           </Button>
