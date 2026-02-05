@@ -13,7 +13,7 @@ export interface Vehicle {
 
 export type ChecklistStatus = 'completed' | 'pending_arrival' | 'problem';
 
-export type FuelType = 'gasolina' | 'etanol' | 'diesel' | 'gnv';
+export type FuelType = 'gasolina' | 'diesel';
 
 export interface Refueling {
   amount: number;

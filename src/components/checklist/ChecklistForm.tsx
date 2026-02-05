@@ -35,7 +35,7 @@ const photoLabels: Record<PhotoType, string> = {
 };
 
 type RefuelingInput = {
-    amount: string;
+    pricePerLiter: string;
     liters: string;
     type: FuelType | '';
 }
@@ -139,7 +139,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
   }
 
   const handleAddRefueling = () => {
-    setRefuelings([...refuelings, { amount: '', liters: '', type: '' }]);
+    setRefuelings([...refuelings, { pricePerLiter: '', liters: '', type: '' }]);
   };
 
   const handleRemoveRefueling = (index: number) => {
@@ -196,11 +196,14 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
 
         const numericRefuelings: Refueling[] = [];
         for (const r of refuelings) {
-            if (!r.amount && !r.liters && !r.type) {
+            if (!r.pricePerLiter && !r.liters && !r.type) {
                 continue;
             }
+            
+            const price = parseFloat(r.pricePerLiter.replace(',', '.')) || 0;
+            const liters = parseFloat(r.liters.replace(',', '.')) || 0;
 
-            if (!r.amount || !r.liters || !r.type) {
+            if (!price || !liters || !r.type) {
                 toast({
                     title: 'Abastecimento incompleto',
                     description: "Preencha todos os campos de cada abastecimento ou remova os registros em branco.",
@@ -210,8 +213,8 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
                 return;
             }
             numericRefuelings.push({
-                amount: parseFloat(r.amount.replace(',', '.')),
-                liters: parseFloat(r.liters.replace(',', '.')),
+                amount: price * liters,
+                liters: liters,
                 type: r.type,
             });
         }
@@ -322,37 +325,47 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
                     <p className="text-sm text-muted-foreground text-center py-4">Nenhum abastecimento registrado na saída.</p>
                 )}
 
-                {refuelings.map((refueling, index) => (
-                  <div key={index} className="space-y-4 p-4 border rounded-lg relative bg-slate-50/50">
-                      <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 text-muted-foreground hover:bg-red-100 hover:text-destructive" onClick={() => handleRemoveRefueling(index)}>
-                          <Trash2 className="w-4 h-4"/>
-                      </Button>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor={`refueling-amount-${index}`}>Valor (R$)</Label>
-                            <Input id={`refueling-amount-${index}`} value={refueling.amount} onChange={(e) => handleRefuelingChange(index, 'amount', e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 150,00" type="text" inputMode="decimal" disabled={isSaving} />
+                {refuelings.map((refueling, index) => {
+                    const price = parseFloat(refueling.pricePerLiter.replace(',', '.')) || 0;
+                    const liters = parseFloat(refueling.liters.replace(',', '.')) || 0;
+                    const total = price * liters;
+
+                    return (
+                        <div key={index} className="space-y-4 p-4 border rounded-lg relative bg-slate-50/50">
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 text-muted-foreground hover:bg-red-100 hover:text-destructive" onClick={() => handleRemoveRefueling(index)}>
+                                <Trash2 className="w-4 h-4"/>
+                            </Button>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor={`refueling-price-${index}`}>Preço / Litro (R$)</Label>
+                                    <Input id={`refueling-price-${index}`} value={refueling.pricePerLiter} onChange={(e) => handleRefuelingChange(index, 'pricePerLiter', e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 5,50" type="text" inputMode="decimal" disabled={isSaving} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`refueling-liters-${index}`}>Litros</Label>
+                                    <Input id={`refueling-liters-${index}`} value={refueling.liters} onChange={(e) => handleRefuelingChange(index, 'liters', e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 30,5" type="text" inputMode="decimal" disabled={isSaving} />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor={`fuel-type-${index}`}>Tipo de Combustível</Label>
+                                <Select value={refueling.type} onValueChange={(value: FuelType) => handleRefuelingChange(index, 'type', value)} disabled={isSaving}>
+                                    <SelectTrigger id={`fuel-type-${index}`}>
+                                        <SelectValue placeholder="Selecione o tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="gasolina">Gasolina</SelectItem>
+                                        <SelectItem value="diesel">Óleo Diesel</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="mt-4 p-3 bg-slate-100 rounded-md text-right">
+                                <span className="text-sm text-muted-foreground">Valor Total: </span>
+                                <span className="font-bold text-lg text-slate-800">
+                                    {total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </span>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor={`refueling-liters-${index}`}>Litros</Label>
-                            <Input id={`refueling-liters-${index}`} value={refueling.liters} onChange={(e) => handleRefuelingChange(index, 'liters', e.target.value.replace(/[^0-9,.]/g, ''))} placeholder="Ex: 30,5" type="text" inputMode="decimal" disabled={isSaving} />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                            <Label htmlFor={`fuel-type-${index}`}>Tipo de Combustível</Label>
-                            <Select value={refueling.type} onValueChange={(value: FuelType) => handleRefuelingChange(index, 'type', value)} disabled={isSaving}>
-                                <SelectTrigger id={`fuel-type-${index}`}>
-                                    <SelectValue placeholder="Selecione o tipo" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="gasolina">Gasolina</SelectItem>
-                                    <SelectItem value="etanol">Etanol</SelectItem>
-                                    <SelectItem value="diesel">Diesel</SelectItem>
-                                    <SelectItem value="gnv">GNV</SelectItem>
-                                </SelectContent>
-                            </Select>
-                      </div>
-                  </div>
-                ))}
+                    );
+                })}
               </div>
             </div>
 
