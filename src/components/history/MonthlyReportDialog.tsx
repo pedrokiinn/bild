@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo } from 'react';
 import { DailyChecklist, Vehicle } from '@/types';
@@ -68,6 +67,21 @@ const generateMonthlyPDF = (vehicle: Vehicle, monthlyChecklists: (DailyChecklist
                 </div>
             </div>
         ` : '';
+        
+        const refuelingsTotalAmount = c.refuelings?.reduce((sum, r) => sum + r.amount, 0) || 0;
+        const refuelingsTotalLiters = c.refuelings?.reduce((sum, r) => sum + r.liters, 0) || 0;
+
+        const refuelingsHTML = c.refuelings && c.refuelings.length > 0
+            ? `
+            <div class="section-block">
+                <div class="section-title">Abastecimentos</div>
+                <div class="info-grid">
+                    <div class="info-item"><span>Valor Total</span> <span>R$ ${refuelingsTotalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                    <div class="info-item"><span>Litros Totais</span> <span>${refuelingsTotalLiters.toLocaleString('pt-BR')} L</span></div>
+                </div>
+            </div>
+            `
+            : '';
 
         return `
             <div class="checklist-entry">
@@ -82,6 +96,8 @@ const generateMonthlyPDF = (vehicle: Vehicle, monthlyChecklists: (DailyChecklist
                         <div class="info-item"><span>KM Chegada:</span> <span>${c.arrivalMileage?.toLocaleString('pt-BR') || 'N/A'}</span></div>
                     </div>
                 </div>
+
+                ${refuelingsHTML}
 
                 ${problemItemsHTML.length > 0 ? `
                 <div class="section-block">

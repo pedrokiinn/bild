@@ -53,6 +53,19 @@ export default function PdfGeneratorButton({ checklist, vehicle }: PdfGeneratorB
                 `;
             })
             .join('');
+        
+        const refuelingsTotalAmount = checklist.refuelings?.reduce((sum, r) => sum + r.amount, 0) || 0;
+        const refuelingsTotalLiters = checklist.refuelings?.reduce((sum, r) => sum + r.liters, 0) || 0;
+
+        const refuelingsHTML = checklist.refuelings && checklist.refuelings.length > 0
+            ? `
+            <div class="section-block">
+                <div class="section-title">Abastecimento(s)</div>
+                <div class="info-item"><span>Valor Total</span> <span>R$ ${refuelingsTotalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                <div class="info-item"><span>Litros Totais</span> <span>${refuelingsTotalLiters.toLocaleString('pt-BR')} L</span></div>
+            </div>
+            `
+            : '';
 
         return `
             <!DOCTYPE html>
@@ -104,6 +117,8 @@ export default function PdfGeneratorButton({ checklist, vehicle }: PdfGeneratorB
                              <div class="info-item"><span>KM Chegada</span> <span>${checklist.arrivalMileage?.toLocaleString('pt-BR') || 'N/A'}</span></div>
                         </div>
                     </div>
+
+                    ${refuelingsHTML}
 
                     ${itemsComProblema.length > 0 ? `
                     <div class="section-block">
