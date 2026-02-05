@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,9 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DailyChecklist, Vehicle, FuelType, Refueling } from "@/types";
+import { DailyChecklist, Vehicle, FuelType, Refueling, User } from "@/types";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { getCurrentUser } from "@/lib/auth";
 
 interface ArrivalDialogProps {
   isOpen: boolean;
@@ -34,11 +34,18 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
   const [refuelings, setRefuelings] = useState<RefuelingInput[]>([]);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   
   const isEditing = !!checklist?.arrivalMileage;
 
   useEffect(() => {
+    const fetchUser = async () => {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+    };
+
     if (isOpen && checklist) {
+      fetchUser();
       setArrivalMileage(checklist.arrivalMileage?.toString() || "");
       
       if (checklist.refuelings && checklist.refuelings.length > 0) {
@@ -126,10 +133,10 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar Abastecimento' : 'Registrar Chegada'}</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Chegada / Abastecimento' : 'Registrar Chegada'}</DialogTitle>
           <DialogDescription>
              {isEditing 
-                ? 'Adicione ou edite as informações de abastecimento desta viagem.' 
+                ? 'Edite as informações de chegada e abastecimento desta viagem.' 
                 : 'Confirme a quilometragem e o abastecimento (se houver) na chegada do veículo.'
             }
           </DialogDescription>
@@ -162,7 +169,7 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
                 onChange={handleMileageChange}
                 className="col-span-3"
                 placeholder={`Maior que ${checklist.departureMileage}`}
-                disabled={isSaving || isEditing}
+                disabled={isSaving || (isEditing && user?.role !== 'admin')}
               />
             </div>
           </div>
@@ -227,7 +234,7 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSaving}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={isSaving || (!isEditing && !arrivalMileage)}>
+          <Button onClick={handleSave} disabled={isSaving || !!error || (!isEditing && !arrivalMileage)}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? "Salvando..." : "Salvar"}
           </Button>

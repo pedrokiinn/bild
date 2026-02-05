@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { DailyChecklist, Vehicle, Refueling } from '@/types';
@@ -25,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import MonthlyReportDialog from '@/components/history/MonthlyReportDialog';
+import { getCurrentUser } from '@/lib/auth';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -119,6 +119,7 @@ function HistoryContent() {
         if (!selectedChecklist) return;
 
         try {
+            const user = await getCurrentUser();
             const updatedChecklist: Partial<DailyChecklist> & { id: string } = { ...selectedChecklist };
             const isNewArrival = updatedChecklist.status === 'pending_arrival';
 
@@ -128,6 +129,10 @@ function HistoryContent() {
                 // The backend will convert this to a Timestamp
                 (updatedChecklist.arrivalTimestamp as any) = new Date();
                 updatedChecklist.arrivalMileage = arrivalMileage;
+            } else {
+                 if (user?.role === 'admin') {
+                    updatedChecklist.arrivalMileage = arrivalMileage;
+                 }
             }
 
             updatedChecklist.refuelings = refuelings;
