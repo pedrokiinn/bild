@@ -5,6 +5,8 @@ import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText, User, Fuel } from 'lucide-react';
+import { format, getMonth, getYear, setMonth, setYear } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
     Dialog,
     DialogContent,
@@ -39,6 +41,7 @@ function HistoryContent() {
     
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     const { toast } = useToast();
 
@@ -46,7 +49,7 @@ function HistoryContent() {
         setIsLoading(true);
         try {
             const [loadedChecklists, loadedVehicles] = await Promise.all([
-                getChecklists(),
+                getChecklists(selectedDate),
                 getVehicles(),
             ]);
 
@@ -67,7 +70,7 @@ function HistoryContent() {
         } finally {
             setIsLoading(false);
         }
-    }, [toast]);
+    }, [toast, selectedDate]);
 
     useEffect(() => {
         loadData();
@@ -82,6 +85,18 @@ function HistoryContent() {
         });
         return Array.from(driverMap, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
     }, [checklists]);
+    
+    const months = useMemo(() => {
+        return Array.from({ length: 12 }, (_, i) => ({ 
+            value: String(i), 
+            label: format(new Date(2000, i), 'MMMM', { locale: ptBR }).replace(/^\w/, c => c.toUpperCase())
+        }));
+    }, []);
+
+    const currentYear = getYear(new Date());
+    const years = useMemo(() => {
+        return Array.from({ length: 5 }, (_, i) => String(currentYear - i));
+    }, [currentYear]);
 
     const handleDelete = async () => {
         if (!itemToDelete) return;
@@ -220,7 +235,7 @@ function HistoryContent() {
                     </CardHeader>
                 </Card>
 
-                <div className="bg-white p-4 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-2 md:gap-4 items-center">
+                <div className="bg-white p-4 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-2 md:gap-4 items-center flex-wrap">
                     <div className="relative w-full md:flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input 
@@ -230,8 +245,30 @@ function HistoryContent() {
                             className="pl-9 text-sm"
                         />
                     </div>
+                    <Select
+                        value={String(getYear(selectedDate))}
+                        onValueChange={(value) => setSelectedDate(prev => setYear(new Date(prev), Number(value)))}
+                     >
+                        <SelectTrigger className="w-full md:w-[120px] text-sm">
+                            <SelectValue placeholder="Ano" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                        </SelectContent>
+                     </Select>
+                     <Select
+                        value={String(getMonth(selectedDate))}
+                        onValueChange={(value) => setSelectedDate(prev => setMonth(new Date(prev), Number(value)))}
+                     >
+                        <SelectTrigger className="w-full md:w-[150px] text-sm">
+                            <SelectValue placeholder="Mês" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                        </SelectContent>
+                     </Select>
                      <Select value={selectedDriver} onValueChange={setSelectedDriver}>
-                        <SelectTrigger className="w-full md:w-[250px] text-sm">
+                        <SelectTrigger className="w-full md:w-[200px] text-sm">
                             <SelectValue placeholder="Filtrar por motorista" />
                         </SelectTrigger>
                         <SelectContent>
@@ -242,7 +279,7 @@ function HistoryContent() {
                         </SelectContent>
                     </Select>
                     <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
-                        <SelectTrigger className="w-full md:w-[250px] text-sm">
+                        <SelectTrigger className="w-full md:w-[200px] text-sm">
                             <SelectValue placeholder="Filtrar por veículo" />
                         </SelectTrigger>
                         <SelectContent>

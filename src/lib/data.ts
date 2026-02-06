@@ -1,6 +1,5 @@
-
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { db, auth } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp, deleteField } from "firebase/firestore";
 
@@ -123,9 +122,22 @@ export const deleteVehicle = async (id: string): Promise<void> => {
 }
 
 // Checklist Functions
-export const getChecklists = async (): Promise<DailyChecklist[]> => {
+export const getChecklists = async (date?: Date): Promise<DailyChecklist[]> => {
     const checklistsCollection = collection(db, "checklists");
-    const q = query(checklistsCollection, orderBy("departureTimestamp", "desc"));
+    let q;
+
+    if (date) {
+        const start = startOfMonth(date);
+        const end = endOfMonth(date);
+        q = query(checklistsCollection,
+            where("departureTimestamp", ">=", Timestamp.fromDate(start)),
+            where("departureTimestamp", "<=", Timestamp.fromDate(end)),
+            orderBy("departureTimestamp", "desc")
+        );
+    } else {
+        q = query(checklistsCollection, orderBy("departureTimestamp", "desc"));
+    }
+
     const checklistSnapshot = await getDocs(q);
     
     return checklistSnapshot.docs.map(doc => {
