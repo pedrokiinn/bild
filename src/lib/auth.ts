@@ -10,31 +10,6 @@ import { auth, db } from './firebase';
 import { collection, doc, getDoc, query, getDocs, setDoc } from "firebase/firestore";
 import type { User } from "@/types";
 
-/**
- * Securely gets the currently authenticated user's profile from the server-side.
- * This should be the single source of truth for user identity in server actions.
- * Throws an error if the user is not authenticated or their profile doesn't exist.
- * @returns A Promise that resolves to the User object.
- */
-export async function getCurrentUser(): Promise<User> {
-    const firebaseUser = auth.currentUser;
-    if (!firebaseUser) {
-        throw new Error("Usuário não autenticado. Por favor, faça login novamente.");
-    }
-
-    const userDocRef = doc(db, "users", firebaseUser.uid);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-        return { id: userDocSnap.id, ...userDocSnap.data() } as User;
-    }
-
-    // This can happen if user exists in Auth but not in Firestore.
-    // We log them out to resolve the inconsistent state.
-    await signOut(auth);
-    throw new Error("Perfil de usuário não encontrado. Faça login novamente.");
-}
-
 export async function login(email: string, password_raw: string): Promise<User> {
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password_raw);

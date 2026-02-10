@@ -1,9 +1,8 @@
+
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { db, auth } from './firebase';
+import { db } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp, deleteField } from "firebase/firestore";
-import { getCurrentUser } from './auth';
-
 
 // User Functions
 export const getUsers = async (): Promise<User[]> => {
@@ -26,10 +25,9 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
     await updateDoc(userDoc, { role: newRole });
 };
 
-export const deleteUser = async (userId: string, reason: string, adminName: string): Promise<void> => {
-    const adminUser = auth.currentUser;
-    if (!adminUser) {
-        throw new Error("Ação não autorizada. Administrador não está logado.");
+export const deleteUser = async (userId: string, reason: string, adminUser: User | null): Promise<void> => {
+    if (!adminUser || adminUser.role !== 'admin') {
+        throw new Error("Ação não autorizada. Apenas administradores podem excluir usuários.");
     }
     
     const userToDeleteDoc = doc(db, "users", userId);
@@ -44,8 +42,8 @@ export const deleteUser = async (userId: string, reason: string, adminName: stri
     const report: Omit<DeletionReport, 'id' | 'timestamp'> & { timestamp: any } = {
         deletedUserId: userId,
         deletedUserName: userToDelete.name || 'N/A',
-        adminId: adminUser.uid,
-        adminName: adminName,
+        adminId: adminUser.id,
+        adminName: adminUser.name,
         reason,
         timestamp: serverTimestamp(),
     };
@@ -123,23 +121,50 @@ export const deleteVehicle = async (id: string): Promise<void> => {
 }
 
 // Checklist Functions
-export const getChecklists = async (date?: Date): Promise<DailyChecklist[]> => {
-    const checklistsCollection = collection(db, "checklists");
-    let q;
+export const getChecklists = async (user: User | null, date?: Date): Promise<DailyChecklist[]> => {
+    if (!user) return [];
 
-    if (date) {
-        const start = startOfMonth(date);
-        const end = endOfMonth(date);
-        q = query(checklistsCollection,
-            where("departureTimestamp", ">=", Timestamp.fromDate(start)),
-            where("departureTimestamp", "<=", Timestamp.fromDate(end)),
-            orderBy("departureTimestamp", "desc")
-        );
-    } else {
-        q = query(checklistsCollection, orderBy("departureTimestamp", "desc"));
+    const checklistsCollection = collection(db, "checklists");
+    
+    let finalQuery;
+
+    // RBAC: If user is collaborator, add a filter for their ID.
+    if (user.role === 'collaborator') {
+        // Querying for a specific user and ordering by timestamp requires a composite index.
+        // To avoid this, we fetch the user's documents and then filter/sort in the application.
+        const userChecklistsQuery = query(checklistsCollection, where("driverId", "==", user.id));
+        const checklistSnapshot = await getDocs(userChecklistsQuery);
+        let userChecklists = checklistSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return { id: doc.id, ...data } as DailyChecklist
+        });
+
+        // Date filtering in application code
+        if (date) {
+            const start = startOfMonth(date);
+            const end = endOfMonth(date);
+            userChecklists = userChecklists.filter(c => {
+                const departureDate = c.departureTimestamp.toDate();
+                return departureDate >= start && departureDate <= end;
+            });
+        }
+        
+        // Sorting in application code
+        userChecklists.sort((a, b) => b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis());
+        return userChecklists;
+
+    } else { // Admin: Can see all checklists
+        const conditions = [];
+        if (date) {
+            const start = startOfMonth(date);
+            const end = endOfMonth(date);
+            conditions.push(where("departureTimestamp", ">=", Timestamp.fromDate(start)));
+            conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
+        }
+        finalQuery = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
     }
 
-    const checklistSnapshot = await getDocs(q);
+    const checklistSnapshot = await getDocs(finalQuery);
     
     return checklistSnapshot.docs.map(doc => {
         const data = doc.data();
@@ -180,20 +205,23 @@ export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<Da
   return { id: docData.id, ...docData.data() } as DailyChecklist;
 };
 
-export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { id?: string }): Promise<any> => {
+export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { id?: string }, userForCreate: User | null): Promise<any> => {
   const { id, ...dataToSave } = checklistData;
   let finalData: Record<string, any>;
 
   if (id) {
-    // UPDATE: Preserve original driver info, do not fetch current user.
+    // UPDATE: The user ID is already associated, so we don't need to re-assign it.
+    // The original driver info is preserved.
     finalData = { ...dataToSave };
   } else {
-    // CREATE: Securely set driver info from the currently authenticated user.
-    const user = await getCurrentUser();
+    // CREATE: Securely set driver info from the provided user context.
+    if (!userForCreate) {
+      throw new Error("Usuário não autenticado. A criação do checklist falhou.");
+    }
     finalData = {
       ...dataToSave,
-      driverId: user.id,
-      driverName: user.name,
+      driverId: userForCreate.id,
+      driverName: userForCreate.name,
     };
   }
 

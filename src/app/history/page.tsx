@@ -1,10 +1,11 @@
+
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { DailyChecklist, Vehicle, Refueling } from '@/types';
+import type { DailyChecklist, Vehicle, Refueling, User } from '@/types';
 import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText, User, Fuel } from 'lucide-react';
+import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText, User as UserIcon, Fuel } from 'lucide-react';
 import { format, getMonth, getYear, setMonth, setYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -26,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import MonthlyReportDialog from '@/components/history/MonthlyReportDialog';
-import { getCurrentUser } from '@/lib/auth';
+import { useUser } from '@/context/UserContext';
 
 function HistoryContent() {
     const [checklists, setChecklists] = useState<(DailyChecklist & { vehicle?: Vehicle })[]>([]);
@@ -44,12 +45,14 @@ function HistoryContent() {
     const [selectedDate, setSelectedDate] = useState(new Date());
 
     const { toast } = useToast();
+    const user = useUser();
 
     const loadData = useCallback(async () => {
+        if (!user) return;
         setIsLoading(true);
         try {
             const [loadedChecklists, loadedVehicles] = await Promise.all([
-                getChecklists(selectedDate),
+                getChecklists(user, selectedDate),
                 getVehicles(),
             ]);
 
@@ -70,7 +73,7 @@ function HistoryContent() {
         } finally {
             setIsLoading(false);
         }
-    }, [toast, selectedDate]);
+    }, [toast, selectedDate, user]);
 
     useEffect(() => {
         loadData();
@@ -134,7 +137,6 @@ function HistoryContent() {
         if (!selectedChecklist) return;
 
         try {
-            const user = await getCurrentUser();
             const updatedChecklist: Partial<DailyChecklist> & { id: string } = { ...selectedChecklist };
             const isNewArrival = updatedChecklist.status === 'pending_arrival';
 
@@ -158,7 +160,7 @@ function HistoryContent() {
             delete (updatedChecklist as any).fuelType;
 
 
-            await saveChecklist(updatedChecklist);
+            await saveChecklist(updatedChecklist, null); // Pass null for userForCreate as this is an update
 
             toast({
                 title: "Checklist Atualizado!",
@@ -267,17 +269,19 @@ function HistoryContent() {
                             {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                         </SelectContent>
                      </Select>
-                     <Select value={selectedDriver} onValueChange={setSelectedDriver}>
-                        <SelectTrigger className="w-full md:w-[200px] text-sm">
-                            <SelectValue placeholder="Filtrar por motorista" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos os motoristas</SelectItem>
-                            {drivers.map(d => (
-                                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                     {user?.role === 'admin' && (
+                        <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+                            <SelectTrigger className="w-full md:w-[200px] text-sm">
+                                <SelectValue placeholder="Filtrar por motorista" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos os motoristas</SelectItem>
+                                {drivers.map(d => (
+                                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                     )}
                     <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
                         <SelectTrigger className="w-full md:w-[200px] text-sm">
                             <SelectValue placeholder="Filtrar por veículo" />
@@ -313,7 +317,7 @@ function HistoryContent() {
                                     <CardContent className="flex-1 flex flex-col justify-between">
                                         <div className="space-y-3 text-sm mb-4">
                                             <div className="flex items-center gap-2 text-slate-700">
-                                                <User className="w-4 h-4 text-muted-foreground" /> 
+                                                <UserIcon className="w-4 h-4 text-muted-foreground" /> 
                                                 <span className="font-medium">Motorista:</span> {checklist.driverName}
                                             </div>
                                             <div className="flex items-center gap-1.5">

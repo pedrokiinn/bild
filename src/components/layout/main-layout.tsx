@@ -18,13 +18,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight, Fuel, Eye, EyeOff } from 'lucide-react';
-import { User, getCurrentUser, login, logout, register } from '@/lib/auth';
+import { User, login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -33,6 +34,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { UserProvider } from '@/context/UserContext';
 
 
 const navigationItems = [
@@ -55,6 +57,7 @@ const navigationItems = [
         title: "Consumo",
         url: "/consumption",
         icon: Fuel,
+        adminOnly: true,
     },
     {
         title: "Meus Veículos",
@@ -338,13 +341,18 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 try {
-                    // Use the now-secure getCurrentUser to fetch profile data.
-                    // This prevents issues where the auth state is valid but the DB profile is missing.
-                    const userProfile = await getCurrentUser();
-                    setUser(userProfile);
+                    const userDocRef = doc(db, "users", firebaseUser.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+                    if (userDocSnap.exists()) {
+                        setUser({ id: userDocSnap.id, ...userDocSnap.data() } as User);
+                    } else {
+                        // Inconsistent state, user exists in Auth but not Firestore. Force logout.
+                        await logout();
+                        setUser(null);
+                    }
                 } catch (error) {
-                    console.error("Inconsistent auth state detected. Forcing logout.", error);
-                    await logout(); // This will trigger onAuthStateChanged again with a null user.
+                    console.error("Error fetching user profile:", error);
+                    await logout();
                     setUser(null);
                 }
             } else {
@@ -384,73 +392,75 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="min-h-screen flex w-full">
-            {user ? (
-                <>
-                    <Sidebar>
-                        <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
-                            <Logo />
-                        </SidebarHeader>
+        <UserProvider user={user}>
+            <div className="min-h-screen flex w-full">
+                {user ? (
+                    <>
+                        <Sidebar>
+                            <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
+                                <Logo />
+                            </SidebarHeader>
 
-                        <SidebarContent className='p-3'>
-                            <NavigationMenu user={user} />
-                        </SidebarContent>
+                            <SidebarContent className='p-3'>
+                                <NavigationMenu user={user} />
+                            </SidebarContent>
 
-                        <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
-                            {user && (
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
-                                            <span className="text-white font-semibold text-sm">
-                                                {user.name.charAt(0)?.toUpperCase() || 'U'}
-                                            </span>
+                            <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
+                                {user && (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
+                                                <span className="text-white font-semibold text-sm">
+                                                    {user.name.charAt(0)?.toUpperCase() || 'U'}
+                                                </span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-semibold text-slate-900 text-sm truncate" title={user.name}>
+                                                    {user.name || 'Usuário'}
+                                                </p>
+                                                <p className="text-xs text-slate-500 truncate" title={user.email}>{user.email}</p>
+                                            </div>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-semibold text-slate-900 text-sm truncate" title={user.name}>
-                                                {user.name || 'Usuário'}
-                                            </p>
-                                            <p className="text-xs text-slate-500 truncate" title={user.email}>{user.email}</p>
-                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleLogout}
+                                            className="w-full"
+                                        >
+                                            <LogOut className="w-4 h-4 mr-2" />
+                                            Sair
+                                        </Button>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleLogout}
-                                        className="w-full"
-                                    >
-                                        <LogOut className="w-4 h-4 mr-2" />
-                                        Sair
-                                    </Button>
+                                )}
+                            </SidebarFooter>
+                        </Sidebar>
+
+                        <SidebarInset>
+                            <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between lg:hidden">
+                                <div className="flex items-center gap-2">
+                                    <SidebarTrigger>
+                                        <Menu className="w-5 h-5" />
+                                    </SidebarTrigger>
+                                    <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'G3 Checklist'}</h1>
                                 </div>
-                            )}
-                        </SidebarFooter>
-                    </Sidebar>
+                            </header>
 
-                    <SidebarInset>
-                         <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between lg:hidden">
-                            <div className="flex items-center gap-2">
-                                <SidebarTrigger>
-                                    <Menu className="w-5 h-5" />
-                                </SidebarTrigger>
-                                <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'G3 Checklist'}</h1>
-                            </div>
-                        </header>
-
-                        <main className="flex-1 overflow-auto">
-                            {children}
-                        </main>
-                    </SidebarInset>
-                </>
-            ) : (
-                <div className="w-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-gray-100">
-                    {authView === 'login' ? (
-                        <LoginView onLoginSuccess={handleAuthSuccess} onSwitchToRegister={() => setAuthView('register')} />
-                    ) : (
-                        <RegisterView onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={() => setAuthView('login')} />
-                    )}
-                </div>
-            )}
-        </div>
+                            <main className="flex-1 overflow-auto">
+                                {children}
+                            </main>
+                        </SidebarInset>
+                    </>
+                ) : (
+                    <div className="w-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-gray-100">
+                        {authView === 'login' ? (
+                            <LoginView onLoginSuccess={handleAuthSuccess} onSwitchToRegister={() => setAuthView('register')} />
+                        ) : (
+                            <RegisterView onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={() => setAuthView('login')} />
+                        )}
+                    </div>
+                )}
+            </div>
+        </UserProvider>
     );
 }
 

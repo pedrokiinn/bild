@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { DailyChecklist, Vehicle, FuelType, Refueling, User } from "@/types";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { getCurrentUser } from "@/lib/auth";
+import { useUser } from "@/context/UserContext";
 
 interface ArrivalDialogProps {
   isOpen: boolean;
@@ -34,18 +35,12 @@ export function ArrivalDialog({ isOpen, onClose, onSave, checklist }: ArrivalDia
   const [refuelings, setRefuelings] = useState<RefuelingInput[]>([]);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const user = useUser();
   
   const isEditing = !!checklist?.arrivalMileage;
 
   useEffect(() => {
-    const fetchUser = async () => {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-    };
-
     if (isOpen && checklist) {
-      fetchUser();
       setArrivalMileage(checklist.arrivalMileage?.toString() || "");
       
       if (checklist.refuelings && checklist.refuelings.length > 0) {

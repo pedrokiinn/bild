@@ -17,6 +17,7 @@ import ChecklistItem from './ChecklistItem';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useUser } from '@/context/UserContext';
 
 interface ChecklistFormProps {
   vehicles: Vehicle[];
@@ -42,6 +43,7 @@ type RefuelingInput = {
 export default function ChecklistForm({ vehicles, selectedVehicle, checklistItems, onBack }: ChecklistFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const user = useUser();
   const [departureMileage, setDepartureMileage] = useState<string>(selectedVehicle?.mileage?.toString() || '');
   const [itemStates, setItemStates] = useState<Record<string, 'ok' | 'problem'>>({});
   const [itemValues, setItemValues] = useState<Record<string, string>>({});
@@ -207,7 +209,6 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             });
         }
 
-        // The driverId and driverName are now securely set on the server in the saveChecklist function.
         const newChecklist: Omit<DailyChecklist, 'id' | 'driverId' | 'driverName'> = {
             vehicleId: selectedVehicle.id,
             departureTimestamp: new Date(),
@@ -221,7 +222,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             refuelings: numericRefuelings
         };
 
-        await saveChecklist(newChecklist);
+        await saveChecklist(newChecklist, user);
 
         toast({
             title: 'Checklist salvo!',

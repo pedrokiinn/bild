@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import { User } from '@/types';
@@ -19,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useUser } from '@/context/UserContext';
 
 function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
     const [reason, setReason] = useState('');
@@ -73,6 +75,7 @@ function UsersContent() {
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
     const { toast } = useToast();
+    const adminUser = useUser();
 
 
     const loadData = async () => {
@@ -107,7 +110,7 @@ function UsersContent() {
         
         setIsSaving(true);
         try {
-            await deleteUser(userToDelete.id, reason, "Admin");
+            await deleteUser(userToDelete.id, reason, adminUser);
             toast({ title: "Sucesso", description: `Usuário ${userToDelete.name} excluído.`});
             loadData();
         } catch (e: any) {
@@ -198,6 +201,7 @@ function UsersContent() {
                                     <Select
                                         value={user.role}
                                         onValueChange={(newRole: 'admin' | 'collaborator') => handleRoleChange(user.id, newRole)}
+                                        disabled={user.id === adminUser?.id}
                                     >
                                         <SelectTrigger className="w-full text-xs sm:text-sm mt-1">
                                             <SelectValue />
@@ -221,6 +225,7 @@ function UsersContent() {
                                         variant="destructive"
                                         size="icon"
                                         onClick={() => openDeleteDialog(user)}
+                                        disabled={user.id === adminUser?.id}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </Button>

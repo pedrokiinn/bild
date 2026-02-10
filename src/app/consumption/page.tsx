@@ -2,15 +2,16 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { DailyChecklist, Vehicle } from '@/types';
+import { DailyChecklist, Vehicle, User } from '@/types';
 import { getChecklists, getVehicles } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Fuel, Car, Route, TrendingUp, DollarSign, Droplets, Calendar, User } from 'lucide-react';
+import { Fuel, Car, Route, TrendingUp, DollarSign, Droplets, Calendar, User as UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useUser } from '@/context/UserContext';
 
 interface Trip {
   id: string;
@@ -43,12 +44,14 @@ function ConsumptionContent() {
     const [checklists, setChecklists] = useState<DailyChecklist[]>([]);
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const user = useUser();
 
     useEffect(() => {
         const loadData = async () => {
+            if (!user) return;
             setIsLoading(true);
             try {
-                const [checklistData, vehicleData] = await Promise.all([getChecklists(), getVehicles()]);
+                const [checklistData, vehicleData] = await Promise.all([getChecklists(user), getVehicles()]);
                 setChecklists(checklistData);
                 setVehicles(vehicleData);
             } catch (error) {
@@ -58,7 +61,7 @@ function ConsumptionContent() {
             }
         };
         loadData();
-    }, []);
+    }, [user]);
 
     const trips = useMemo((): Trip[] => {
         const vehicleMap = new Map(vehicles.map(v => [v.id, v]));

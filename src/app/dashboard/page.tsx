@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DailyChecklist, Vehicle } from '@/types';
+import { DailyChecklist, Vehicle, User } from '@/types';
 import { getChecklists, getVehicles } from '@/lib/data';
 import { Car, ClipboardCheck, TrendingUp, AlertCircle, Plus, Calendar } from 'lucide-react';
 import StatsCard from '@/components/dashboard/StatsCard';
@@ -11,16 +11,20 @@ import VehicleStatus from '@/components/dashboard/VehicleStatus';
 import { subDays, format } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useUser } from '@/context/UserContext';
 
 function DashboardContent() {
     const [data, setData] = useState<{ checklists: (DailyChecklist & { vehicle?: Vehicle })[], vehicles: Vehicle[] }>({ checklists: [], vehicles: [] });
     const [isLoading, setIsLoading] = useState(true);
+    const user = useUser();
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!user) return;
+
             setIsLoading(true);
             try {
-                const [checklistsData, vehiclesData] = await Promise.all([getChecklists(), getVehicles()]);
+                const [checklistsData, vehiclesData] = await Promise.all([getChecklists(user), getVehicles()]);
                 
                 const checklistsWithVehicleData = checklistsData.map(checklist => {
                     const vehicle = vehiclesData.find(v => v.id === checklist.vehicleId);
@@ -37,7 +41,7 @@ function DashboardContent() {
         };
 
         fetchData();
-    }, []);
+    }, [user]);
 
     const { checklists, vehicles } = data;
 
