@@ -99,9 +99,9 @@ function UsersContent() {
             await updateUserRole(userId, newRole);
             toast({ title: "Sucesso", description: "Função do usuário atualizada."});
             loadData();
-        } catch (e) {
+        } catch (e: any) {
             console.error("Falha ao atualizar a função do usuário:", e);
-            toast({ title: "Erro", description: "Ocorreu um erro ao tentar atualizar a função.", variant: "destructive"});
+            toast({ title: "Erro", description: e.message || "Ocorreu um erro ao tentar atualizar a função.", variant: "destructive"});
         }
     };
 
@@ -201,7 +201,7 @@ function UsersContent() {
                                     <Select
                                         value={user.role}
                                         onValueChange={(newRole: 'admin' | 'collaborator') => handleRoleChange(user.id, newRole)}
-                                        disabled={user.id === adminUser?.id}
+                                        disabled={user.id === adminUser?.id || user.email === 'keennlemariem@gmail.com'}
                                     >
                                         <SelectTrigger className="w-full text-xs sm:text-sm mt-1">
                                             <SelectValue />
@@ -225,7 +225,7 @@ function UsersContent() {
                                         variant="destructive"
                                         size="icon"
                                         onClick={() => openDeleteDialog(user)}
-                                        disabled={user.id === adminUser?.id}
+                                        disabled={user.id === adminUser?.id || user.email === 'keennlemariem@gmail.com'}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </Button>

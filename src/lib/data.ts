@@ -21,6 +21,10 @@ export const getUserById = async (id: string): Promise<User | undefined> => {
 }
 
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
+    const userSnap = await getDoc(doc(db, "users", userId));
+    if (userSnap.exists() && userSnap.data().email === 'keennlemariem@gmail.com') {
+        throw new Error("A função deste usuário administrador não pode ser alterada.");
+    }
     const userDoc = doc(db, "users", userId);
     await updateDoc(userDoc, { role: newRole });
 };
@@ -36,6 +40,10 @@ export const deleteUser = async (userId: string, reason: string, adminUser: User
     
     if (!userToDelete) throw new Error("Usuário não encontrado.");
     
+    if (userToDelete.email === 'keennlemariem@gmail.com') {
+        throw new Error("Este usuário administrador principal não pode ser excluído.");
+    }
+
     // We need to call a function to delete the user from auth, this will be handled by a cloud function trigger.
     // For now we just create the report and delete the firestore user document.
 
@@ -124,57 +132,30 @@ export const deleteVehicle = async (id: string): Promise<void> => {
 export const getChecklists = async (user: User | null, date?: Date): Promise<DailyChecklist[]> => {
     if (!user) return [];
 
+    let checklistsData: DailyChecklist[];
     const checklistsCollection = collection(db, "checklists");
     
-    let finalQuery;
-
-    // RBAC: If user is collaborator, add a filter for their ID.
-    if (user.role === 'collaborator') {
-        // Querying for a specific user and ordering by timestamp requires a composite index.
-        // To avoid this, we fetch the user's documents and then filter/sort in the application.
-        const userChecklistsQuery = query(checklistsCollection, where("driverId", "==", user.id));
-        const checklistSnapshot = await getDocs(userChecklistsQuery);
-        let userChecklists = checklistSnapshot.docs.map(doc => {
-            const data = doc.data();
-            return { id: doc.id, ...data } as DailyChecklist
-        });
-
-        // Date filtering in application code
-        if (date) {
-            const start = startOfMonth(date);
-            const end = endOfMonth(date);
-            userChecklists = userChecklists.filter(c => {
-                const departureDate = c.departureTimestamp.toDate();
-                return departureDate >= start && departureDate <= end;
-            });
-        }
-        
-        // Sorting in application code
-        userChecklists.sort((a, b) => b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis());
-        return userChecklists;
-
-    } else { // Admin: Can see all checklists
-        const conditions = [];
-        if (date) {
-            const start = startOfMonth(date);
-            const end = endOfMonth(date);
-            conditions.push(where("departureTimestamp", ">=", Timestamp.fromDate(start)));
-            conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
-        }
-        finalQuery = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
+    const conditions = [];
+    if (date) {
+        const start = startOfMonth(date);
+        const end = endOfMonth(date);
+        conditions.push(where("departureTimestamp", ">=", Timestamp.fromDate(start)));
+        conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
     }
-
-    const checklistSnapshot = await getDocs(finalQuery);
+    const q = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
     
-    return checklistSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return { 
-            id: doc.id, 
-            ...data,
-            departureTimestamp: data.departureTimestamp,
-            arrivalTimestamp: data.arrivalTimestamp || undefined,
-        } as DailyChecklist;
-    });
+    const checklistSnapshot = await getDocs(q);
+
+    checklistsData = checklistSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+    } as DailyChecklist));
+
+    if (user.role === 'collaborator') {
+        return checklistsData.filter(c => c.driverId === user.id);
+    }
+    
+    return checklistsData;
 };
 
 
