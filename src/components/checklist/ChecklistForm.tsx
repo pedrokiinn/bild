@@ -14,7 +14,6 @@ import { saveChecklist } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import type { ChecklistItemOption } from '@/types';
 import ChecklistItem from './ChecklistItem';
-import { getCurrentUser } from '@/lib/auth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -166,18 +165,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
     }
     
     setIsSaving(true);
-    const user = await getCurrentUser();
-
-    if (!user) {
-        toast({
-            title: 'Erro de Autenticação',
-            description: 'Sessão expirada. Por favor, faça login novamente para continuar.',
-            variant: 'destructive',
-        });
-        setIsSaving(false);
-        return;
-    }
-
+    
     if(Number(departureMileage) < (selectedVehicle?.mileage ?? 0)) {
         toast({
             title: 'Quilometragem inválida',
@@ -219,10 +207,9 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             });
         }
 
-        const newChecklist: Omit<DailyChecklist, 'id'> = {
+        // The driverId and driverName are now securely set on the server in the saveChecklist function.
+        const newChecklist: Omit<DailyChecklist, 'id' | 'driverId' | 'driverName'> = {
             vehicleId: selectedVehicle.id,
-            driverId: user.id,
-            driverName: user.name,
             departureTimestamp: new Date(),
             departureMileage: Number(departureMileage),
             checklistItems: checklistItemsToSave,
@@ -241,11 +228,11 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
             description: 'O checklist de saída foi registrado com sucesso.',
         });
         router.push('/history');
-    } catch (error) {
-        console.error("Erro ao salvar o checklist:", error)
+    } catch (error: any) {
+        console.error("Erro ao salvar o checklist:", error);
         toast({
             title: 'Erro ao salvar',
-            description: 'Não foi possível salvar o checklist. Tente novamente.',
+            description: error.message || 'Não foi possível salvar o checklist. Tente novamente.',
             variant: 'destructive',
         });
         setIsSaving(false);

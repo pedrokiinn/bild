@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -336,8 +337,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                const userProfile = await getCurrentUser();
-                setUser(userProfile);
+                try {
+                    // Use the now-secure getCurrentUser to fetch profile data.
+                    // This prevents issues where the auth state is valid but the DB profile is missing.
+                    const userProfile = await getCurrentUser();
+                    setUser(userProfile);
+                } catch (error) {
+                    console.error("Inconsistent auth state detected. Forcing logout.", error);
+                    await logout(); // This will trigger onAuthStateChanged again with a null user.
+                    setUser(null);
+                }
             } else {
                 setUser(null);
             }

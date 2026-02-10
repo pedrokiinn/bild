@@ -2,6 +2,7 @@ import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { db, auth } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp, deleteField } from "firebase/firestore";
+import { getCurrentUser } from './auth';
 
 
 // User Functions
@@ -179,53 +180,61 @@ export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<Da
   return { id: docData.id, ...docData.data() } as DailyChecklist;
 };
 
-export const saveChecklist = async (checklistData: Omit<DailyChecklist, 'id'> & { id?: string }): Promise<any> => {
+export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { id?: string }): Promise<any> => {
   const { id, ...dataToSave } = checklistData;
+  let finalData: Record<string, any>;
 
-  if (!dataToSave.driverId) {
-      throw new Error("ID do motorista não fornecido.");
+  if (id) {
+    // UPDATE: Preserve original driver info, do not fetch current user.
+    finalData = { ...dataToSave };
+  } else {
+    // CREATE: Securely set driver info from the currently authenticated user.
+    const user = await getCurrentUser();
+    finalData = {
+      ...dataToSave,
+      driverId: user.id,
+      driverName: user.name,
+    };
   }
 
-  // Firestore does not support `undefined`. Create a clean object.
-  const finalData: Record<string, any> = { ...dataToSave };
-
-  // Convert JS Dates to Firestore Timestamps
-  if (dataToSave.departureTimestamp instanceof Date) {
-    finalData.departureTimestamp = Timestamp.fromDate(dataToSave.departureTimestamp);
+  // Convert JS Dates to Firestore Timestamps for portability
+  if (finalData.departureTimestamp instanceof Date) {
+    finalData.departureTimestamp = Timestamp.fromDate(finalData.departureTimestamp);
   }
-  
-  if (dataToSave.arrivalTimestamp instanceof Date) {
-    finalData.arrivalTimestamp = Timestamp.fromDate(dataToSave.arrivalTimestamp);
-  } else if (dataToSave.arrivalTimestamp === undefined) {
-    // If it's undefined, we need to make sure it's not in the object for `addDoc`
-    // or use `deleteField()` for `updateDoc`.
+  if (finalData.arrivalTimestamp instanceof Date) {
+    finalData.arrivalTimestamp = Timestamp.fromDate(finalData.arrivalTimestamp);
+  } else if (finalData.arrivalTimestamp === undefined) {
+    // Ensure undefined doesn't get sent, which can cause issues.
+    // For updates, we may need to delete the field.
     delete finalData.arrivalTimestamp;
   }
 
   if (id) {
     const checklistDoc = doc(db, "checklists", id);
-    // If arrivalTimestamp is explicitly being set to undefined, we should delete it from the document
+    // If arrivalTimestamp is explicitly being set to undefined on an update, we should delete it.
     if (checklistData.arrivalTimestamp === undefined) {
         finalData.arrivalTimestamp = deleteField();
     }
     await updateDoc(checklistDoc, finalData);
 
+    // Update vehicle mileage on arrival
     if (finalData.arrivalMileage) {
         const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
         await updateDoc(vehicleDoc, { mileage: finalData.arrivalMileage });
     }
-
     return { id, ...checklistData };
   } 
   
+  // Logic for creating a new checklist
   const docRef = await addDoc(collection(db, "checklists"), finalData);
 
+  // Update vehicle mileage on departure
   if (finalData.departureMileage) {
     const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
     await updateDoc(vehicleDoc, { mileage: finalData.departureMileage });
   }
   
-  return { id: docRef.id, ...checklistData };
+  return { id: docRef.id, ...finalData };
 }
 
 export const checklistItemsOptions: ChecklistItemOption[] = [
