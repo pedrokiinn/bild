@@ -132,30 +132,52 @@ export const deleteVehicle = async (id: string): Promise<void> => {
 export const getChecklists = async (user: User | null, date?: Date): Promise<DailyChecklist[]> => {
     if (!user) return [];
 
-    let checklistsData: DailyChecklist[];
     const checklistsCollection = collection(db, "checklists");
-    
-    const conditions = [];
-    if (date) {
-        const start = startOfMonth(date);
-        const end = endOfMonth(date);
-        conditions.push(where("departureTimestamp", ">=", Timestamp.fromDate(start)));
-        conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
-    }
-    const q = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
-    
-    const checklistSnapshot = await getDocs(q);
+    let q;
+    let checklistSnapshot;
 
-    checklistsData = checklistSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-    } as DailyChecklist));
+    if (user.role === 'admin') {
+        // For admins, query by date range and order. This is efficient.
+        const conditions = [];
+        if (date) {
+            const start = startOfMonth(date);
+            const end = endOfMonth(date);
+            conditions.push(where("departureTimestamp", ">=", Timestamp.fromDate(start)));
+            conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
+        }
+        q = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
+        checklistSnapshot = await getDocs(q);
+        return checklistSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
 
-    if (user.role === 'collaborator') {
-        return checklistsData.filter(c => c.driverId === user.id);
+    } else { // For collaborators
+        // For collaborators, query just by their ID to avoid complex index requirements.
+        q = query(checklistsCollection, where("driverId", "==", user.id));
+        checklistSnapshot = await getDocs(q);
+        
+        let checklistsData = checklistSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        } as DailyChecklist));
+
+        // Then, filter by date in JavaScript.
+        if (date) {
+            const start = startOfMonth(date);
+            const end = endOfMonth(date);
+            checklistsData = checklistsData.filter(c => {
+                if (!c.departureTimestamp) return false;
+                const checkDate = c.departureTimestamp.toDate();
+                return checkDate >= start && checkDate <= end;
+            });
+        }
+        
+        // And sort by date in JavaScript.
+        checklistsData.sort((a, b) => {
+            if (!a.departureTimestamp || !b.departureTimestamp) return 0;
+            return b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis();
+        });
+
+        return checklistsData;
     }
-    
-    return checklistsData;
 };
 
 
