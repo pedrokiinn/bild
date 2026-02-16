@@ -35,7 +35,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { UserProvider } from '@/context/UserContext';
-import { ForgotPasswordDialog } from '../auth/ForgotPasswordDialog';
 
 
 const navigationItems = [
@@ -121,7 +120,7 @@ function NavigationMenu({ user }: { user: User | null }) {
     );
 }
 
-function LoginView({ onLoginSuccess, onSwitchToRegister, onForgotPasswordClick }: { onLoginSuccess: (user: User) => void, onSwitchToRegister: () => void, onForgotPasswordClick: () => void }) {
+function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (user: User) => void, onSwitchToRegister: () => void }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -162,12 +161,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister, onForgotPasswordClick }
                         <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" />
                     </div>
                     <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                            <Label htmlFor="login-password">Senha</Label>
-                            <button type="button" onClick={onForgotPasswordClick} className="text-xs text-primary hover:underline font-semibold">
-                                Esqueci minha senha
-                            </button>
-                        </div>
+                        <Label htmlFor="login-password">Senha</Label>
                         <div className="relative">
                             <Input
                                 id="login-password"
@@ -342,7 +336,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authView, setAuthView] = useState<'login' | 'register'>('login');
-    const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -465,7 +458,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                             <LoginView 
                                 onLoginSuccess={handleAuthSuccess} 
                                 onSwitchToRegister={() => setAuthView('register')}
-                                onForgotPasswordClick={() => setIsForgotPasswordOpen(true)}
                             />
                         ) : (
                             <RegisterView 
@@ -476,10 +468,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                     </div>
                 )}
             </div>
-            <ForgotPasswordDialog
-                isOpen={isForgotPasswordOpen}
-                onOpenChange={setIsForgotPasswordOpen}
-            />
         </UserProvider>
     );
 }
@@ -491,3 +479,5 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </SidebarProvider>
     )
 }
+
+    
