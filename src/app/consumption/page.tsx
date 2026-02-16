@@ -1,20 +1,25 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { DailyChecklist, Vehicle, User } from '@/types';
-import { getChecklists, getVehicles } from '@/lib/data';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { DailyChecklist, Vehicle, User, Refueling } from '@/types';
+import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Fuel, Car, Route, TrendingUp, DollarSign, Droplets, Calendar, User as UserIcon } from 'lucide-react';
+import { Fuel, Car, Route, TrendingUp, DollarSign, Droplets, Calendar, User as UserIcon, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useUser } from '@/context/UserContext';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrivalDialog } from '@/components/history/ArrivalDialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface Trip {
   id: string;
+  vehicleId: string;
   vehicleInfo: string;
   driverName: string;
   startDate: Date;
@@ -22,6 +27,9 @@ interface Trip {
   liters: number;
   cost: number;
   efficiency: number | null;
+  departureMileage: number;
+  arrivalMileage?: number;
+  checklist: DailyChecklist & { vehicle?: Vehicle };
 }
 
 const getEfficiencyBadge = (efficiency: number | null) => {
@@ -44,24 +52,35 @@ function ConsumptionContent() {
     const [checklists, setChecklists] = useState<DailyChecklist[]>([]);
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedVehicle, setSelectedVehicle] = useState('all');
+    const [isArrivalDialogOpen, setIsArrivalDialogOpen] = useState(false);
+    const [selectedChecklist, setSelectedChecklist] = useState<(DailyChecklist & { vehicle?: Vehicle }) | null>(null);
+    
     const user = useUser();
+    const { toast } = useToast();
+
+    const loadData = useCallback(async () => {
+        if (!user) return;
+        setIsLoading(true);
+        try {
+            const [checklistData, vehicleData] = await Promise.all([getChecklists(user), getVehicles()]);
+            setChecklists(checklistData);
+            setVehicles(vehicleData);
+        } catch (error) {
+            console.error("Erro ao carregar dados de consumo:", error);
+            toast({
+                title: "Erro ao carregar dados",
+                description: "Não foi possível carregar os dados de consumo.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user, toast]);
 
     useEffect(() => {
-        const loadData = async () => {
-            if (!user) return;
-            setIsLoading(true);
-            try {
-                const [checklistData, vehicleData] = await Promise.all([getChecklists(user), getVehicles()]);
-                setChecklists(checklistData);
-                setVehicles(vehicleData);
-            } catch (error) {
-                console.error("Erro ao carregar dados de consumo:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         loadData();
-    }, [user]);
+    }, [loadData]);
 
     const trips = useMemo((): Trip[] => {
         const vehicleMap = new Map(vehicles.map(v => [v.id, v]));
@@ -77,6 +96,7 @@ function ConsumptionContent() {
                 
                 return {
                     id: c.id,
+                    vehicleId: c.vehicleId,
                     vehicleInfo: vehicle ? `${vehicle.brand} ${vehicle.model}` : 'Veículo não encontrado',
                     driverName: c.driverName,
                     startDate: c.departureTimestamp.toDate(),
@@ -84,17 +104,61 @@ function ConsumptionContent() {
                     liters,
                     cost,
                     efficiency,
+                    departureMileage: c.departureMileage,
+                    arrivalMileage: c.arrivalMileage,
+                    checklist: { ...c, vehicle },
                 };
             })
-            .filter(t => t.distance > 0)
+            .filter(t => t.distance >= 0)
             .sort((a, b) => b.startDate.getTime() - a.startDate.getTime()); // Sort by most recent trip
     }, [checklists, vehicles]);
     
+    const filteredTrips = useMemo(() => {
+        if (selectedVehicle === 'all') {
+            return trips;
+        }
+        return trips.filter(trip => trip.vehicleId === selectedVehicle);
+    }, [trips, selectedVehicle]);
+
+    const openArrivalDialog = (checklist: DailyChecklist & { vehicle?: Vehicle }) => {
+        setSelectedChecklist(checklist);
+        setIsArrivalDialogOpen(true);
+    };
+
+    const handleArrivalSave = async (arrivalMileage: number, refuelings: Refueling[]) => {
+        if (!selectedChecklist) return;
+
+        try {
+            const updatedChecklist: Partial<DailyChecklist> & { id: string } = { ...selectedChecklist };
+            
+            if (user?.role === 'admin') {
+                updatedChecklist.arrivalMileage = arrivalMileage;
+            }
+            updatedChecklist.refuelings = refuelings;
+
+            await saveChecklist(updatedChecklist, null); 
+
+            toast({
+                title: "Checklist Atualizado!",
+                description: "As informações de abastecimento foram salvas com sucesso."
+            });
+            
+            setIsArrivalDialogOpen(false);
+            setSelectedChecklist(null);
+            loadData();
+
+        } catch (error: any) {
+            console.error("Erro ao salvar abastecimento:", error);
+            toast({
+                title: "Erro ao salvar",
+                description: error.message || "Não foi possível salvar as informações.",
+                variant: 'destructive',
+            });
+        }
+    };
+    
     const renderSkeleton = () => (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {Array(4).fill(0).map((_,i) => <Skeleton key={i} className="h-24" />)}
-            </div>
              <Card>
                 <CardHeader>
                     <Skeleton className="h-6 w-1/3" />
@@ -157,7 +221,20 @@ function ConsumptionContent() {
                 ) : (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Histórico de Viagens</CardTitle>
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <CardTitle>Histórico de Viagens</CardTitle>
+                                <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
+                                    <SelectTrigger className="w-full md:w-[250px] text-sm">
+                                        <SelectValue placeholder="Filtrar por veículo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos os veículos</SelectItem>
+                                        {vehicles.map(v => (
+                                            <SelectItem key={v.id} value={v.id}>{`${v.brand} ${v.model} (${v.license_plate})`}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -165,20 +242,25 @@ function ConsumptionContent() {
                                     <TableRow>
                                         <TableHead>Veículo</TableHead>
                                         <TableHead>Motorista</TableHead>
+                                        <TableHead className="text-right">KM Saída</TableHead>
+                                        <TableHead className="text-right">KM Chegada</TableHead>
                                         <TableHead className="text-right">Distância</TableHead>
                                         <TableHead className="text-right">Litros</TableHead>
                                         <TableHead className="text-right">Custo</TableHead>
                                         <TableHead className="text-center">Eficiência (km/L)</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {trips.map(trip => (
+                                    {filteredTrips.map(trip => (
                                         <TableRow key={trip.id}>
                                             <TableCell>
                                                 <div className="font-medium">{trip.vehicleInfo}</div>
                                                 <div className="text-xs text-muted-foreground">{format(trip.startDate, 'dd/MM/yy')}</div>
                                             </TableCell>
                                             <TableCell>{trip.driverName}</TableCell>
+                                            <TableCell className="text-right">{trip.departureMileage.toLocaleString('pt-BR')} km</TableCell>
+                                            <TableCell className="text-right">{trip.arrivalMileage?.toLocaleString('pt-BR')} km</TableCell>
                                             <TableCell className="text-right">{trip.distance.toFixed(1)} km</TableCell>
                                             <TableCell className="text-right">{trip.liters > 0 ? trip.liters.toFixed(2) + ' L' : '-'}</TableCell>
                                             <TableCell className="text-right">{trip.cost > 0 ? `R$ ${trip.cost.toFixed(2)}` : '-'}</TableCell>
@@ -188,6 +270,11 @@ function ConsumptionContent() {
                                                     {getEfficiencyBadge(trip.efficiency)}
                                                 </div>
                                             </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="icon" onClick={() => openArrivalDialog(trip.checklist)}>
+                                                    <Edit className="w-4 h-4" />
+                                                </Button>
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -196,6 +283,15 @@ function ConsumptionContent() {
                     </Card>
                 )}
             </div>
+
+            {selectedChecklist && (
+                <ArrivalDialog
+                    isOpen={isArrivalDialogOpen}
+                    onClose={() => setIsArrivalDialogOpen(false)}
+                    onSave={handleArrivalSave}
+                    checklist={selectedChecklist}
+                />
+            )}
         </div>
     );
 }
