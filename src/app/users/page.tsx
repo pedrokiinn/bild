@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '@/types';
 import { getUsers, updateUserRole, deleteUser } from '@/lib/data';
+import { resetPasswordByAdmin } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Users, Shield, User as UserIcon, Loader2, Search } from 'lucide-react';
+import { Trash2, Users, Shield, User as UserIcon, Loader2, Search, KeyRound } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/context/UserContext';
+import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
 
 function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
     const [reason, setReason] = useState('');
@@ -74,6 +76,9 @@ function UsersContent() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
+    const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+    const [userToReset, setUserToReset] = useState<User | null>(null);
+
     const { toast } = useToast();
     const adminUser = useUser();
 
@@ -110,7 +115,7 @@ function UsersContent() {
         
         setIsSaving(true);
         try {
-            await deleteUser(userToDelete.id, reason, adminUser);
+            await deleteUser(userToDelete.id, reason);
             toast({ title: "Sucesso", description: `Usuário ${userToDelete.name} excluído.`});
             loadData();
         } catch (e: any) {
@@ -123,9 +128,27 @@ function UsersContent() {
         }
     };
 
+    const handleResetPassword = async (newPassword: string) => {
+        if (!userToReset) return;
+        try {
+            await resetPasswordByAdmin(userToReset.id, newPassword);
+            toast({ title: "Sucesso", description: `Senha para ${userToReset.name} foi redefinida.`});
+            setIsResetDialogOpen(false);
+            setUserToReset(null);
+        } catch (e: any) {
+            console.error("Falha ao redefinir a senha:", e);
+            toast({ title: "Erro", description: e.message || "Ocorreu um erro ao tentar redefinir a senha.", variant: "destructive"});
+        }
+    };
+
     const openDeleteDialog = (user: User) => {
         setUserToDelete(user);
         setIsDeleteDialogOpen(true);
+    };
+
+    const openResetDialog = (user: User) => {
+        setUserToReset(user);
+        setIsResetDialogOpen(true);
     };
 
     const filteredUsers = users.filter(u => {
@@ -220,7 +243,15 @@ function UsersContent() {
                                         </SelectContent>
                                     </Select>
                                 </CardContent>
-                                <CardFooter className="flex justify-end pt-4 border-t border-slate-200/60">
+                                <CardFooter className="flex justify-end pt-4 border-t border-slate-200/60 gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => openResetDialog(user)}
+                                        disabled={user.email === 'keennlemariem@gmail.com'}
+                                    >
+                                        <KeyRound className="w-4 h-4" />
+                                    </Button>
                                     <Button
                                         variant="destructive"
                                         size="icon"
@@ -247,7 +278,13 @@ function UsersContent() {
                     </div>
                 )}
             </div>
-             <DeletionDialog
+            <ResetPasswordDialog
+                isOpen={isResetDialogOpen}
+                onOpenChange={setIsResetDialogOpen}
+                onConfirm={handleResetPassword}
+                user={userToReset}
+            />
+            <DeletionDialog
                 isOpen={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}
                 onConfirm={handleDeleteUser}

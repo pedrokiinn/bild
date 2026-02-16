@@ -7,9 +7,10 @@ import {
     signOut,
     sendPasswordResetEmail,
 } from "firebase/auth";
-import { auth, db } from './firebase';
+import { auth, db, functions } from './firebase';
 import { collection, doc, getDoc, query, getDocs, setDoc } from "firebase/firestore";
 import type { User } from "@/types";
+import { httpsCallable } from "firebase/functions";
 
 export async function login(email: string, password_raw: string): Promise<User> {
     try {
@@ -90,5 +91,16 @@ export async function sendPasswordReset(email: string): Promise<void> {
              throw new Error("Se este email estiver cadastrado, um link de recuperação será enviado.");
         }
         throw new Error("Ocorreu um erro ao tentar enviar o email de recuperação.");
+    }
+}
+
+export async function resetPasswordByAdmin(targetUserId: string, newPassword: string): Promise<void> {
+    try {
+        const resetPassword = httpsCallable(functions, 'resetPasswordByAdmin');
+        await resetPassword({ targetUserId, newPassword });
+    } catch (error: any) {
+        console.error("Erro ao chamar a função de redefinição de senha:", error);
+        // Firebase functions throw an error object with a `message` property
+        throw new Error(error.message || "Falha ao redefinir a senha do usuário.");
     }
 }

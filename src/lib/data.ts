@@ -1,8 +1,9 @@
 
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { db } from './firebase';
+import { db, functions } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp, deleteField } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 
 // User Functions
 export const getUsers = async (): Promise<User[]> => {
@@ -29,40 +30,15 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
     await updateDoc(userDoc, { role: newRole });
 };
 
-export const deleteUser = async (userId: string, reason: string, adminUser: User | null): Promise<void> => {
-    if (!adminUser || adminUser.role !== 'admin') {
-        throw new Error("Ação não autorizada. Apenas administradores podem excluir usuários.");
+export const deleteUser = async (targetUserId: string, reason: string): Promise<void> => {
+    // The admin check is now done inside the cloud function
+    try {
+        const deleteUserByAdmin = httpsCallable(functions, 'deleteUserByAdmin');
+        await deleteUserByAdmin({ targetUserId, reason });
+    } catch (error: any) {
+        console.error("Erro ao chamar a função de exclusão de usuário:", error);
+        throw new Error(error.message || "Falha ao excluir o usuário.");
     }
-    
-    const userToDeleteDoc = doc(db, "users", userId);
-    const userToDeleteSnap = await getDoc(userToDeleteDoc);
-    const userToDelete = userToDeleteSnap.data() as User;
-    
-    if (!userToDelete) throw new Error("Usuário não encontrado.");
-    
-    if (userToDelete.email === 'keennlemariem@gmail.com') {
-        throw new Error("Este usuário administrador principal não pode ser excluído.");
-    }
-
-    // We need to call a function to delete the user from auth, this will be handled by a cloud function trigger.
-    // For now we just create the report and delete the firestore user document.
-
-    const report: Omit<DeletionReport, 'id' | 'timestamp'> & { timestamp: any } = {
-        deletedUserId: userId,
-        deletedUserName: userToDelete.name || 'N/A',
-        adminId: adminUser.id,
-        adminName: adminUser.name,
-        reason,
-        timestamp: serverTimestamp(),
-    };
-    
-    const reportCollection = collection(db, "deletionReports");
-    
-    const batch = writeBatch(db);
-    batch.delete(userToDeleteDoc); // This will trigger the onUserDeleted cloud function
-    batch.set(doc(reportCollection), report);
-
-    await batch.commit();
 };
 
 // Deletion Report Functions
