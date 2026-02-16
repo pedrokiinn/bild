@@ -5,6 +5,9 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     signOut,
+    updatePassword,
+    EmailAuthProvider,
+    reauthenticateWithCredential,
 } from "firebase/auth";
 import { auth, db } from './firebase';
 import { collection, doc, getDoc, query, getDocs, setDoc } from "firebase/firestore";
@@ -74,5 +77,32 @@ export async function register(name: string, email: string, password_raw: string
             throw new Error("O formato do email é inválido.");
         }
         throw new Error("Não foi possível completar o cadastro.");
+    }
+}
+
+export async function changePassword(currentPassword_raw: string, newPassword_raw: string): Promise<void> {
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+        throw new Error("Usuário não autenticado. Faça login novamente.");
+    }
+    
+    try {
+        const credential = EmailAuthProvider.credential(user.email, currentPassword_raw);
+        
+        // Re-authenticate the user
+        await reauthenticateWithCredential(user, credential);
+        
+        // Now update the password
+        await updatePassword(user, newPassword_raw);
+    
+    } catch(error: any) {
+        console.error("Erro ao alterar a senha:", error.code);
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+            throw new Error("A senha atual está incorreta.");
+        }
+        if (error.code === 'auth/weak-password') {
+            throw new Error("A nova senha deve ter pelo menos 6 caracteres.");
+        }
+        throw new Error("Ocorreu um erro ao tentar alterar a senha.");
     }
 }

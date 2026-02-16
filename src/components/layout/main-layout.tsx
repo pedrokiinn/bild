@@ -17,7 +17,7 @@ import {
     useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight, Fuel, Eye, EyeOff } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight, Fuel, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { User, login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
 import { Input } from '../ui/input';
@@ -35,6 +35,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { UserProvider } from '@/context/UserContext';
+import { ChangePasswordDialog } from '../auth/ChangePasswordDialog';
 
 
 const navigationItems = [
@@ -336,6 +337,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authView, setAuthView] = useState<'login' | 'register'>('login');
+    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -421,15 +423,26 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                                                 <p className="text-xs text-slate-500 truncate" title={user.email}>{user.email}</p>
                                             </div>
                                         </div>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleLogout}
-                                            className="w-full"
-                                        >
-                                            <LogOut className="w-4 h-4 mr-2" />
-                                            Sair
-                                        </Button>
+                                        <div className="flex flex-col gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setIsChangePasswordOpen(true)}
+                                                className="w-full"
+                                            >
+                                                <KeyRound className="w-4 h-4 mr-2" />
+                                                Trocar Senha
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleLogout}
+                                                className="w-full"
+                                            >
+                                                <LogOut className="w-4 h-4 mr-2" />
+                                                Sair
+                                            </Button>
+                                        </div>
                                     </div>
                                 )}
                             </SidebarFooter>
@@ -449,6 +462,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                                 {children}
                             </main>
                         </SidebarInset>
+                        <ChangePasswordDialog
+                            isOpen={isChangePasswordOpen}
+                            onOpenChange={setIsChangePasswordOpen}
+                        />
                     </>
                 ) : (
                     <div className="w-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-gray-100">
