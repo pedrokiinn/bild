@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -22,19 +23,15 @@ interface ChangePasswordDialogProps {
 }
 
 export function ChangePasswordDialog({ isOpen, onOpenChange }: ChangePasswordDialogProps) {
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const resetState = () => {
-    setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    setShowCurrentPassword(false);
     setShowNewPassword(false);
     setIsSaving(false);
   }
@@ -59,7 +56,7 @@ export function ChangePasswordDialog({ isOpen, onOpenChange }: ChangePasswordDia
 
     setIsSaving(true);
     try {
-      await changePassword(currentPassword, newPassword);
+      await changePassword(newPassword);
       toast({
         title: 'Sucesso!',
         description: 'Sua senha foi alterada.',
@@ -89,25 +86,10 @@ export function ChangePasswordDialog({ isOpen, onOpenChange }: ChangePasswordDia
         <DialogHeader>
           <DialogTitle>Alterar Senha</DialogTitle>
           <DialogDescription>
-            Digite sua senha atual e a nova senha desejada.
+            Defina a nova senha desejada.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="currentPassword">Senha Atual</Label>
-            <div className="relative">
-                <Input
-                id="currentPassword"
-                type={showCurrentPassword ? "text" : "password"}
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="••••••••"
-                />
-                <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
-                    {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </Button>
-            </div>
-          </div>
           <div className="space-y-2">
             <Label htmlFor="newPassword">Nova Senha</Label>
             <div className="relative">
@@ -137,7 +119,7 @@ export function ChangePasswordDialog({ isOpen, onOpenChange }: ChangePasswordDia
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Cancelar
           </Button>
-          <Button onClick={handlePasswordChange} disabled={isSaving || !currentPassword || !newPassword}>
+          <Button onClick={handlePasswordChange} disabled={isSaving || !newPassword}>
             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Salvar Nova Senha
           </Button>

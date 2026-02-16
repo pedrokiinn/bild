@@ -80,25 +80,18 @@ export async function register(name: string, email: string, password_raw: string
     }
 }
 
-export async function changePassword(currentPassword_raw: string, newPassword_raw: string): Promise<void> {
+export async function changePassword(newPassword_raw: string): Promise<void> {
     const user = auth.currentUser;
-    if (!user || !user.email) {
+    if (!user) {
         throw new Error("Usuário não autenticado. Faça login novamente.");
     }
     
     try {
-        const credential = EmailAuthProvider.credential(user.email, currentPassword_raw);
-        
-        // Re-authenticate the user
-        await reauthenticateWithCredential(user, credential);
-        
-        // Now update the password
         await updatePassword(user, newPassword_raw);
-    
     } catch(error: any) {
         console.error("Erro ao alterar a senha:", error.code);
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-            throw new Error("A senha atual está incorreta.");
+        if (error.code === 'auth/requires-recent-login') {
+             throw new Error("Sua sessão de segurança expirou. Por favor, faça login novamente para alterar a senha.");
         }
         if (error.code === 'auth/weak-password') {
             throw new Error("A nova senha deve ter pelo menos 6 caracteres.");
