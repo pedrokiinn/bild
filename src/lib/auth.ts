@@ -5,9 +5,7 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     signOut,
-    updatePassword,
-    EmailAuthProvider,
-    reauthenticateWithCredential,
+    sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth, db } from './firebase';
 import { collection, doc, getDoc, query, getDocs, setDoc } from "firebase/firestore";
@@ -80,22 +78,17 @@ export async function register(name: string, email: string, password_raw: string
     }
 }
 
-export async function changePassword(newPassword_raw: string): Promise<void> {
-    const user = auth.currentUser;
-    if (!user) {
-        throw new Error("Usuário não autenticado. Faça login novamente.");
-    }
-    
+
+export async function sendPasswordReset(email: string): Promise<void> {
     try {
-        await updatePassword(user, newPassword_raw);
-    } catch(error: any) {
-        console.error("Erro ao alterar a senha:", error.code);
-        if (error.code === 'auth/requires-recent-login') {
-             throw new Error("Sua sessão de segurança expirou. Por favor, faça login novamente para alterar a senha.");
+        await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+        console.error("Erro ao enviar email de redefinição:", error.code);
+        // Do not reveal if the user exists for security reasons.
+        // The user will get a toast message explaining this.
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+             throw new Error("Se este email estiver cadastrado, um link de recuperação será enviado.");
         }
-        if (error.code === 'auth/weak-password') {
-            throw new Error("A nova senha deve ter pelo menos 6 caracteres.");
-        }
-        throw new Error("Ocorreu um erro ao tentar alterar a senha.");
+        throw new Error("Ocorreu um erro ao tentar enviar o email de recuperação.");
     }
 }
