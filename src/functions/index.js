@@ -23,7 +23,7 @@ exports.onUserDeleted = functions.region('us-central1')
 });
 
 
-exports.resetPasswordByAdmin = functions.https.onCall(async (data, context) => {
+exports.resetPasswordByAdmin = functions.region('us-central1').https.onCall(async (data, context) => {
     // 1. Check for authentication
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'A requisição deve ser autenticada.');
@@ -62,7 +62,7 @@ exports.resetPasswordByAdmin = functions.https.onCall(async (data, context) => {
 });
 
 
-exports.deleteUserByAdmin = functions.https.onCall(async (data, context) => {
+exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (data, context) => {
     // 1. Check for authentication and admin role
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'A requisição deve ser autenticada.');
@@ -110,8 +110,6 @@ exports.deleteUserByAdmin = functions.https.onCall(async (data, context) => {
         return { success: true, message: 'Usuário excluído com sucesso.' };
     } catch (error) {
         console.error('Erro ao excluir o usuário da autenticação:', error);
-        // Attempt to clean up the report if deletion fails
-        // This part is tricky, might leave an orphaned report but it's better than silent failure.
-        throw new functions.https.HttpsError('internal', 'Falha ao excluir o usuário da autenticação. O relatório de exclusão pode ter sido criado.');
+        throw new functions.https.HttpsError('internal', 'Falha ao excluir o usuário da autenticação.');
     }
 });
