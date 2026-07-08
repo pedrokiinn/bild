@@ -24,13 +24,13 @@ export async function login(email: string, password_raw: string): Promise<User> 
             return { id: userDocSnap.id, ...userDocSnap.data() } as User;
         } else {
             await signOut(auth);
-            throw new Error("Perfil de usuário não encontrado.");
+            throw new Error("Perfil de usuário não encontrado no banco de dados.");
         }
     } catch (error: any) {
         if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
-            throw new Error("Email ou senha inválidos.");
+            throw new Error("Email ou senha inválidos. Tente novamente.");
         }
-        throw new Error("Erro ao entrar. Verifique sua conexão.");
+        throw new Error("Erro ao autenticar: " + (error.message || "Verifique sua conexão."));
     }
 }
 
@@ -57,8 +57,8 @@ export async function register(name: string, email: string, password_raw: string
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);
         return { id: firebaseUser.uid, ...newUser };
     } catch (error: any) {
-        if (error.code === 'auth/email-already-in-use') throw new Error("Email já cadastrado.");
-        throw new Error("Falha no cadastro.");
+        if (error.code === 'auth/email-already-in-use') throw new Error("Este email já está sendo utilizado.");
+        throw new Error("Falha ao criar conta: " + error.message);
     }
 }
 
@@ -75,7 +75,7 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
             throw new Error("A função não foi encontrada no servidor. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1 para ativar este recurso.");
         }
-        throw new Error(error.message || "Erro ao redefinir senha.");
+        throw new Error(error.message || "Não foi possível redefinir a senha do usuário.");
     }
 }
 
@@ -88,6 +88,6 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
             throw new Error("A função não foi encontrada no servidor. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1 para ativar este recurso.");
         }
-        throw new Error(error.message || "Erro ao excluir usuário.");
+        throw new Error(error.message || "Não foi possível excluir o usuário.");
     }
 }
