@@ -24,13 +24,13 @@ export async function login(email: string, password_raw: string): Promise<User> 
             return { id: userDocSnap.id, ...userDocSnap.data() } as User;
         } else {
             await signOut(auth);
-            throw new Error("Perfil de usuário não encontrado no banco de dados.");
+            throw new Error("Perfil de usuário não encontrado no Firestore.");
         }
     } catch (error: any) {
         if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
-            throw new Error("Email ou senha inválidos. Tente novamente.");
+            throw new Error("Credenciais inválidas. Verifique seu email e senha.");
         }
-        throw new Error("Erro ao autenticar: " + (error.message || "Verifique sua conexão."));
+        throw new Error("Erro de autenticação: " + (error.message || "Tente novamente mais tarde."));
     }
 }
 
@@ -57,8 +57,8 @@ export async function register(name: string, email: string, password_raw: string
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);
         return { id: firebaseUser.uid, ...newUser };
     } catch (error: any) {
-        if (error.code === 'auth/email-already-in-use') throw new Error("Este email já está sendo utilizado.");
-        throw new Error("Falha ao criar conta: " + error.message);
+        if (error.code === 'auth/email-already-in-use') throw new Error("Este endereço de email já está em uso.");
+        throw new Error("Falha ao registrar colaborador: " + error.message);
     }
 }
 
@@ -72,10 +72,10 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         await resetFn({ targetUserId, newPassword });
     } catch (error: any) {
         const errorCode = error.code || (error as any).status;
-        if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função não foi encontrada no servidor. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1 para ativar este recurso.");
+        if (errorCode === 'not-found' || errorCode === 'functions/not-found' || errorCode === 'internal') {
+            throw new Error("A função de administrador não foi ativada no servidor. Por favor, execute 'firebase deploy --only functions' no terminal do seu projeto para ativar este recurso.");
         }
-        throw new Error(error.message || "Não foi possível redefinir a senha do usuário.");
+        throw new Error(error.message || "Falha ao redefinir senha.");
     }
 }
 
@@ -85,9 +85,9 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         await deleteFn({ targetUserId, reason });
     } catch (error: any) {
         const errorCode = error.code || (error as any).status;
-        if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função não foi encontrada no servidor. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1 para ativar este recurso.");
+        if (errorCode === 'not-found' || errorCode === 'functions/not-found' || errorCode === 'internal') {
+             throw new Error("A função de exclusão não foi ativada no servidor. Por favor, execute 'firebase deploy --only functions' no terminal do seu projeto para ativar este recurso.");
         }
-        throw new Error(error.message || "Não foi possível excluir o usuário.");
+        throw new Error(error.message || "Falha ao remover colaborador.");
     }
 }

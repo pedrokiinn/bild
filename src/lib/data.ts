@@ -10,16 +10,16 @@ export const getUsers = async (): Promise<User[]> => {
         const usersCollection = collection(db, "users");
         const userSnapshot = await getDocs(usersCollection);
         return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-    } catch (error) {
-        console.error("Erro ao buscar usuários:", error);
-        throw error;
+    } catch (error: any) {
+        console.error("Erro ao buscar usuários no Firestore:", error);
+        throw new Error(error.message || "Falha ao carregar a lista de colaboradores.");
     }
 };
 
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
     const userSnap = await getDoc(doc(db, "users", userId));
     if (userSnap.exists() && userSnap.data().email === 'keennlemariem@gmail.com') {
-        throw new Error("A função deste usuário administrador não pode ser alterada.");
+        throw new Error("A função deste usuário administrador mestre não pode ser alterada.");
     }
     const userDoc = doc(db, "users", userId);
     await updateDoc(userDoc, { role: newRole });
@@ -42,15 +42,12 @@ export const deleteAllReports = async (): Promise<void> => {
     const reportsCollection = collection(db, "deletionReports");
     const reportSnapshot = await getDocs(reportsCollection);
     
-    if (reportSnapshot.empty) {
-        return;
-    }
+    if (reportSnapshot.empty) return;
     
     const batch = writeBatch(db);
     reportSnapshot.docs.forEach(doc => {
         batch.delete(doc.ref);
     });
-    
     await batch.commit();
 };
 
@@ -67,7 +64,6 @@ export const saveVehicle = async (vehicle: Omit<Vehicle, 'id'> & { id?: string }
     await updateDoc(vehicleDoc, vehicle);
     return vehicle as Vehicle;
   }
-  
   const docRef = await addDoc(collection(db, "vehicles"), vehicle);
   return { id: docRef.id, ...vehicle } as Vehicle;
 };
@@ -138,7 +134,7 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
     finalData = { ...dataToSave };
   } else {
     if (!userForCreate) {
-      throw new Error("Usuário não autenticado. A criação do checklist falhou.");
+      throw new Error("Usuário não autenticado.");
     }
     finalData = {
       ...dataToSave,
