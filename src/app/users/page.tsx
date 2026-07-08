@@ -82,7 +82,7 @@ function UsersContent() {
             setUsers(allUsers.sort((a, b) => a.name.localeCompare(b.name)));
         } catch (err: any) {
             console.error("Erro ao carregar usuários:", err);
-            setError(err.message || "Não foi possível carregar a lista de usuários.");
+            setError(err.message || "Não foi possível carregar a lista de usuários. Verifique se você tem permissão de administrador.");
         } finally {
             setIsLoading(false);
         }
@@ -91,7 +91,7 @@ function UsersContent() {
     useEffect(() => { 
         if (currentUser?.role === 'admin') {
             loadData(); 
-        } else if (currentUser) {
+        } else if (currentUser !== undefined) {
             setIsLoading(false);
         }
     }, [loadData, currentUser]);
@@ -115,7 +115,12 @@ function UsersContent() {
             loadData();
             setUserToDelete(null);
         } catch (e: any) {
-            toast({ title: "Recurso Indisponível", description: e.message, variant: "destructive", duration: 10000 });
+            toast({ 
+                title: "Função não encontrada", 
+                description: "As Cloud Functions não foram implantadas. Execute 'firebase deploy --only functions' para ativar este recurso.", 
+                variant: "destructive", 
+                duration: 8000 
+            });
         } finally {
             setIsSaving(false);
         }
@@ -128,7 +133,12 @@ function UsersContent() {
             toast({ title: "Sucesso", description: "Senha alterada com sucesso."});
             setUserToReset(null);
         } catch (e: any) {
-            toast({ title: "Recurso Indisponível", description: e.message, variant: "destructive", duration: 10000 });
+            toast({ 
+                title: "Função não encontrada", 
+                description: "As Cloud Functions não foram implantadas. Execute 'firebase deploy --only functions' para ativar este recurso.", 
+                variant: "destructive", 
+                duration: 8000 
+            });
         }
     };
 
@@ -137,17 +147,38 @@ function UsersContent() {
         u.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Estado inicial: Carregando Contexto
-    if (currentUser === undefined) {
+    if (currentUser === undefined || isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-slate-500 font-medium">Verificando credenciais...</p>
+            <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+                <div className="max-w-7xl mx-auto space-y-8">
+                    <div className="flex justify-between items-center">
+                        <Skeleton className="h-10 w-48" />
+                        <Skeleton className="h-10 w-32" />
+                    </div>
+                    <Skeleton className="h-14 w-full rounded-2xl" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {Array(6).fill(0).map((_, i) => (
+                            <Card key={i} className="bg-white border-slate-100 shadow-sm rounded-2xl">
+                                <CardHeader className="flex-row items-center gap-4 pb-2">
+                                    <Skeleton className="w-14 h-14 rounded-2xl" />
+                                    <div className="space-y-2 flex-1">
+                                        <Skeleton className="h-5 w-3/4" />
+                                        <Skeleton className="h-4 w-1/2" />
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-4"><Skeleton className="h-12 w-full rounded-xl" /></CardContent>
+                                <CardFooter className="justify-end gap-2 pt-4 border-t border-slate-50">
+                                    <Skeleton className="h-9 w-20" />
+                                    <Skeleton className="h-9 w-20" />
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
 
-    // Acesso Negado
     if (currentUser?.role !== 'admin') {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-3xl shadow-xl border border-slate-100 mx-4 my-10 max-w-lg lg:mx-auto">
@@ -190,26 +221,7 @@ function UsersContent() {
                     />
                 </div>
 
-                {isLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {Array(6).fill(0).map((_, i) => (
-                            <Card key={i} className="bg-white border-slate-100 shadow-sm rounded-2xl">
-                                <CardHeader className="flex-row items-center gap-4 pb-2">
-                                    <Skeleton className="w-14 h-14 rounded-2xl" />
-                                    <div className="space-y-2 flex-1">
-                                        <Skeleton className="h-5 w-3/4" />
-                                        <Skeleton className="h-4 w-1/2" />
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="pt-4"><Skeleton className="h-12 w-full rounded-xl" /></CardContent>
-                                <CardFooter className="justify-end gap-2 pt-4 border-t border-slate-50">
-                                    <Skeleton className="h-9 w-20" />
-                                    <Skeleton className="h-9 w-20" />
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
-                ) : error ? (
+                {error ? (
                     <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-3xl shadow-sm border border-slate-200">
                         <UserX className="w-16 h-16 mb-6 text-red-400 opacity-50" />
                         <h3 className="text-xl font-bold text-slate-900">Erro ao carregar colaboradores</h3>

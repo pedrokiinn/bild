@@ -73,7 +73,7 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
     } catch (error: any) {
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found' || errorCode === 'internal') {
-            throw new Error("A função de administrador não foi ativada no servidor. Por favor, execute 'firebase deploy --only functions' no terminal do seu projeto para ativar este recurso.");
+            throw new Error("A função de administrador não foi encontrada. Execute 'firebase deploy --only functions' na região us-central1.");
         }
         throw new Error(error.message || "Falha ao redefinir senha.");
     }
@@ -86,7 +86,7 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
     } catch (error: any) {
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found' || errorCode === 'internal') {
-             throw new Error("A função de exclusão não foi ativada no servidor. Por favor, execute 'firebase deploy --only functions' no terminal do seu projeto para ativar este recurso.");
+             throw new Error("A função de exclusão não foi encontrada. Execute 'firebase deploy --only functions' na região us-central1.");
         }
         throw new Error(error.message || "Falha ao remover colaborador.");
     }
