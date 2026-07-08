@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import { User } from '@/types';
@@ -13,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Users, Shield, User as UserIcon, Loader2, Search, KeyRound } from 'lucide-react';
+import { Trash2, Users, Shield, User as UserIcon, Loader2, Search, KeyRound, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
@@ -66,6 +67,7 @@ function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen:
 function UsersContent() {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -78,9 +80,14 @@ function UsersContent() {
 
     const loadData = async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const allUsers = await getUsers();
             setUsers(allUsers.sort((a, b) => a.name.localeCompare(b.name)));
+        } catch (err: any) {
+            console.error("Erro ao carregar usuários:", err);
+            setError("Não foi possível carregar a lista de usuários. Verifique suas permissões.");
+            toast({ title: "Erro", description: "Falha ao buscar usuários.", variant: "destructive"});
         } finally {
             setIsLoading(false);
         }
@@ -150,21 +157,36 @@ function UsersContent() {
                         />
                     </div>
 
-                    {isLoading ? <Skeleton className="h-64 w-full" /> : (
+                    {isLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500">
+                            <AlertCircle className="w-12 h-12 mb-4 text-destructive" />
+                            <p>{error}</p>
+                            <Button variant="outline" className="mt-4" onClick={loadData}>Tentar Novamente</Button>
+                        </div>
+                    ) : filteredUsers.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500">
+                            <Users className="w-12 h-12 mb-4 opacity-20" />
+                            <p>Nenhum usuário encontrado.</p>
+                        </div>
+                    ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredUsers.map(user => (
-                                <Card key={user.id}>
+                                <Card key={user.id} className="hover:shadow-md transition-shadow">
                                     <CardHeader className="flex-row items-center gap-4">
-                                        <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center font-bold">
+                                        <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold">
                                             {user.name.charAt(0).toUpperCase()}
                                         </div>
-                                        <div>
-                                            <CardTitle className="text-sm">{user.name}</CardTitle>
-                                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                                        <div className="min-w-0">
+                                            <CardTitle className="text-sm truncate">{user.name}</CardTitle>
+                                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                                         </div>
                                     </CardHeader>
                                     <CardContent>
-                                        <Label className="text-xs">Cargo</Label>
+                                        <Label className="text-xs text-slate-500">Cargo no Sistema</Label>
                                         <Select 
                                             value={user.role} 
                                             onValueChange={(val: any) => handleRoleChange(user.id, val)}
@@ -179,9 +201,27 @@ function UsersContent() {
                                             </SelectContent>
                                         </Select>
                                     </CardContent>
-                                    <CardFooter className="justify-end gap-2">
-                                        <Button variant="outline" size="icon" onClick={() => setUserToReset(user)} disabled={user.email === 'keennlemariem@gmail.com'}><KeyRound className="w-4 h-4" /></Button>
-                                        <Button variant="destructive" size="icon" onClick={() => setUserToDelete(user)} disabled={user.email === 'keennlemariem@gmail.com' || user.id === adminUser?.id}><Trash2 className="w-4 h-4" /></Button>
+                                    <CardFooter className="justify-end gap-2 border-t pt-4">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="text-slate-600"
+                                            onClick={() => setUserToReset(user)} 
+                                            disabled={user.email === 'keennlemariem@gmail.com'}
+                                        >
+                                            <KeyRound className="w-4 h-4 mr-2" />
+                                            Senha
+                                        </Button>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="text-destructive hover:bg-destructive/10"
+                                            onClick={() => setUserToDelete(user)} 
+                                            disabled={user.email === 'keennlemariem@gmail.com' || user.id === adminUser?.id}
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Excluir
+                                        </Button>
                                     </CardFooter>
                                 </Card>
                             ))}
