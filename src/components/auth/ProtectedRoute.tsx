@@ -1,13 +1,10 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
-import { User } from '@/types';
-import { Car, ShieldAlert } from 'lucide-react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { useUser } from '@/context/UserContext';
+import { ShieldAlert } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,73 +12,34 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
+  const user = useUser();
   const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const userDocRef = doc(db, "users", firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        
-        if (userDocSnap.exists()) {
-          const userProfile = { id: userDocSnap.id, ...userDocSnap.data() } as User;
-          setUser(userProfile);
-          
-          if (requiredRole) {
-            const hasRequiredRole = userProfile.role === 'admin' || userProfile.role === requiredRole;
-            setHasAccess(hasRequiredRole);
-            if (!hasRequiredRole) {
-              router.replace('/dashboard');
-            }
-          } else {
-            setHasAccess(true);
-          }
-        } else {
-          // This case can happen if a user is deleted from firestore but still has a valid auth session
-          await auth.signOut();
-          setUser(null);
-          setHasAccess(false);
-        }
-      } else {
-        setUser(null);
-        setHasAccess(false);
-      }
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [requiredRole, router]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Verificando autenticação...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // The main-layout will render the login screen if there is no user
+  // Se o MainLayout ainda está carregando o usuário, ele lida com o loading global.
+  // Se chegamos aqui e não há usuário, o MainLayout deveria ter mostrado a tela de login.
   if (!user) {
     return null;
   }
 
+  const hasAccess = !requiredRole || user.role === 'admin' || user.role === requiredRole;
+
   if (!hasAccess) {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
-            <div className="text-center space-y-4">
-                <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-                    <ShieldAlert className="w-10 h-10 text-red-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-slate-900">Acesso Negado</h2>
-                <p className="text-slate-600">Você não tem permissão para acessar esta página.</p>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-10 h-10 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900">Acesso Negado</h2>
+          <p className="text-slate-600">Você não tem permissão para acessar esta página.</p>
+          <button 
+            onClick={() => router.replace('/dashboard')}
+            className="text-primary font-semibold hover:underline"
+          >
+            Voltar para o Dashboard
+          </button>
         </div>
+      </div>
     );
   }
 

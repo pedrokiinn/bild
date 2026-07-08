@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -13,6 +14,11 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && getUserRole(request.auth.uid) == 'admin';
       allow delete: if request.auth != null && getUserRole(request.auth.uid) == 'admin';
+    }
+    
+    // Regra explícita para permitir que admins listem a coleção de usuários
+    match /users {
+      allow list: if request.auth != null && getUserRole(request.auth.uid) == 'admin';
     }
 
     match /vehicles/{vehicleId} {

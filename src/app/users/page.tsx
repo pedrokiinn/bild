@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User } from '@/types';
 import { getUsers, updateUserRole } from '@/lib/data';
 import { resetPasswordByAdmin, deleteUser } from '@/lib/auth';
@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Users, Shield, User as UserIcon, Loader2, Search, KeyRound, AlertCircle } from 'lucide-react';
+import { Trash2, Users, User as UserIcon, Loader2, Search, KeyRound, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen:
     const handleConfirm = () => {
         if (!reason.trim()) return;
         onConfirm(reason);
+        setReason('');
     }
 
     return (
@@ -76,9 +77,7 @@ function UsersContent() {
     const { toast } = useToast();
     const adminUser = useUser();
 
-    useEffect(() => { loadData(); }, []);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
@@ -86,12 +85,15 @@ function UsersContent() {
             setUsers(allUsers.sort((a, b) => a.name.localeCompare(b.name)));
         } catch (err: any) {
             console.error("Erro ao carregar usuários:", err);
-            setError("Não foi possível carregar a lista de usuários. Verifique suas permissões.");
-            toast({ title: "Erro", description: "Falha ao buscar usuários.", variant: "destructive"});
+            setError("Não foi possível carregar a lista de usuários. Verifique as permissões de administrador.");
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => { 
+        loadData(); 
+    }, [loadData]);
 
     const handleRoleChange = async (userId: string, newRole: 'admin' | 'collaborator') => {
         try {
@@ -138,9 +140,9 @@ function UsersContent() {
         <ProtectedRoute requiredRole="admin">
             <div className="p-4 md:p-6 bg-slate-50 min-h-screen">
                 <div className="max-w-7xl mx-auto space-y-6">
-                    <Card>
+                    <Card className="bg-white border-0 shadow-sm">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-3">
                                 <Users className="w-6 h-6 text-primary" />
                                 Gestão de Equipe
                             </CardTitle>
@@ -153,7 +155,7 @@ function UsersContent() {
                             placeholder="Buscar por nome ou email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9"
+                            className="pl-9 bg-white"
                         />
                     </div>
 
@@ -162,37 +164,37 @@ function UsersContent() {
                             {Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
                         </div>
                     ) : error ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500">
+                        <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500 bg-white rounded-xl shadow-sm">
                             <AlertCircle className="w-12 h-12 mb-4 text-destructive" />
-                            <p>{error}</p>
+                            <p className="max-w-md">{error}</p>
                             <Button variant="outline" className="mt-4" onClick={loadData}>Tentar Novamente</Button>
                         </div>
                     ) : filteredUsers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500">
+                        <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500 bg-white rounded-xl shadow-sm">
                             <Users className="w-12 h-12 mb-4 opacity-20" />
                             <p>Nenhum usuário encontrado.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredUsers.map(user => (
-                                <Card key={user.id} className="hover:shadow-md transition-shadow">
+                                <Card key={user.id} className="hover:shadow-md transition-shadow bg-white border-0 shadow-sm">
                                     <CardHeader className="flex-row items-center gap-4">
-                                        <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold">
+                                        <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold shrink-0">
                                             {user.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div className="min-w-0">
-                                            <CardTitle className="text-sm truncate">{user.name}</CardTitle>
+                                            <CardTitle className="text-sm truncate font-bold">{user.name}</CardTitle>
                                             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                                         </div>
                                     </CardHeader>
                                     <CardContent>
-                                        <Label className="text-xs text-slate-500">Cargo no Sistema</Label>
+                                        <Label className="text-xs text-slate-500 mb-2 block">Cargo no Sistema</Label>
                                         <Select 
                                             value={user.role} 
                                             onValueChange={(val: any) => handleRoleChange(user.id, val)}
                                             disabled={user.email === 'keennlemariem@gmail.com' || user.id === adminUser?.id}
                                         >
-                                            <SelectTrigger className="mt-1">
+                                            <SelectTrigger className="w-full">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -205,7 +207,7 @@ function UsersContent() {
                                         <Button 
                                             variant="ghost" 
                                             size="sm" 
-                                            className="text-slate-600"
+                                            className="text-slate-600 h-8"
                                             onClick={() => setUserToReset(user)} 
                                             disabled={user.email === 'keennlemariem@gmail.com'}
                                         >
@@ -215,7 +217,7 @@ function UsersContent() {
                                         <Button 
                                             variant="ghost" 
                                             size="sm" 
-                                            className="text-destructive hover:bg-destructive/10"
+                                            className="text-destructive hover:bg-destructive/10 h-8"
                                             onClick={() => setUserToDelete(user)} 
                                             disabled={user.email === 'keennlemariem@gmail.com' || user.id === adminUser?.id}
                                         >
