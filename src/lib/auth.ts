@@ -23,14 +23,13 @@ export async function login(email: string, password_raw: string): Promise<User> 
             return { id: userDocSnap.id, ...userDocSnap.data() } as User;
         } else {
             await signOut(auth);
-            throw new Error("Perfil de usuário não encontrado no sistema. Entre em contato com o administrador.");
+            throw new Error("Perfil de usuário não encontrado.");
         }
     } catch (error: any) {
-        console.error("Erro no login:", error.code);
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
             throw new Error("Email ou senha inválidos.");
         }
-        throw new Error("Ocorreu um erro durante o login. Verifique sua conexão.");
+        throw new Error("Erro ao entrar. Verifique sua conexão.");
     }
 }
 
@@ -56,25 +55,9 @@ export async function register(name: string, email: string, password_raw: string
 
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);
         return { id: firebaseUser.uid, ...newUser };
-
     } catch (error: any) {
-        console.error("Erro no registro:", error.code, error.message);
-        if (error.code === 'auth/email-already-in-use') {
-             throw new Error("Este endereço de email já está em uso.");
-        }
-        if (error.code === 'auth/weak-password') {
-            throw new Error("A senha deve ter pelo menos 6 caracteres.");
-        }
-        throw new Error("Não foi possível completar o cadastro.");
-    }
-}
-
-export async function sendPasswordReset(email: string): Promise<void> {
-    try {
-        await sendPasswordResetEmail(auth, email);
-    } catch (error: any) {
-        console.error("Erro ao enviar email de redefinição:", error.code);
-        throw new Error("Ocorreu um erro ao tentar enviar o email de recuperação.");
+        if (error.code === 'auth/email-already-in-use') throw new Error("Email já cadastrado.");
+        throw new Error("Falha no cadastro.");
     }
 }
 
@@ -83,12 +66,11 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         const resetFn = httpsCallable(functions, 'resetPasswordByAdmin');
         await resetFn({ targetUserId, newPassword });
     } catch (error: any) {
-        console.error("Erro ao redefinir senha:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função de redefinição não foi encontrada no servidor. Verifique se as Cloud Functions foram implantadas corretamente na região us-central1 através do comando 'firebase deploy --only functions'.");
+            throw new Error("A função não foi encontrada. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1.");
         }
-        throw new Error(error.message || "Falha ao redefinir a senha do usuário.");
+        throw new Error(error.message || "Erro ao redefinir senha.");
     }
 }
 
@@ -97,11 +79,10 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         const deleteFn = httpsCallable(functions, 'deleteUserByAdmin');
         await deleteFn({ targetUserId, reason });
     } catch (error: any) {
-        console.error("Erro ao excluir usuário:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função de exclusão não foi encontrada no servidor. Verifique se as Cloud Functions foram implantadas corretamente na região us-central1 através do comando 'firebase deploy --only functions'.");
+            throw new Error("A função não foi encontrada. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1.");
         }
-        throw new Error(error.message || "Falha ao excluir o usuário.");
+        throw new Error(error.message || "Erro ao excluir usuário.");
     }
 }
