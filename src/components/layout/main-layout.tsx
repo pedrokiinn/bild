@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -17,7 +16,7 @@ import {
     useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight, Fuel, Eye, EyeOff, Truck } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { User, login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
 import { Input } from '../ui/input';
@@ -36,7 +35,6 @@ import {
 } from "@/components/ui/card"
 import { UserProvider } from '@/context/UserContext';
 
-
 const navigationItems = [
     {
         title: "Dashboard",
@@ -54,21 +52,9 @@ const navigationItems = [
         icon: Calendar,
     },
     {
-        title: "Consumo",
-        url: "/consumption",
-        icon: Fuel,
-        adminOnly: true,
-    },
-    {
         title: "Veículos",
         url: "/vehicle",
         icon: Car,
-        adminOnly: true,
-    },
-    {
-        title: "Carretas",
-        url: "/carretas",
-        icon: Truck,
         adminOnly: true,
     },
     {
@@ -324,7 +310,6 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
         </Card>
     )
 }
-
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
