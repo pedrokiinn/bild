@@ -1,3 +1,4 @@
+
 'use server';
 
 import { 
@@ -61,6 +62,10 @@ export async function register(name: string, email: string, password_raw: string
     }
 }
 
+export async function sendPasswordReset(email: string): Promise<void> {
+    await sendPasswordResetEmail(auth, email);
+}
+
 export async function resetPasswordByAdmin(targetUserId: string, newPassword: string): Promise<void> {
     try {
         const resetFn = httpsCallable(functions, 'resetPasswordByAdmin');
@@ -68,7 +73,7 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
     } catch (error: any) {
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função não foi encontrada. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1.");
+            throw new Error("A função não foi encontrada no servidor. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1 para ativar este recurso.");
         }
         throw new Error(error.message || "Erro ao redefinir senha.");
     }
@@ -81,7 +86,7 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
     } catch (error: any) {
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função não foi encontrada. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1.");
+            throw new Error("A função não foi encontrada no servidor. Certifique-se de rodar 'firebase deploy --only functions' na região us-central1 para ativar este recurso.");
         }
         throw new Error(error.message || "Erro ao excluir usuário.");
     }

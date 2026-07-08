@@ -11,16 +11,6 @@ export interface Vehicle {
   mileage?: number;
 }
 
-export interface Carreta {
-  id: string;
-  code: string; // Identificador da carreta (ex: CAR-01)
-  license_plate: string;
-  model: string;
-  year: number;
-  type: string; // Ex: Baú, Sider, Grade Baixa
-  status: 'available' | 'maintenance' | 'irregular';
-}
-
 export type ChecklistStatus = 'completed' | 'pending_arrival' | 'problem';
 
 export type FuelType = 'gasolina' | 'diesel';
@@ -34,7 +24,6 @@ export interface Refueling {
 export interface DailyChecklist {
   id: string;
   vehicleId: string;
-  carretaId?: string; // ID da carreta se for um checklist de carreta
   driverId: string;
   driverName: string;
   departureTimestamp: Timestamp;
@@ -48,14 +37,12 @@ export interface DailyChecklist {
     rear?: string;
     left?: string;
     right?: string;
-    carreta_left?: string;
-    carreta_right?: string;
   };
   notes?: string;
   status: ChecklistStatus;
   date: string; // YYYY-MM-DD
   refuelings?: Refueling[];
-  type: 'vehicle' | 'carreta';
+  type: 'vehicle';
 }
 
 export interface User {

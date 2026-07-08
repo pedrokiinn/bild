@@ -1,25 +1,20 @@
 
-import type { DailyChecklist, Vehicle, Carreta, User, ChecklistItemOption, DeletionReport } from "@/types";
+import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { db, functions } from './firebase';
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp, deleteField } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
+import { db } from './firebase';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, deleteField } from "firebase/firestore";
 
 // User Functions
 export const getUsers = async (): Promise<User[]> => {
-    const usersCollection = collection(db, "users");
-    const userSnapshot = await getDocs(usersCollection);
-    return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-};
-
-export const getUserById = async (id: string): Promise<User | undefined> => {
-    const userDoc = doc(db, "users", id);
-    const userSnap = await getDoc(userDoc);
-    if (userSnap.exists()) {
-        return { id: userSnap.id, ...userSnap.data() } as User;
+    try {
+        const usersCollection = collection(db, "users");
+        const userSnapshot = await getDocs(usersCollection);
+        return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    } catch (error) {
+        console.error("Erro ao buscar usuários:", error);
+        throw error;
     }
-    return undefined;
-}
+};
 
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
     const userSnap = await getDoc(doc(db, "users", userId));
@@ -80,29 +75,6 @@ export const saveVehicle = async (vehicle: Omit<Vehicle, 'id'> & { id?: string }
 export const deleteVehicle = async (id: string): Promise<void> => {
     const vehicleDoc = doc(db, "vehicles", id);
     await deleteDoc(vehicleDoc);
-}
-
-// Carreta Functions
-export const getCarretas = async (): Promise<Carreta[]> => {
-  const carretasCollection = collection(db, "carretas");
-  const carretasSnapshot = await getDocs(carretasCollection);
-  return carretasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Carreta));
-};
-
-export const saveCarreta = async (carreta: Omit<Carreta, 'id'> & { id?: string }): Promise<Carreta> => {
-  if (carreta.id) {
-    const carretaDoc = doc(db, "carretas", carreta.id);
-    await updateDoc(carretaDoc, carreta);
-    return carreta as Carreta;
-  }
-  
-  const docRef = await addDoc(collection(db, "carretas"), carreta);
-  return { id: docRef.id, ...carreta } as Carreta;
-};
-
-export const deleteCarreta = async (id: string): Promise<void> => {
-    const carretaDoc = doc(db, "carretas", id);
-    await deleteDoc(carretaDoc);
 }
 
 // Checklist Functions
@@ -172,6 +144,7 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
       ...dataToSave,
       driverId: userForCreate.id,
       driverName: userForCreate.name,
+      type: 'vehicle'
     };
   }
 
@@ -180,8 +153,6 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
   }
   if (finalData.arrivalTimestamp instanceof Date) {
     finalData.arrivalTimestamp = Timestamp.fromDate(finalData.arrivalTimestamp);
-  } else if (finalData.arrivalTimestamp === undefined) {
-    delete finalData.arrivalTimestamp;
   }
 
   if (id) {
@@ -243,40 +214,5 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
             { value: "major_issues", label: "Problemas Graves", color: "red" }
         ],
         isProblem: (value: string) => ['some_issues', 'major_issues'].includes(value),
-    },
-];
-
-export const carretaChecklistItems: ChecklistItemOption[] = [
-    {
-        key: "pino_rei",
-        title: "Pino Rei e Quinta Roda",
-        description: "Verifique o acoplamento e lubrificação",
-        options: [
-            { value: "ok", label: "OK", color: "green" },
-            { value: "needs_grease", label: "Falta Graxa", color: "orange" },
-            { value: "damaged", label: "Danificado", color: "red" }
-        ],
-        isProblem: (value: string) => value === 'damaged',
-    },
-    {
-        key: "chassi",
-        title: "Estrutura do Chassi",
-        description: "Verifique trincas ou deformações",
-        options: [
-            { value: "ok", label: "OK", color: "green" },
-            { value: "crack", label: "Trincas", color: "red" }
-        ],
-        isProblem: (value: string) => value === 'crack',
-    },
-    {
-        key: "eixos",
-        title: "Eixos e Suspensão",
-        description: "Verifique molas e bolsas de ar",
-        options: [
-            { value: "ok", label: "OK", color: "green" },
-            { value: "air_leak", label: "Vazamento Ar", color: "orange" },
-            { value: "broken_spring", label: "Mola Quebrada", color: "red" }
-        ],
-        isProblem: (value: string) => ['air_leak', 'broken_spring'].includes(value),
     },
 ];
