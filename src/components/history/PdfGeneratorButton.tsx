@@ -5,7 +5,7 @@ import { Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { checklistItemsOptions } from '@/lib/data';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface PdfGeneratorButtonProps {
     checklist?: DailyChecklist & { vehicle?: Vehicle };
@@ -163,15 +163,17 @@ export default function PdfGeneratorButton({ checklist, vehicle }: PdfGeneratorB
     };
 
     return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                 <Button variant="ghost" size="icon" onClick={handleGeneratePDF}>
-                    <Printer className="w-4 h-4" />
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>Imprimir / Salvar PDF</p>
-            </TooltipContent>
-        </Tooltip>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                     <Button variant="ghost" size="icon" onClick={handleGeneratePDF}>
+                        <Printer className="w-4 h-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Imprimir / Salvar PDF</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     );
 };

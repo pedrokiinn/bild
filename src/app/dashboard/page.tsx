@@ -47,6 +47,7 @@ function DashboardContent() {
 
     const getWeeklyAverage = () => {
         const lastWeek = checklists.filter(checklist => {
+            if (!checklist.departureTimestamp) return false;
             const checkDate = checklist.departureTimestamp.toDate();
             const weekAgo = subDays(new Date(), 7);
             return checkDate >= weekAgo;

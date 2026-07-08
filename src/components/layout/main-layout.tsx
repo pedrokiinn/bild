@@ -18,7 +18,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight, Fuel, Eye, EyeOff, KeyRound } from 'lucide-react';
-import { User, login, logout, register } from '@/lib/auth';
+import type { User } from '@/types';
+import { login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -35,6 +36,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { UserProvider } from '@/context/UserContext';
+import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
 
 
 const navigationItems = [
@@ -125,6 +127,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
     const { toast } = useToast();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -192,7 +195,10 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                     </Button>
                 </form>
             </CardContent>
-            <CardFooter className="justify-center">
+            <CardFooter className="flex flex-col gap-2">
+                <button type="button" onClick={() => setIsForgotPasswordOpen(true)} className="text-xs text-primary hover:underline">
+                    Esqueceu a senha?
+                </button>
                 <p className="text-sm text-muted-foreground">
                     Não tem uma conta?{' '}
                     <button onClick={onSwitchToRegister} className="text-primary hover:underline font-semibold">
@@ -200,6 +206,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                     </button>
                 </p>
             </CardFooter>
+            <ForgotPasswordDialog isOpen={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen} />
         </Card>
     );
 }

@@ -137,7 +137,8 @@ function HistoryContent() {
         if (!selectedChecklist) return;
 
         try {
-            const updatedChecklist: Partial<DailyChecklist> & { id: string } = { ...selectedChecklist };
+            const { vehicle, ...checklistWithoutVehicle } = selectedChecklist;
+            const updatedChecklist: Partial<DailyChecklist> & { id: string } = { ...checklistWithoutVehicle };
             const isNewArrival = updatedChecklist.status === 'pending_arrival';
 
             if (isNewArrival) {

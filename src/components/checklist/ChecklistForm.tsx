@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useUser } from '@/context/UserContext';
+import { Timestamp } from 'firebase/firestore';
 
 interface ChecklistFormProps {
   vehicles: Vehicle[];
@@ -211,7 +212,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
 
         const newChecklist: Omit<DailyChecklist, 'id' | 'driverId' | 'driverName'> = {
             vehicleId: selectedVehicle.id,
-            departureTimestamp: new Date(),
+            departureTimestamp: Timestamp.fromDate(new Date()),
             departureMileage: Number(departureMileage),
             checklistItems: checklistItemsToSave,
             checklistValues: itemValues,
@@ -273,7 +274,7 @@ export default function ChecklistForm({ vehicles, selectedVehicle, checklistItem
                         <div key={type}>
                             {photos[type] ? (
                                 <div className="relative group aspect-video">
-                                    <Image src={photos[type]} alt={`Foto da ${photoLabels[type]}`} layout="fill" objectFit="cover" className="rounded-lg" />
+                                    <Image src={photos[type]} alt={`Foto da ${photoLabels[type]}`} fill className="rounded-lg object-cover" />
                                     <Button
                                         type="button"
                                         variant="destructive"

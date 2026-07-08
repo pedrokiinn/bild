@@ -1,9 +1,8 @@
 
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { db, functions } from './firebase';
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp, deleteField } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
+import { db } from './firebase';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, deleteField } from "firebase/firestore";
 
 // User Functions
 export const getUsers = async (): Promise<User[]> => {
@@ -30,17 +29,6 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
     await updateDoc(userDoc, { role: newRole });
 };
 
-export const deleteUser = async (targetUserId: string, reason: string): Promise<void> => {
-    // The admin check is now done inside the cloud function
-    try {
-        const deleteUserByAdmin = httpsCallable(functions, 'deleteUserByAdmin');
-        await deleteUserByAdmin({ targetUserId, reason });
-    } catch (error: any) {
-        console.error("Erro ao chamar a função de exclusão de usuário:", error);
-        throw new Error(error.message || "Falha ao excluir o usuário.");
-    }
-};
-
 // Deletion Report Functions
 export const getDeletionReports = async (): Promise<DeletionReport[]> => {
     const reportsCollection = collection(db, "deletionReports");
@@ -48,7 +36,6 @@ export const getDeletionReports = async (): Promise<DeletionReport[]> => {
     const reportSnapshot = await getDocs(q);
     return reportSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DeletionReport));
 }
-
 
 export const deleteReport = async (reportId: string): Promise<void> => {
     const reportDoc = doc(db, "deletionReports", reportId);
@@ -71,7 +58,6 @@ export const deleteAllReports = async (): Promise<void> => {
     await batch.commit();
 };
 
-
 // Vehicle Functions
 export const getVehicles = async (): Promise<Vehicle[]> => {
   const vehiclesCollection = collection(db, "vehicles");
@@ -90,8 +76,9 @@ export const getVehicleById = async (id: string): Promise<Vehicle | undefined> =
 
 export const saveVehicle = async (vehicle: Omit<Vehicle, 'id'> & { id?: string }): Promise<Vehicle> => {
   if (vehicle.id) {
-    const vehicleDoc = doc(db, "vehicles", vehicle.id);
-    await updateDoc(vehicleDoc, vehicle);
+    const { id, ...dataToSave } = vehicle;
+    const vehicleDoc = doc(db, "vehicles", id);
+    await updateDoc(vehicleDoc, dataToSave);
     return vehicle as Vehicle;
   }
   
@@ -113,7 +100,6 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
     let checklistSnapshot;
 
     if (user.role === 'admin') {
-        // For admins, query by date range and order. This is efficient.
         const conditions = [];
         if (date) {
             const start = startOfMonth(date);
@@ -125,8 +111,7 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
         checklistSnapshot = await getDocs(q);
         return checklistSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
 
-    } else { // For collaborators
-        // For collaborators, query just by their ID to avoid complex index requirements.
+    } else {
         q = query(checklistsCollection, where("driverId", "==", user.id));
         checklistSnapshot = await getDocs(q);
         
@@ -135,7 +120,6 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
             ...doc.data(),
         } as DailyChecklist));
 
-        // Then, filter by date in JavaScript.
         if (date) {
             const start = startOfMonth(date);
             const end = endOfMonth(date);
@@ -146,7 +130,6 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
             });
         }
         
-        // And sort by date in JavaScript.
         checklistsData.sort((a, b) => {
             if (!a.departureTimestamp || !b.departureTimestamp) return 0;
             return b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis();
@@ -155,7 +138,6 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
         return checklistsData;
     }
 };
-
 
 export const getChecklistById = async (id:string): Promise<DailyChecklist | undefined> => {
     const checklistDoc = doc(db, "checklists", id);
@@ -171,29 +153,13 @@ export const deleteChecklist = async (id: string): Promise<void> => {
     await deleteDoc(checklistDoc);
 }
 
-export const getTodayChecklistForVehicle = async (vehicleId: string): Promise<DailyChecklist | undefined> => {
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const checklistsRef = collection(db, "checklists");
-  const q = query(checklistsRef, where("vehicleId", "==", vehicleId), where("date", "==", today));
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) {
-      return undefined;
-  }
-  const docData = querySnapshot.docs[0];
-  return { id: docData.id, ...docData.data() } as DailyChecklist;
-};
-
-export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { id?: string }, userForCreate: User | null): Promise<any> => {
+export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { id?: string }, userForCreate: User | null): Promise<Partial<DailyChecklist> & { id: string }> => {
   const { id, ...dataToSave } = checklistData;
   let finalData: Record<string, any>;
 
   if (id) {
-    // UPDATE: The user ID is already associated, so we don't need to re-assign it.
-    // The original driver info is preserved.
     finalData = { ...dataToSave };
   } else {
-    // CREATE: Securely set driver info from the provided user context.
     if (!userForCreate) {
       throw new Error("Usuário não autenticado. A criação do checklist falhou.");
     }
@@ -204,44 +170,37 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
     };
   }
 
-  // Convert JS Dates to Firestore Timestamps for portability
   if (finalData.departureTimestamp instanceof Date) {
     finalData.departureTimestamp = Timestamp.fromDate(finalData.departureTimestamp);
   }
   if (finalData.arrivalTimestamp instanceof Date) {
     finalData.arrivalTimestamp = Timestamp.fromDate(finalData.arrivalTimestamp);
   } else if (finalData.arrivalTimestamp === undefined) {
-    // Ensure undefined doesn't get sent, which can cause issues.
-    // For updates, we may need to delete the field.
     delete finalData.arrivalTimestamp;
   }
 
   if (id) {
     const checklistDoc = doc(db, "checklists", id);
-    // If arrivalTimestamp is explicitly being set to undefined on an update, we should delete it.
     if (checklistData.arrivalTimestamp === undefined) {
         finalData.arrivalTimestamp = deleteField();
     }
     await updateDoc(checklistDoc, finalData);
 
-    // Update vehicle mileage on arrival
     if (finalData.arrivalMileage) {
         const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
         await updateDoc(vehicleDoc, { mileage: finalData.arrivalMileage });
     }
-    return { id, ...checklistData };
+    return { id, ...checklistData } as any;
   } 
   
-  // Logic for creating a new checklist
   const docRef = await addDoc(collection(db, "checklists"), finalData);
 
-  // Update vehicle mileage on departure
   if (finalData.departureMileage) {
     const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
     await updateDoc(vehicleDoc, { mileage: finalData.departureMileage });
   }
   
-  return { id: docRef.id, ...finalData };
+  return { id: docRef.id, ...finalData } as any;
 }
 
 export const checklistItemsOptions: ChecklistItemOption[] = [

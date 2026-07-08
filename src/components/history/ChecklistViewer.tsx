@@ -140,7 +140,7 @@ export default function ChecklistViewer({ checklist, vehicle, onArrivalClick }: 
                                <div key={key}>
                                     <a href={url} target="_blank" rel="noopener noreferrer">
                                         <div className="relative aspect-video group">
-                                            <Image src={url} alt={photoLabels[key] || 'Foto do veículo'} layout="fill" objectFit="cover" className="rounded-lg"/>
+                                            <Image src={url} alt={photoLabels[key] || 'Foto do veículo'} fill className="rounded-lg object-cover"/>
                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
                                                 <span className="text-white text-sm font-semibold">{photoLabels[key]}</span>
                                             </div>

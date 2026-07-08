@@ -2,8 +2,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { User } from '@/types';
-import { getUsers, updateUserRole, deleteUser } from '@/lib/data';
-import { resetPasswordByAdmin } from '@/lib/auth';
+import { getUsers, updateUserRole } from '@/lib/data';
+import { resetPasswordByAdmin, deleteUser } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -65,7 +65,6 @@ function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen:
         </Dialog>
     )
 }
-
 
 function UsersContent() {
     const [users, setUsers] = useState<User[]>([]);

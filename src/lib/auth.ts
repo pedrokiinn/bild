@@ -1,6 +1,4 @@
 
-'use server';
-
 import { 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
@@ -23,7 +21,6 @@ export async function login(email: string, password_raw: string): Promise<User> 
         if (userDocSnap.exists()) {
             return { id: userDocSnap.id, ...userDocSnap.data() } as User;
         } else {
-            // This case is unlikely but good to handle.
             await signOut(auth);
             throw new Error("Perfil de usuário não encontrado no Firestore.");
         }
@@ -42,26 +39,20 @@ export async function logout(): Promise<void> {
 
 export async function register(name: string, email: string, password_raw: string): Promise<User> {
     try {
-        //  Criar o usuário no Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, email, password_raw);
         const firebaseUser = userCredential.user;
 
-        // Verificar se é o primeiro usuário para definir como admin
         const usersRef = collection(db, "users");
         const allUsersSnapshot = await getDocs(query(usersRef));
-        const isFirstUser = allUsersSnapshot.size === 0; // A verificação deve ser antes de adicionar o novo
-        const isAdminByEmail = email.toLowerCase() === 'keennlemariem@gmail.com';
-
-        // Criar o documento do perfil do usuário no Firestore
+        const isFirstUser = allUsersSnapshot.size === 0;
+        
         const newUser: Omit<User, 'id'> = {
             name: name,
             email: email,
-            role: isFirstUser || isAdminByEmail ? 'admin' : 'collaborator',
+            role: isFirstUser ? 'admin' : 'collaborator',
         };
 
-        // Usar o UID do Firebase Auth como ID do documento no Firestore
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);
-        
         return { id: firebaseUser.uid, ...newUser };
 
     } catch (error: any) {
@@ -79,14 +70,11 @@ export async function register(name: string, email: string, password_raw: string
     }
 }
 
-
 export async function sendPasswordReset(email: string): Promise<void> {
     try {
         await sendPasswordResetEmail(auth, email);
     } catch (error: any) {
         console.error("Erro ao enviar email de redefinição:", error.code);
-        // Do not reveal if the user exists for security reasons.
-        // The user will get a toast message explaining this.
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
              throw new Error("Se este email estiver cadastrado, um link de recuperação será enviado.");
         }
@@ -100,7 +88,16 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         await resetPassword({ targetUserId, newPassword });
     } catch (error: any) {
         console.error("Erro ao chamar a função de redefinição de senha:", error);
-        // Firebase functions throw an error object with a `message` property
         throw new Error(error.message || "Falha ao redefinir a senha do usuário.");
+    }
+}
+
+export async function deleteUser(targetUserId: string, reason: string): Promise<void> {
+    try {
+        const deleteUserByAdmin = httpsCallable(functions, 'deleteUserByAdmin');
+        await deleteUserByAdmin({ targetUserId, reason });
+    } catch (error: any) {
+        console.error("Erro ao chamar a função de exclusão de usuário:", error);
+        throw new Error(error.message || "Falha ao excluir o usuário.");
     }
 }
