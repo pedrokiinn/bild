@@ -11,7 +11,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Qualquer usuário autenticado pode ler seu próprio perfil
+      // Qualquer usuário autenticado pode ler seu próprio perfil ou se for admin
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && isAdmin();

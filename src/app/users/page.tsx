@@ -116,8 +116,8 @@ function UsersContent() {
             setUserToDelete(null);
         } catch (e: any) {
             toast({ 
-                title: "Função não encontrada", 
-                description: "As Cloud Functions não foram implantadas. Execute 'firebase deploy --only functions' para ativar este recurso.", 
+                title: "Falha na Exclusão", 
+                description: e.message, 
                 variant: "destructive", 
                 duration: 8000 
             });
@@ -134,8 +134,8 @@ function UsersContent() {
             setUserToReset(null);
         } catch (e: any) {
             toast({ 
-                title: "Função não encontrada", 
-                description: "As Cloud Functions não foram implantadas. Execute 'firebase deploy --only functions' para ativar este recurso.", 
+                title: "Falha na Senha", 
+                description: e.message, 
                 variant: "destructive", 
                 duration: 8000 
             });
