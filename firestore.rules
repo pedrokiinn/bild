@@ -11,15 +11,13 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Qualquer usuário autenticado pode ler seu próprio perfil ou se for admin
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && isAdmin();
-      allow delete: if false; // Deletar é feito via Cloud Function
+      allow delete: if false; 
     }
     
     match /users {
-      // Permite listagem para administradores
       allow list: if request.auth != null && isAdmin();
     }
 

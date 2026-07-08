@@ -1,6 +1,6 @@
 
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { startOfMonth, endOfMonth } from "date-fns";
 import { db } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, deleteField } from "firebase/firestore";
 
@@ -11,15 +11,15 @@ export const getUsers = async (): Promise<User[]> => {
         const userSnapshot = await getDocs(usersCollection);
         return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
     } catch (error: any) {
-        console.error("Erro ao buscar usuários no Firestore:", error);
-        throw new Error(error.message || "Falha ao carregar a lista de colaboradores.");
+        console.error("Erro ao buscar usuários:", error);
+        throw error;
     }
 };
 
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
     const userSnap = await getDoc(doc(db, "users", userId));
     if (userSnap.exists() && userSnap.data().email === 'keennlemariem@gmail.com') {
-        throw new Error("A função deste usuário administrador mestre não pode ser alterada.");
+        throw new Error("Não é possível alterar o administrador mestre.");
     }
     const userDoc = doc(db, "users", userId);
     await updateDoc(userDoc, { role: newRole });
@@ -41,13 +41,9 @@ export const deleteReport = async (reportId: string): Promise<void> => {
 export const deleteAllReports = async (): Promise<void> => {
     const reportsCollection = collection(db, "deletionReports");
     const reportSnapshot = await getDocs(reportsCollection);
-    
     if (reportSnapshot.empty) return;
-    
     const batch = writeBatch(db);
-    reportSnapshot.docs.forEach(doc => {
-        batch.delete(doc.ref);
-    });
+    reportSnapshot.docs.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
 };
 
@@ -76,11 +72,8 @@ export const deleteVehicle = async (id: string): Promise<void> => {
 // Checklist Functions
 export const getChecklists = async (user: User | null, date?: Date): Promise<DailyChecklist[]> => {
     if (!user) return [];
-
     const checklistsCollection = collection(db, "checklists");
     let q;
-    let checklistSnapshot;
-
     if (user.role === 'admin') {
         const conditions = [];
         if (date) {
@@ -90,88 +83,54 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
             conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
         }
         q = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
-        checklistSnapshot = await getDocs(q);
-        return checklistSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
-
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
     } else {
         q = query(checklistsCollection, where("driverId", "==", user.id));
-        checklistSnapshot = await getDocs(q);
-        
-        let checklistsData = checklistSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        } as DailyChecklist));
-
+        const snap = await getDocs(q);
+        let data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
         if (date) {
             const start = startOfMonth(date);
             const end = endOfMonth(date);
-            checklistsData = checklistsData.filter(c => {
-                if (!c.departureTimestamp) return false;
-                const checkDate = c.departureTimestamp.toDate();
-                return checkDate >= start && checkDate <= end;
-            });
+            data = data.filter(c => c.departureTimestamp.toDate() >= start && c.departureTimestamp.toDate() <= end);
         }
-        
-        checklistsData.sort((a, b) => {
-            if (!a.departureTimestamp || !b.departureTimestamp) return 0;
-            return b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis();
-        });
-
-        return checklistsData;
+        data.sort((a, b) => b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis());
+        return data;
     }
 };
 
 export const deleteChecklist = async (id: string): Promise<void> => {
-    const checklistDoc = doc(db, "checklists", id);
-    await deleteDoc(checklistDoc);
+    await deleteDoc(doc(db, "checklists", id));
 }
 
 export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { id?: string }, userForCreate: User | null): Promise<any> => {
   const { id, ...dataToSave } = checklistData;
-  let finalData: Record<string, any>;
+  let finalData: Record<string, any> = { ...dataToSave };
 
-  if (id) {
-    finalData = { ...dataToSave };
-  } else {
-    if (!userForCreate) {
-      throw new Error("Usuário não autenticado.");
-    }
-    finalData = {
-      ...dataToSave,
-      driverId: userForCreate.id,
-      driverName: userForCreate.name,
-      type: 'vehicle'
-    };
+  if (!id) {
+    if (!userForCreate) throw new Error("Usuário não autenticado.");
+    finalData.driverId = userForCreate.id;
+    finalData.driverName = userForCreate.name;
+    finalData.type = 'vehicle';
   }
 
-  if (finalData.departureTimestamp instanceof Date) {
-    finalData.departureTimestamp = Timestamp.fromDate(finalData.departureTimestamp);
-  }
-  if (finalData.arrivalTimestamp instanceof Date) {
-    finalData.arrivalTimestamp = Timestamp.fromDate(finalData.arrivalTimestamp);
-  }
+  if (finalData.departureTimestamp instanceof Date) finalData.departureTimestamp = Timestamp.fromDate(finalData.departureTimestamp);
+  if (finalData.arrivalTimestamp instanceof Date) finalData.arrivalTimestamp = Timestamp.fromDate(finalData.arrivalTimestamp);
 
   if (id) {
     const checklistDoc = doc(db, "checklists", id);
-    if (checklistData.arrivalTimestamp === undefined) {
-        finalData.arrivalTimestamp = deleteField();
-    }
+    if (checklistData.arrivalTimestamp === undefined) finalData.arrivalTimestamp = deleteField();
     await updateDoc(checklistDoc, finalData);
-
     if (finalData.arrivalMileage && finalData.vehicleId) {
-        const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
-        await updateDoc(vehicleDoc, { mileage: finalData.arrivalMileage });
+        await updateDoc(doc(db, "vehicles", finalData.vehicleId), { mileage: finalData.arrivalMileage });
     }
     return { id, ...checklistData };
   } 
   
   const docRef = await addDoc(collection(db, "checklists"), finalData);
-
   if (finalData.departureMileage && finalData.vehicleId) {
-    const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
-    await updateDoc(vehicleDoc, { mileage: finalData.departureMileage });
+    await updateDoc(doc(db, "vehicles", finalData.vehicleId), { mileage: finalData.departureMileage });
   }
-  
   return { id: docRef.id, ...finalData };
 }
 
