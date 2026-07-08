@@ -129,8 +129,7 @@ function ConsumptionContent() {
         if (!selectedChecklist) return;
 
         try {
-            const { vehicle, ...checklistWithoutVehicle } = selectedChecklist;
-            const updatedChecklist: Partial<DailyChecklist> & { id: string } = { ...checklistWithoutVehicle };
+            const updatedChecklist: Partial<DailyChecklist> & { id: string } = { ...selectedChecklist };
             
             if (user?.role === 'admin') {
                 updatedChecklist.arrivalMileage = arrivalMileage;

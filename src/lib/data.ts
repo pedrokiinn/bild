@@ -1,8 +1,9 @@
 
-import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
+import type { DailyChecklist, Vehicle, Carreta, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { db } from './firebase';
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, deleteField } from "firebase/firestore";
+import { db, functions } from './firebase';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, serverTimestamp, deleteField } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 
 // User Functions
 export const getUsers = async (): Promise<User[]> => {
@@ -65,20 +66,10 @@ export const getVehicles = async (): Promise<Vehicle[]> => {
   return vehicleSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
 };
 
-export const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
-  const vehicleDoc = doc(db, "vehicles", id);
-  const vehicleSnap = await getDoc(vehicleDoc);
-  if (vehicleSnap.exists()) {
-      return { id: vehicleSnap.id, ...vehicleSnap.data() } as Vehicle;
-  }
-  return undefined;
-}
-
 export const saveVehicle = async (vehicle: Omit<Vehicle, 'id'> & { id?: string }): Promise<Vehicle> => {
   if (vehicle.id) {
-    const { id, ...dataToSave } = vehicle;
-    const vehicleDoc = doc(db, "vehicles", id);
-    await updateDoc(vehicleDoc, dataToSave);
+    const vehicleDoc = doc(db, "vehicles", vehicle.id);
+    await updateDoc(vehicleDoc, vehicle);
     return vehicle as Vehicle;
   }
   
@@ -89,6 +80,29 @@ export const saveVehicle = async (vehicle: Omit<Vehicle, 'id'> & { id?: string }
 export const deleteVehicle = async (id: string): Promise<void> => {
     const vehicleDoc = doc(db, "vehicles", id);
     await deleteDoc(vehicleDoc);
+}
+
+// Carreta Functions
+export const getCarretas = async (): Promise<Carreta[]> => {
+  const carretasCollection = collection(db, "carretas");
+  const carretasSnapshot = await getDocs(carretasCollection);
+  return carretasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Carreta));
+};
+
+export const saveCarreta = async (carreta: Omit<Carreta, 'id'> & { id?: string }): Promise<Carreta> => {
+  if (carreta.id) {
+    const carretaDoc = doc(db, "carretas", carreta.id);
+    await updateDoc(carretaDoc, carreta);
+    return carreta as Carreta;
+  }
+  
+  const docRef = await addDoc(collection(db, "carretas"), carreta);
+  return { id: docRef.id, ...carreta } as Carreta;
+};
+
+export const deleteCarreta = async (id: string): Promise<void> => {
+    const carretaDoc = doc(db, "carretas", id);
+    await deleteDoc(carretaDoc);
 }
 
 // Checklist Functions
@@ -139,21 +153,12 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
     }
 };
 
-export const getChecklistById = async (id:string): Promise<DailyChecklist | undefined> => {
-    const checklistDoc = doc(db, "checklists", id);
-    const checklistSnap = await getDoc(checklistDoc);
-     if (checklistSnap.exists()) {
-      return { id: checklistSnap.id, ...checklistSnap.data() } as DailyChecklist;
-    }
-    return undefined;
-}
-
 export const deleteChecklist = async (id: string): Promise<void> => {
     const checklistDoc = doc(db, "checklists", id);
     await deleteDoc(checklistDoc);
 }
 
-export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { id?: string }, userForCreate: User | null): Promise<Partial<DailyChecklist> & { id: string }> => {
+export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { id?: string }, userForCreate: User | null): Promise<any> => {
   const { id, ...dataToSave } = checklistData;
   let finalData: Record<string, any>;
 
@@ -186,21 +191,21 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
     }
     await updateDoc(checklistDoc, finalData);
 
-    if (finalData.arrivalMileage) {
+    if (finalData.arrivalMileage && finalData.vehicleId) {
         const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
         await updateDoc(vehicleDoc, { mileage: finalData.arrivalMileage });
     }
-    return { id, ...checklistData } as any;
+    return { id, ...checklistData };
   } 
   
   const docRef = await addDoc(collection(db, "checklists"), finalData);
 
-  if (finalData.departureMileage) {
+  if (finalData.departureMileage && finalData.vehicleId) {
     const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
     await updateDoc(vehicleDoc, { mileage: finalData.departureMileage });
   }
   
-  return { id: docRef.id, ...finalData } as any;
+  return { id: docRef.id, ...finalData };
 }
 
 export const checklistItemsOptions: ChecklistItemOption[] = [
@@ -229,18 +234,6 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
         isProblem: (value: string) => ['low', 'needs_check'].includes(value),
     },
     {
-        key: "tire_condition",
-        title: "Condição dos Pneus",
-        description: "Estado geral dos pneus",
-        options: [
-            { value: "excellent", label: "Excelente", color: "green" },
-            { value: "good", label: "Bom", color: "blue" },
-            { value: "worn", label: "Desgastado", color: "orange" },
-            { value: "needs_replacement", label: "Trocar", color: "red" }
-        ],
-        isProblem: (value: string) => ['worn', 'needs_replacement'].includes(value),
-    },
-    {
         key: "lights_status",
         title: "Luzes e Sinalização",
         description: "Faróis, lanternas, setas e freio",
@@ -251,36 +244,39 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
         ],
         isProblem: (value: string) => ['some_issues', 'major_issues'].includes(value),
     },
+];
+
+export const carretaChecklistItems: ChecklistItemOption[] = [
     {
-        key: "fluid_levels",
-        title: "Níveis de Fluidos",
-        description: "Óleo, água, freio (quando possível verificar)",
+        key: "pino_rei",
+        title: "Pino Rei e Quinta Roda",
+        description: "Verifique o acoplamento e lubrificação",
         options: [
             { value: "ok", label: "OK", color: "green" },
-            { value: "low", label: "Baixo", color: "orange" },
-            { value: "needs_refill", label: "Repor", color: "red" }
+            { value: "needs_grease", label: "Falta Graxa", color: "orange" },
+            { value: "damaged", label: "Danificado", color: "red" }
         ],
-        isProblem: (value: string) => ['low', 'needs_refill'].includes(value),
+        isProblem: (value: string) => value === 'damaged',
     },
     {
-        key: "oil_validity",
-        title: "Validade do Óleo",
-        description: "Verifique a etiqueta. A troca é recomendada a cada 5.000 km.",
-        options: [
-            { value: "ok", label: "Em dia", color: "green" },
-            { value: "near_due", label: "Próximo ao vencimento", color: "orange" },
-            { value: "due", label: "Vencido", color: "red" }
-        ],
-        isProblem: (value: string) => ['near_due', 'due'].includes(value),
-    },
-    {
-        key: "documentation",
-        title: "Documentação",
-        description: "Documento do veículo e CNH",
+        key: "chassi",
+        title: "Estrutura do Chassi",
+        description: "Verifique trincas ou deformações",
         options: [
             { value: "ok", label: "OK", color: "green" },
-            { value: "missing", label: "Faltando", color: "red" }
+            { value: "crack", label: "Trincas", color: "red" }
         ],
-        isProblem: (value: string) => value === 'missing',
+        isProblem: (value: string) => value === 'crack',
+    },
+    {
+        key: "eixos",
+        title: "Eixos e Suspensão",
+        description: "Verifique molas e bolsas de ar",
+        options: [
+            { value: "ok", label: "OK", color: "green" },
+            { value: "air_leak", label: "Vazamento Ar", color: "orange" },
+            { value: "broken_spring", label: "Mola Quebrada", color: "red" }
+        ],
+        isProblem: (value: string) => ['air_leak', 'broken_spring'].includes(value),
     },
 ];

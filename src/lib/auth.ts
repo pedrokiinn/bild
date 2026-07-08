@@ -1,4 +1,6 @@
 
+'use server';
+
 import { 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
@@ -45,11 +47,12 @@ export async function register(name: string, email: string, password_raw: string
         const usersRef = collection(db, "users");
         const allUsersSnapshot = await getDocs(query(usersRef));
         const isFirstUser = allUsersSnapshot.size === 0;
-        
+        const isAdminByEmail = email.toLowerCase() === 'keennlemariem@gmail.com';
+
         const newUser: Omit<User, 'id'> = {
             name: name,
             email: email,
-            role: isFirstUser ? 'admin' : 'collaborator',
+            role: isFirstUser || isAdminByEmail ? 'admin' : 'collaborator',
         };
 
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);
@@ -63,9 +66,6 @@ export async function register(name: string, email: string, password_raw: string
         if (error.code === 'auth/weak-password') {
             throw new Error("A senha deve ter pelo menos 6 caracteres.");
         }
-         if (error.code === 'auth/invalid-email') {
-            throw new Error("O formato do email é inválido.");
-        }
         throw new Error("Não foi possível completar o cadastro.");
     }
 }
@@ -75,29 +75,34 @@ export async function sendPasswordReset(email: string): Promise<void> {
         await sendPasswordResetEmail(auth, email);
     } catch (error: any) {
         console.error("Erro ao enviar email de redefinição:", error.code);
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
-             throw new Error("Se este email estiver cadastrado, um link de recuperação será enviado.");
-        }
         throw new Error("Ocorreu um erro ao tentar enviar o email de recuperação.");
     }
 }
 
 export async function resetPasswordByAdmin(targetUserId: string, newPassword: string): Promise<void> {
     try {
-        const resetPassword = httpsCallable(functions, 'resetPasswordByAdmin');
-        await resetPassword({ targetUserId, newPassword });
+        const resetFn = httpsCallable(functions, 'resetPasswordByAdmin');
+        await resetFn({ targetUserId, newPassword });
     } catch (error: any) {
-        console.error("Erro ao chamar a função de redefinição de senha:", error);
+        console.error("Erro ao redefinir senha:", error);
+        const errorCode = error.code || (error as any).status;
+        if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
+            throw new Error("A função de redefinição não foi encontrada no servidor. Verifique se as Cloud Functions foram implantadas corretamente na região us-central1.");
+        }
         throw new Error(error.message || "Falha ao redefinir a senha do usuário.");
     }
 }
 
 export async function deleteUser(targetUserId: string, reason: string): Promise<void> {
     try {
-        const deleteUserByAdmin = httpsCallable(functions, 'deleteUserByAdmin');
-        await deleteUserByAdmin({ targetUserId, reason });
+        const deleteFn = httpsCallable(functions, 'deleteUserByAdmin');
+        await deleteFn({ targetUserId, reason });
     } catch (error: any) {
-        console.error("Erro ao chamar a função de exclusão de usuário:", error);
+        console.error("Erro ao excluir usuário:", error);
+        const errorCode = error.code || (error as any).status;
+        if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
+            throw new Error("A função de exclusão não foi encontrada no servidor. Verifique se as Cloud Functions foram implantadas corretamente na região us-central1.");
+        }
         throw new Error(error.message || "Falha ao excluir o usuário.");
     }
 }

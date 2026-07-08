@@ -17,9 +17,8 @@ import {
     useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight, Fuel, Eye, EyeOff, KeyRound } from 'lucide-react';
-import type { User } from '@/types';
-import { login, logout, register } from '@/lib/auth';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, FileText, Loader2, ArrowRight, Fuel, Eye, EyeOff, Truck } from 'lucide-react';
+import { User, login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -36,7 +35,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { UserProvider } from '@/context/UserContext';
-import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
 
 
 const navigationItems = [
@@ -62,9 +60,15 @@ const navigationItems = [
         adminOnly: true,
     },
     {
-        title: "Meus Veículos",
+        title: "Veículos",
         url: "/vehicle",
         icon: Car,
+        adminOnly: true,
+    },
+    {
+        title: "Carretas",
+        url: "/carretas",
+        icon: Truck,
         adminOnly: true,
     },
     {
@@ -127,7 +131,6 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
     const { toast } = useToast();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -183,9 +186,6 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                                 onClick={() => setShowPassword(!showPassword)}
                             >
                                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                <span className="sr-only">
-                                    {showPassword ? "Esconder senha" : "Mostrar senha"}
-                                </span>
                             </Button>
                         </div>
                     </div>
@@ -195,10 +195,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                     </Button>
                 </form>
             </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-                <button type="button" onClick={() => setIsForgotPasswordOpen(true)} className="text-xs text-primary hover:underline">
-                    Esqueceu a senha?
-                </button>
+            <CardFooter className="justify-center">
                 <p className="text-sm text-muted-foreground">
                     Não tem uma conta?{' '}
                     <button onClick={onSwitchToRegister} className="text-primary hover:underline font-semibold">
@@ -206,7 +203,6 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                     </button>
                 </p>
             </CardFooter>
-            <ForgotPasswordDialog isOpen={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen} />
         </Card>
     );
 }
@@ -255,7 +251,6 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
             <CardHeader className="text-center">
                 <Logo className="mx-auto mb-6" />
                 <CardTitle className="text-2xl">Criar Conta</CardTitle>
-                <CardDescription>Crie uma nova conta para acessar o sistema.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleRegister} className="space-y-4">
@@ -287,9 +282,6 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
                                 onClick={() => setShowPassword(!showPassword)}
                             >
                                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                <span className="sr-only">
-                                    {showPassword ? "Esconder senha" : "Mostrar senha"}
-                                </span>
                             </Button>
                         </div>
                     </div>
@@ -312,9 +304,6 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                             >
                                 {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                <span className="sr-only">
-                                    {showConfirmPassword ? "Esconder senha" : "Mostrar senha"}
-                                </span>
                             </Button>
                         </div>
                     </div>
@@ -353,7 +342,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                     if (userDocSnap.exists()) {
                         setUser({ id: userDocSnap.id, ...userDocSnap.data() } as User);
                     } else {
-                        // Inconsistent state, user exists in Auth but not Firestore. Force logout.
                         await logout();
                         setUser(null);
                     }
@@ -450,7 +438,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                                     <SidebarTrigger>
                                         <Menu className="w-5 h-5" />
                                     </SidebarTrigger>
-                                    <h1 className="font-semibold text-lg">{navigationItems.find(item => pathname.startsWith(item.url))?.title || 'G3 Checklist'}</h1>
+                                    <h1 className="font-semibold text-lg">G3 Checklist</h1>
                                 </div>
                             </header>
 
@@ -486,5 +474,3 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </SidebarProvider>
     )
 }
-
-    

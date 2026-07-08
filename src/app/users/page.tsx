@@ -66,6 +66,7 @@ function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen:
     )
 }
 
+
 function UsersContent() {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
