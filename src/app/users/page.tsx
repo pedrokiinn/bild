@@ -88,6 +88,7 @@ export default function UsersPage() {
     }, []);
 
     useEffect(() => {
+        // Se o currentUser existe, carregamos. Se for null, o MainLayout já trata o login.
         if (currentUser) {
             if (currentUser.role === 'admin') {
                 loadData();
@@ -95,6 +96,9 @@ export default function UsersPage() {
                 setIsLoading(false);
                 setError("Acesso restrito: Apenas administradores podem gerenciar a equipe.");
             }
+        } else {
+            // Se ainda não carregou o usuário do contexto, mantemos o loading.
+            setIsLoading(true);
         }
     }, [currentUser, loadData]);
 
