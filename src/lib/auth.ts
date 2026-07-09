@@ -1,3 +1,4 @@
+
 'use server';
 
 import { 
@@ -71,7 +72,7 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
     } catch (error: any) {
         console.error("Erro ao redefinir senha:", error);
         if (error.code === 'not-found' || error.message?.includes('not-found')) {
-            throw new Error("A função de senha não foi instalada no servidor. Execute 'firebase deploy --only functions' no terminal.");
+            throw new Error("A função de senha não foi encontrada no servidor. Verifique se o deploy foi realizado.");
         }
         throw new Error(error.message || "Falha ao redefinir senha.");
     }
@@ -84,7 +85,7 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
     } catch (error: any) {
         console.error("Erro ao excluir usuário:", error);
         if (error.code === 'not-found' || error.message?.includes('not-found')) {
-            throw new Error("A função de exclusão não foi instalada no servidor. Execute 'firebase deploy --only functions' no terminal.");
+            throw new Error("A função de exclusão não foi encontrada no servidor. Verifique se o deploy foi realizado.");
         }
         throw new Error(error.message || "Falha na exclusão do usuário.");
     }
