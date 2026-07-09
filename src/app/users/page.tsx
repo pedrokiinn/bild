@@ -81,7 +81,7 @@ export default function UsersPage() {
             setUsers(allUsers.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
         } catch (err: any) {
             console.error("Erro ao carregar usuários:", err);
-            setError("Falha ao carregar a lista. Verifique sua conexão ou permissões.");
+            setError("Falha ao carregar a lista de equipe. Verifique se você é um administrador e se a conexão com o banco está ativa.");
         } finally {
             setIsLoading(false);
         }
@@ -90,6 +90,9 @@ export default function UsersPage() {
     useEffect(() => {
         if (currentUser && currentUser.role === 'admin') {
             loadData();
+        } else if (currentUser && currentUser.role !== 'admin') {
+            setIsLoading(false);
+            setError("Acesso restrito: Apenas administradores podem gerenciar a equipe.");
         }
     }, [currentUser, loadData]);
 
@@ -134,12 +137,42 @@ export default function UsersPage() {
         (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (!currentUser || currentUser.role !== 'admin') {
+    if (isLoading) {
         return (
-            <div className="p-8 text-center bg-slate-50 min-h-screen flex flex-col items-center justify-center">
-                <ShieldCheck className="w-16 h-16 text-slate-300 mb-4" />
-                <h2 className="text-xl font-bold">Acesso restrito</h2>
-                <p className="text-slate-500">Apenas administradores podem gerenciar a equipe.</p>
+            <div className="p-8 max-w-7xl mx-auto space-y-6">
+                <div className="flex justify-between items-center mb-8">
+                    <Skeleton className="h-10 w-48" />
+                    <Skeleton className="h-10 w-32" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array(6).fill(0).map((_, i) => (
+                        <Card key={i} className="p-6 space-y-4">
+                            <div className="flex gap-4">
+                                <Skeleton className="w-12 h-12 rounded-xl" />
+                                <div className="space-y-2 flex-1">
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <Skeleton className="h-3 w-1/2" />
+                                </div>
+                            </div>
+                            <Skeleton className="h-10 w-full rounded-md" />
+                        </Card>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-8 text-center bg-slate-50 min-h-[80vh] flex flex-col items-center justify-center">
+                <div className="bg-white p-12 rounded-3xl shadow-xl border border-slate-100 max-w-md">
+                    <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-6" />
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Ops! Algo deu errado</h2>
+                    <p className="text-slate-500 mb-8">{error}</p>
+                    <Button onClick={loadData} className="w-full">
+                        <RefreshCw className="w-4 h-4 mr-2" /> Tentar Novamente
+                    </Button>
+                </div>
             </div>
         );
     }
@@ -167,32 +200,11 @@ export default function UsersPage() {
                     />
                 </div>
 
-                {isLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {Array(6).fill(0).map((_, i) => (
-                            <Card key={i} className="p-6 space-y-4">
-                                <div className="flex gap-4">
-                                    <Skeleton className="w-12 h-12 rounded-xl" />
-                                    <div className="space-y-2 flex-1">
-                                        <Skeleton className="h-4 w-3/4" />
-                                        <Skeleton className="h-3 w-1/2" />
-                                    </div>
-                                </div>
-                                <Skeleton className="h-10 w-full rounded-md" />
-                            </Card>
-                        ))}
-                    </div>
-                ) : error ? (
-                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed">
-                        <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">Erro ao carregar dados</h3>
-                        <p className="text-slate-600 max-w-md mx-auto">{error}</p>
-                        <Button variant="outline" className="mt-6" onClick={loadData}>Tentar Novamente</Button>
-                    </div>
-                ) : filteredUsers.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed">
-                        <Users className="w-10 h-10 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">Nenhum colaborador encontrado.</p>
+                {filteredUsers.length === 0 ? (
+                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
+                        <Users className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+                        <h3 className="text-lg font-bold text-slate-900">Nenhum colaborador</h3>
+                        <p className="text-slate-500">Sua busca não retornou nenhum resultado.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -74,7 +74,7 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         console.error("Erro ao redefinir senha:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função administrativa não foi detectada. Execute 'firebase deploy --only functions' para ativar.");
+            throw new Error("A função administrativa não foi detectada. Execute 'firebase deploy --only functions' para ativar os recursos de gestão.");
         }
         throw new Error(error.message || "Falha ao redefinir senha.");
     }
@@ -88,7 +88,7 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         console.error("Erro ao excluir usuário:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-             throw new Error("A função de exclusão não foi detectada. Execute 'firebase deploy --only functions' para ativar.");
+             throw new Error("A função de exclusão não foi detectada no servidor. Para ativar a exclusão de usuários, você deve executar 'firebase deploy --only functions' no terminal.");
         }
         throw new Error(error.message || "Falha ao remover colaborador.");
     }
