@@ -73,7 +73,7 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         console.error("Erro ao redefinir senha:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função de redefinição não foi detectada no servidor. É necessário realizar o deploy das Cloud Functions.");
+            throw new Error("A função de redefinição não foi detectada no servidor. É necessário realizar o deploy das Cloud Functions com 'firebase deploy --only functions'.");
         }
         throw new Error(error.message || "Falha ao redefinir senha.");
     }
