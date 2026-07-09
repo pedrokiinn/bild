@@ -88,7 +88,6 @@ export default function UsersPage() {
     }, []);
 
     useEffect(() => {
-        // Se o currentUser existe, carregamos. Se for null, o MainLayout já trata o login.
         if (currentUser) {
             if (currentUser.role === 'admin') {
                 loadData();
@@ -96,9 +95,6 @@ export default function UsersPage() {
                 setIsLoading(false);
                 setError("Acesso restrito: Apenas administradores podem gerenciar a equipe.");
             }
-        } else {
-            // Se ainda não carregou o usuário do contexto, mantemos o loading.
-            setIsLoading(true);
         }
     }, [currentUser, loadData]);
 
@@ -170,7 +166,7 @@ export default function UsersPage() {
             <div className="p-8 text-center bg-slate-50 min-h-[80vh] flex flex-col items-center justify-center">
                 <div className="bg-white p-12 rounded-3xl shadow-xl border border-slate-100 max-w-md">
                     <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-6" />
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Ops!</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Acesso Negado</h2>
                     <p className="text-slate-500 mb-8">{error}</p>
                     <Button onClick={loadData} className="w-full">
                         <RefreshCw className="w-4 h-4 mr-2" /> Tentar Novamente

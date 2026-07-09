@@ -45,7 +45,7 @@ export async function register(name: string, email: string, password_raw: string
 
         const usersRef = collection(db, "users");
         const allUsersSnapshot = await getDocs(query(usersRef));
-        const isFirstUser = allUsersSnapshot.size <= 1; // Ajuste para garantir admin inicial
+        const isFirstUser = allUsersSnapshot.size <= 1;
 
         const newUser: Omit<User, 'id'> = {
             name: name,
@@ -71,7 +71,6 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         await resetFn({ targetUserId, newPassword });
     } catch (error: any) {
         console.error("Erro ao redefinir senha:", error);
-        // O erro no Toast acontece aqui. Ele indica que a função não foi encontrada no Firebase.
         throw new Error("A função não foi encontrada. Você precisa rodar o comando 'firebase deploy --only functions' no seu terminal para ativar este recurso.");
     }
 }
@@ -82,7 +81,6 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         await deleteFn({ targetUserId, reason });
     } catch (error: any) {
         console.error("Erro ao excluir usuário:", error);
-        // O erro no Toast acontece aqui. Ele indica que a função não foi encontrada no Firebase.
-        throw new Error("A função de exclusão não foi detectada. Para resolver, execute o comando 'firebase deploy --only functions' no seu computador.");
+        throw new Error("A função de exclusão não foi detectada. Para resolver, execute o comando 'firebase deploy --only functions' no seu terminal.");
     }
 }

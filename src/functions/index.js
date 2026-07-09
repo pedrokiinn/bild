@@ -40,7 +40,7 @@ exports.resetPasswordByAdmin = functions.region('us-central1').https.onCall(asyn
     }
     
     const targetUserDoc = await admin.firestore().collection('users').doc(targetUserId).get();
-    if(targetUserDoc.exists() && targetUserDoc.data().email === 'keennlemariem@gmail.com') {
+    if(targetUserDoc.exists && targetUserDoc.data().email === 'keennlemariem@gmail.com') {
          throw new functions.https.HttpsError('permission-denied', 'Proibido alterar o admin principal.');
     }
 
