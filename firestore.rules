@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -16,7 +17,7 @@ service cloud.firestore {
     }
     
     match /users {
-      allow list: if request.auth != null && (isAdmin() || request.auth.uid != null);
+      allow list: if request.auth != null;
     }
 
     match /vehicles/{vehicleId} {

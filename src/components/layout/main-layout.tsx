@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -317,7 +318,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                             <h1 className="font-bold text-lg text-primary">G3 Checklist</h1>
                         </div>
                     </header>
-                    <main className="flex-1 overflow-auto">{children}</main>
+                    <div className="flex-1 overflow-auto">{children}</div>
                 </SidebarInset>
             </div>
         </UserProvider>

@@ -1,3 +1,4 @@
+
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { db } from './firebase';
@@ -11,7 +12,7 @@ export const getUsers = async (): Promise<User[]> => {
         return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
     } catch (error: any) {
         console.error("Erro ao buscar usuários:", error);
-        throw new Error(error.message || "Erro ao carregar equipe. Verifique suas permissões.");
+        throw new Error(error.message || "Erro ao carregar equipe.");
     }
 };
 

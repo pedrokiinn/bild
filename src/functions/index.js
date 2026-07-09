@@ -4,6 +4,8 @@ const admin = require('firebase-admin');
 
 admin.initializeApp();
 
+const db = admin.firestore();
+
 /**
  * Cloud Function acionada ao deletar um usuário do Auth.
  * Remove o perfil correspondente no Firestore.
@@ -12,7 +14,7 @@ exports.onUserDeleted = functions.region('us-central1')
     .auth.user().onDelete(async (user) => {
     const userId = user.uid;
     try {
-        await admin.firestore().collection('users').doc(userId).delete();
+        await db.collection('users').doc(userId).delete();
         console.log(`Perfil do usuário ${userId} removido do Firestore.`);
     } catch (error) {
         console.error(`Erro ao limpar Firestore para ${userId}:`, error);
@@ -28,7 +30,7 @@ exports.resetPasswordByAdmin = functions.region('us-central1').https.onCall(asyn
     }
 
     const adminId = context.auth.uid;
-    const adminDoc = await admin.firestore().collection('users').doc(adminId).get();
+    const adminDoc = await db.collection('users').doc(adminId).get();
 
     if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
         throw new functions.https.HttpsError('permission-denied', 'Acesso negado.');
@@ -39,7 +41,7 @@ exports.resetPasswordByAdmin = functions.region('us-central1').https.onCall(asyn
         throw new functions.https.HttpsError('invalid-argument', 'Dados inválidos.');
     }
     
-    const targetUserDoc = await admin.firestore().collection('users').doc(targetUserId).get();
+    const targetUserDoc = await db.collection('users').doc(targetUserId).get();
     if(targetUserDoc.exists && targetUserDoc.data().email === 'keennlemariem@gmail.com') {
          throw new functions.https.HttpsError('permission-denied', 'Proibido alterar o admin principal.');
     }
@@ -60,7 +62,7 @@ exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (
         throw new functions.https.HttpsError('unauthenticated', 'Autenticação necessária.');
     }
     const adminId = context.auth.uid;
-    const adminDoc = await admin.firestore().collection('users').doc(adminId).get();
+    const adminDoc = await db.collection('users').doc(adminId).get();
     if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
         throw new functions.https.HttpsError('permission-denied', 'Acesso negado.');
     }
@@ -70,7 +72,7 @@ exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (
         throw new functions.https.HttpsError('invalid-argument', 'Justificativa obrigatória.');
     }
     
-    const targetUserDoc = await admin.firestore().collection('users').doc(targetUserId).get();
+    const targetUserDoc = await db.collection('users').doc(targetUserId).get();
     if (!targetUserDoc.exists) throw new functions.https.HttpsError('not-found', 'Usuário não encontrado.');
     
     const targetUserData = targetUserDoc.get('name') || 'N/A';
@@ -81,7 +83,7 @@ exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (
     }
 
     try {
-        await admin.firestore().collection('deletionReports').add({
+        await db.collection('deletionReports').add({
             deletedUserId: targetUserId,
             deletedUserName: targetUserData,
             adminId: adminId,
