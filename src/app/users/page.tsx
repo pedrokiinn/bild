@@ -88,13 +88,11 @@ function UsersContent() {
     }, []);
 
     useEffect(() => {
-        if (currentUser) {
-            if (currentUser.role === 'admin') {
-                loadData();
-            } else {
-                setIsLoading(false);
-                setError("Acesso restrito: Apenas administradores podem gerenciar a equipe.");
-            }
+        if (currentUser && currentUser.role === 'admin') {
+            loadData();
+        } else if (currentUser) {
+            setIsLoading(false);
+            setError("Acesso restrito: Apenas administradores podem gerenciar a equipe.");
         }
     }, [currentUser, loadData]);
 
