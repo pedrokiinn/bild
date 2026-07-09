@@ -24,13 +24,13 @@ export async function login(email: string, password_raw: string): Promise<User> 
             return { id: userDocSnap.id, ...userDocSnap.data() } as User;
         } else {
             await logout();
-            throw new Error("Perfil de usuário não encontrado no Firestore.");
+            throw new Error("Perfil de usuário não encontrado. Entre em contato com o suporte.");
         }
     } catch (error: any) {
-        if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
+        if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-email'].includes(error.code)) {
             throw new Error("Credenciais inválidas. Verifique seu email e senha.");
         }
-        throw new Error("Erro de autenticação: " + (error.message || "Tente novamente mais tarde."));
+        throw new Error(error.message || "Erro de autenticação.");
     }
 }
 
@@ -43,22 +43,22 @@ export async function register(name: string, email: string, password_raw: string
         const userCredential = await createUserWithEmailAndPassword(auth, email, password_raw);
         const firebaseUser = userCredential.user;
 
+        // Se for o primeiro usuário, é admin
         const usersRef = collection(db, "users");
         const allUsersSnapshot = await getDocs(query(usersRef));
         const isFirstUser = allUsersSnapshot.size === 0;
-        const isAdminByEmail = email.toLowerCase() === 'keennlemariem@gmail.com';
 
         const newUser: Omit<User, 'id'> = {
             name: name,
             email: email,
-            role: isFirstUser || isAdminByEmail ? 'admin' : 'collaborator',
+            role: isFirstUser ? 'admin' : 'collaborator',
         };
 
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);
         return { id: firebaseUser.uid, ...newUser };
     } catch (error: any) {
-        if (error.code === 'auth/email-already-in-use') throw new Error("Este endereço de email já está em uso.");
-        throw new Error("Falha ao registrar colaborador: " + error.message);
+        if (error.code === 'auth/email-already-in-use') throw new Error("Este email já está cadastrado.");
+        throw new Error("Erro no cadastro: " + error.message);
     }
 }
 
@@ -74,7 +74,7 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         console.error("Erro ao redefinir senha:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função administrativa não foi detectada no servidor. Isso ocorre porque o deploy das Cloud Functions ainda não foi realizado. Para ativar, você deve executar o comando 'firebase deploy --only functions' no seu computador.");
+            throw new Error("A função administrativa não foi detectada. Execute 'firebase deploy --only functions' para ativar.");
         }
         throw new Error(error.message || "Falha ao redefinir senha.");
     }
@@ -88,7 +88,7 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         console.error("Erro ao excluir usuário:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-             throw new Error("A função de exclusão não foi detectada no servidor. Isso ocorre porque o deploy das Cloud Functions ainda não foi realizado. Para ativar, você deve executar o comando 'firebase deploy --only functions' no seu computador.");
+             throw new Error("A função de exclusão não foi detectada. Execute 'firebase deploy --only functions' para ativar.");
         }
         throw new Error(error.message || "Falha ao remover colaborador.");
     }

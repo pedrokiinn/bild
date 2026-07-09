@@ -65,7 +65,7 @@ const navigationItems = [
         adminOnly: true,
     },
     {
-        title: "Relatórios",
+        title: "Relatórios de Exclusão",
         url: "/reports",
         icon: FileText,
         adminOnly: true
@@ -128,7 +128,8 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
     };
 
     return (
-        <Card className="w-full max-w-md p-4 sm:p-6">
+        <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <Card className="w-full max-w-md p-4 sm:p-6 shadow-2xl border-0">
             <CardHeader className="text-center">
                 <Logo className="mx-auto mb-6" />
                 <CardTitle className="text-2xl flex items-center justify-center gap-2">
@@ -152,7 +153,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                             </Button>
                         </div>
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
                         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         Entrar
                     </Button>
@@ -162,6 +163,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                 <p className="text-sm text-muted-foreground">Não tem uma conta? <button onClick={onSwitchToRegister} className="text-primary hover:underline font-semibold">Cadastre-se</button></p>
             </CardFooter>
         </Card>
+        </div>
     );
 }
 
@@ -192,7 +194,8 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
     };
 
     return (
-        <Card className="w-full max-w-md p-4 sm:p-6">
+        <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <Card className="w-full max-w-md p-4 sm:p-6 shadow-2xl border-0">
             <CardHeader className="text-center">
                 <Logo className="mx-auto mb-6" />
                 <CardTitle className="text-2xl">Criar Conta</CardTitle>
@@ -215,7 +218,7 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
                         <Label htmlFor="register-confirm-password">Repetir Senha</Label>
                         <Input id="register-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
                         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         Cadastrar
                     </Button>
@@ -225,6 +228,7 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
                 <p className="text-sm text-muted-foreground">Já tem uma conta? <button onClick={onSwitchToLogin} className="text-primary hover:underline font-semibold">Faça Login</button></p>
             </CardFooter>
         </Card>
+        </div>
     )
 }
 
@@ -242,7 +246,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                     if (snap.exists()) {
                         setUser({ id: snap.id, ...snap.data() } as User);
                     } else {
+                        // User exists in Auth but not in Firestore - likely just deleted or failed sync
                         setUser(null);
+                        await logout();
                     }
                 } catch (e) {
                     console.error("Erro ao recuperar perfil:", e);
@@ -267,56 +273,54 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                 <div className="text-center">
                     <Car className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
-                    <p className="text-slate-600">Carregando...</p>
+                    <p className="text-slate-600 font-medium">Carregando G3 Checklist...</p>
                 </div>
             </div>
         )
     }
 
+    if (!user) {
+        return authView === 'login' 
+            ? <LoginView onLoginSuccess={setUser} onSwitchToRegister={() => setAuthView('register')} /> 
+            : <RegisterView onRegisterSuccess={() => setAuthView('login')} onSwitchToLogin={() => setAuthView('login')} />;
+    }
+
     return (
         <UserProvider user={user}>
             <div className="min-h-screen flex w-full">
-                {user ? (
-                    <>
-                        <Sidebar>
-                            <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
-                                <Logo />
-                            </SidebarHeader>
-                            <SidebarContent className='p-3'>
-                                <NavigationMenu user={user} />
-                            </SidebarContent>
-                            <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                                            <span className="text-primary font-bold">{user.name?.charAt(0).toUpperCase() || '?'}</span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-semibold text-sm truncate">{user.name}</p>
-                                            <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                                        </div>
-                                    </div>
-                                    <Button variant="outline" size="sm" onClick={handleLogout} className="w-full">
-                                        <LogOut className="w-4 h-4 mr-2" /> Sair
-                                    </Button>
+                <Sidebar>
+                    <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
+                        <Logo />
+                    </SidebarHeader>
+                    <SidebarContent className='p-3'>
+                        <NavigationMenu user={user} />
+                    </SidebarContent>
+                    <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3 p-2 bg-slate-100 rounded-xl">
+                                <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold">
+                                    {user.name?.charAt(0).toUpperCase() || '?'}
                                 </div>
-                            </SidebarFooter>
-                        </Sidebar>
-                        <SidebarInset>
-                            <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between lg:hidden">
-                                <div className="flex items-center gap-2">
-                                    <SidebarTrigger><Menu className="w-5 h-5" /></SidebarTrigger>
-                                    <h1 className="font-semibold text-lg">G3 Checklist</h1>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm truncate">{user.name}</p>
+                                    <p className="text-xs text-slate-500 truncate capitalize">{user.role}</p>
                                 </div>
-                            </header>
-                            <main className="flex-1 overflow-auto">{children}</main>
-                        </SidebarInset>
-                    </>
-                ) : (
-                    <div className="w-full flex items-center justify-center p-4 bg-slate-50">
-                        {authView === 'login' ? <LoginView onLoginSuccess={setUser} onSwitchToRegister={() => setAuthView('register')} /> : <RegisterView onRegisterSuccess={() => setAuthView('login')} onSwitchToLogin={() => setAuthView('login')} />}
-                    </div>
-                )}
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full text-red-500 hover:text-red-600 hover:bg-red-50">
+                                <LogOut className="w-4 h-4 mr-2" /> Sair
+                            </Button>
+                        </div>
+                    </SidebarFooter>
+                </Sidebar>
+                <SidebarInset>
+                    <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between lg:hidden sticky top-0 z-10">
+                        <div className="flex items-center gap-2">
+                            <SidebarTrigger><Menu className="w-5 h-5" /></SidebarTrigger>
+                            <h1 className="font-bold text-lg text-primary">G3 Checklist</h1>
+                        </div>
+                    </header>
+                    <main className="flex-1 overflow-auto">{children}</main>
+                </SidebarInset>
             </div>
         </UserProvider>
     );
