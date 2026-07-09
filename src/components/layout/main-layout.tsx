@@ -246,7 +246,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                     if (snap.exists()) {
                         setUser({ id: snap.id, ...snap.data() } as User);
                     } else {
-                        // User exists in Auth but not in Firestore - likely just deleted or failed sync
                         setUser(null);
                         await logout();
                     }

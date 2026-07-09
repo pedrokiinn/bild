@@ -73,15 +73,17 @@ exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (
     const targetUserDoc = await admin.firestore().collection('users').doc(targetUserId).get();
     if (!targetUserDoc.exists) throw new functions.https.HttpsError('not-found', 'Usuário não encontrado.');
     
-    const targetUserData = targetUserDoc.data();
-    if (targetUserData.email === 'keennlemariem@gmail.com' || targetUserId === adminId) {
-        throw new functions.https.HttpsError('permission-denied', 'Operação não permitida.');
+    const targetUserData = targetUserDoc.get('name') || 'N/A';
+    const targetUserEmail = targetUserDoc.get('email');
+
+    if (targetUserEmail === 'keennlemariem@gmail.com' || targetUserId === adminId) {
+        throw new functions.https.HttpsError('permission-denied', 'Operação não permitida contra super-usuário.');
     }
 
     try {
         await admin.firestore().collection('deletionReports').add({
             deletedUserId: targetUserId,
-            deletedUserName: targetUserData.name || 'N/A',
+            deletedUserName: targetUserData,
             adminId: adminId,
             adminName: adminDoc.data().name,
             reason: reason,

@@ -12,7 +12,7 @@ export const getUsers = async (): Promise<User[]> => {
         return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
     } catch (error: any) {
         console.error("Erro ao buscar usuários:", error);
-        throw error;
+        throw new Error("Falha ao listar usuários do banco de dados.");
     }
 };
 

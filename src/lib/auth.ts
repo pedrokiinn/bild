@@ -24,7 +24,7 @@ export async function login(email: string, password_raw: string): Promise<User> 
             return { id: userDocSnap.id, ...userDocSnap.data() } as User;
         } else {
             await logout();
-            throw new Error("Perfil de usuário não encontrado. Entre em contato com o suporte.");
+            throw new Error("Perfil de usuário não encontrado no banco de dados.");
         }
     } catch (error: any) {
         if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-email'].includes(error.code)) {
@@ -43,7 +43,6 @@ export async function register(name: string, email: string, password_raw: string
         const userCredential = await createUserWithEmailAndPassword(auth, email, password_raw);
         const firebaseUser = userCredential.user;
 
-        // Se for o primeiro usuário, é admin
         const usersRef = collection(db, "users");
         const allUsersSnapshot = await getDocs(query(usersRef));
         const isFirstUser = allUsersSnapshot.size === 0;
@@ -74,7 +73,7 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         console.error("Erro ao redefinir senha:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-            throw new Error("A função administrativa não foi detectada. Execute 'firebase deploy --only functions' para ativar os recursos de gestão.");
+            throw new Error("A função de redefinição não foi detectada no servidor. É necessário realizar o deploy das Cloud Functions.");
         }
         throw new Error(error.message || "Falha ao redefinir senha.");
     }
@@ -88,8 +87,8 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         console.error("Erro ao excluir usuário:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
-             throw new Error("A função de exclusão não foi detectada no servidor. Para ativar a exclusão de usuários, você deve executar 'firebase deploy --only functions' no terminal.");
+             throw new Error("A função de exclusão não foi detectada no servidor. Verifique se as Cloud Functions foram implantadas corretamente na região us-central1 através do comando 'firebase deploy --only functions'.");
         }
-        throw new Error(error.message || "Falha ao remover colaborador.");
+        throw new Error(error.message || "Falha ao excluir o usuário.");
     }
 }
