@@ -13,6 +13,12 @@ export interface Vehicle {
 
 export type ChecklistStatus = 'completed' | 'pending_arrival' | 'problem';
 
+export interface Refueling {
+  amount: number;
+  liters: number;
+  type: 'gasolina' | 'diesel';
+}
+
 export interface DailyChecklist {
   id: string;
   vehicleId: string;
@@ -20,7 +26,7 @@ export interface DailyChecklist {
   driverName: string;
   departureTimestamp: Timestamp;
   arrivalTimestamp?: Timestamp;
-  departureMileage?: number;
+  departureMileage: number;
   arrivalMileage?: number;
   checklistItems: Record<string, 'ok' | 'problem'>;
   checklistValues?: Record<string, string>;
@@ -33,7 +39,7 @@ export interface DailyChecklist {
   notes?: string;
   status: ChecklistStatus;
   date: string; // YYYY-MM-DD
-  type: 'vehicle';
+  refuelings?: Refueling[];
 }
 
 export interface User {

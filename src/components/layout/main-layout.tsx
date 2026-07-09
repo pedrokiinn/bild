@@ -237,11 +237,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                const snap = await getDoc(doc(db, "users", firebaseUser.uid));
-                if (snap.exists()) {
-                    setUser({ id: snap.id, ...snap.data() } as User);
-                } else {
-                    await logout();
+                try {
+                    const snap = await getDoc(doc(db, "users", firebaseUser.uid));
+                    if (snap.exists()) {
+                        setUser({ id: snap.id, ...snap.data() } as User);
+                    } else {
+                        setUser(null);
+                    }
+                } catch (e) {
+                    console.error("Erro ao recuperar perfil:", e);
                     setUser(null);
                 }
             } else {
@@ -285,7 +289,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                                            <span className="text-primary font-bold">{user.name.charAt(0).toUpperCase()}</span>
+                                            <span className="text-primary font-bold">{user.name?.charAt(0).toUpperCase() || '?'}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="font-semibold text-sm truncate">{user.name}</p>

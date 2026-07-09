@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/context/UserContext';
 import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
     const [reason, setReason] = useState('');
@@ -79,10 +80,10 @@ function UsersContent() {
         setError(null);
         try {
             const allUsers = await getUsers();
-            setUsers(allUsers.sort((a, b) => a.name.localeCompare(b.name)));
+            setUsers(allUsers.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
         } catch (err: any) {
             console.error("Erro ao carregar usuários:", err);
-            setError("Não foi possível carregar a lista de colaboradores. Verifique sua conexão e se você é um administrador.");
+            setError("Não foi possível carregar a lista de colaboradores. Verifique se você é um administrador e tem permissão de leitura na coleção 'users'.");
         } finally {
             setIsLoading(false);
         }
@@ -91,7 +92,7 @@ function UsersContent() {
     useEffect(() => { 
         if (currentUser?.role === 'admin') {
             loadData(); 
-        } else if (currentUser !== undefined) {
+        } else if (currentUser !== null) {
             setIsLoading(false);
         }
     }, [loadData, currentUser]);
@@ -133,16 +134,19 @@ function UsersContent() {
     };
 
     const filteredUsers = users.filter(u => 
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        u.email.toLowerCase().includes(searchTerm.toLowerCase())
+        (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (isLoading) {
         return (
             <div className="p-8 bg-slate-50 min-h-screen">
                 <div className="max-w-7xl mx-auto space-y-8">
-                    <Skeleton className="h-10 w-48" />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex justify-between items-center">
+                        <Skeleton className="h-10 w-48" />
+                        <Skeleton className="h-10 w-32" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-2xl" />)}
                     </div>
                 </div>
@@ -150,95 +154,88 @@ function UsersContent() {
         );
     }
 
-    if (currentUser?.role !== 'admin') {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
-                <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                <h2 className="text-xl font-bold">Acesso Restrito</h2>
-                <p className="text-slate-600">Você não tem permissão para gerenciar a equipe.</p>
-            </div>
-        );
-    }
-
     return (
-        <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
-            <div className="max-w-7xl mx-auto space-y-8">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold">Equipe G3</h1>
-                        <p className="text-slate-500">Gestão de colaboradores e permissões.</p>
+        <ProtectedRoute requiredRole="admin">
+            <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+                <div className="max-w-7xl mx-auto space-y-8">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-2xl font-bold">Equipe G3</h1>
+                            <p className="text-slate-500">Gestão de colaboradores e permissões.</p>
+                        </div>
+                        <Button variant="outline" onClick={loadData} disabled={isLoading}>
+                            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> Atualizar
+                        </Button>
                     </div>
-                    <Button variant="outline" onClick={loadData} disabled={isLoading}>
-                        <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> Atualizar
-                    </Button>
-                </div>
 
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input placeholder="Buscar por nome ou email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 h-12 bg-white rounded-xl shadow-sm" />
-                </div>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input placeholder="Buscar por nome ou email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 h-12 bg-white rounded-xl shadow-sm" />
+                    </div>
 
-                {error ? (
-                    <div className="text-center py-20 bg-white rounded-2xl border shadow-sm">
-                        <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-4" />
-                        <p className="text-slate-600">{error}</p>
-                        <Button variant="outline" className="mt-4" onClick={loadData}>Tentar Novamente</Button>
-                    </div>
-                ) : filteredUsers.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-2xl border shadow-sm">
-                        <Users className="w-10 h-10 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">Nenhum colaborador encontrado.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredUsers.map(user => (
-                            <Card key={user.id} className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden">
-                                <CardHeader className="flex-row items-center gap-4 pb-4">
-                                    <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-bold text-xl">
-                                        {user.name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <CardTitle className="text-lg truncate">{user.name}</CardTitle>
-                                        <p className="text-sm text-slate-500 truncate">{user.email}</p>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Acesso</Label>
-                                        <Select 
-                                            value={user.role} 
-                                            onValueChange={(val: any) => handleRoleChange(user.id, val)}
-                                            disabled={user.email === 'keennlemariem@gmail.com' || user.id === currentUser?.id}
-                                        >
-                                            <SelectTrigger className="bg-slate-50 border-slate-100">
-                                                <div className="flex items-center gap-2">
-                                                    {user.role === 'admin' ? <ShieldCheck className="w-4 h-4 text-primary" /> : <Users className="w-4 h-4 text-slate-400" />}
-                                                    <SelectValue />
-                                                </div>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="admin">Administrador</SelectItem>
-                                                <SelectItem value="collaborator">Colaborador</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="justify-end gap-2 border-t pt-4 bg-slate-50/30">
-                                    <Button variant="ghost" size="sm" onClick={() => setUserToReset(user)} disabled={user.email === 'keennlemariem@gmail.com'}>
-                                        <KeyRound className="w-4 h-4 mr-2" /> Senha
-                                    </Button>
-                                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600" onClick={() => setUserToDelete(user)} disabled={user.email === 'keennlemariem@gmail.com' || user.id === currentUser?.id}>
-                                        <Trash2 className="w-4 h-4 mr-2" /> Remover
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
-                )}
+                    {error ? (
+                        <div className="text-center py-20 bg-white rounded-2xl border shadow-sm">
+                            <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Erro de Carregamento</h3>
+                            <p className="text-slate-600 max-w-md mx-auto">{error}</p>
+                            <Button variant="outline" className="mt-6" onClick={loadData}>Tentar Novamente</Button>
+                        </div>
+                    ) : filteredUsers.length === 0 ? (
+                        <div className="text-center py-20 bg-white rounded-2xl border shadow-sm">
+                            <Users className="w-10 h-10 text-slate-300 mx-auto mb-4" />
+                            <p className="text-slate-500">Nenhum colaborador encontrado.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredUsers.map(user => (
+                                <Card key={user.id} className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden">
+                                    <CardHeader className="flex-row items-center gap-4 pb-4">
+                                        <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-bold text-xl">
+                                            {user.name?.charAt(0).toUpperCase() || '?'}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <CardTitle className="text-lg truncate">{user.name}</CardTitle>
+                                            <p className="text-sm text-slate-500 truncate">{user.email}</p>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Acesso</Label>
+                                            <Select 
+                                                value={user.role} 
+                                                onValueChange={(val: any) => handleRoleChange(user.id, val)}
+                                                disabled={user.email === 'keennlemariem@gmail.com' || user.id === currentUser?.id}
+                                            >
+                                                <SelectTrigger className="bg-slate-50 border-slate-100">
+                                                    <div className="flex items-center gap-2">
+                                                        {user.role === 'admin' ? <ShieldCheck className="w-4 h-4 text-primary" /> : <Users className="w-4 h-4 text-slate-400" />}
+                                                        <SelectValue />
+                                                    </div>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="admin">Administrador</SelectItem>
+                                                    <SelectItem value="collaborator">Colaborador</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="justify-end gap-2 border-t pt-4 bg-slate-50/30">
+                                        <Button variant="ghost" size="sm" onClick={() => setUserToReset(user)} disabled={user.email === 'keennlemariem@gmail.com'}>
+                                            <KeyRound className="w-4 h-4 mr-2" /> Senha
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600" onClick={() => setUserToDelete(user)} disabled={user.email === 'keennlemariem@gmail.com' || user.id === currentUser?.id}>
+                                            <Trash2 className="w-4 h-4 mr-2" /> Remover
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                <ResetPasswordDialog isOpen={!!userToReset} onOpenChange={() => setUserToReset(null)} onConfirm={handleResetPassword} user={userToReset} />
+                <DeletionDialog isOpen={!!userToDelete} onOpenChange={() => setUserToDelete(null)} onConfirm={handleDeleteUser} isSaving={isSaving} />
             </div>
-            <ResetPasswordDialog isOpen={!!userToReset} onOpenChange={() => setUserToReset(null)} onConfirm={handleResetPassword} user={userToReset} />
-            <DeletionDialog isOpen={!!userToDelete} onOpenChange={() => setUserToDelete(null)} onConfirm={handleDeleteUser} isSaving={isSaving} />
-        </div>
+        </ProtectedRoute>
     );
 }
 

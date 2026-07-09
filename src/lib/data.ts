@@ -74,28 +74,33 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
     if (!user) return [];
     const checklistsCollection = collection(db, "checklists");
     let q;
-    if (user.role === 'admin') {
-        const conditions = [];
-        if (date) {
-            const start = startOfMonth(date);
-            const end = endOfMonth(date);
-            conditions.push(where("departureTimestamp", ">=", Timestamp.fromDate(start)));
-            conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
+    try {
+        if (user.role === 'admin') {
+            const conditions = [];
+            if (date) {
+                const start = startOfMonth(date);
+                const end = endOfMonth(date);
+                conditions.push(where("departureTimestamp", ">=", Timestamp.fromDate(start)));
+                conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
+            }
+            q = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
+            const snap = await getDocs(q);
+            return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
+        } else {
+            q = query(checklistsCollection, where("driverId", "==", user.id));
+            const snap = await getDocs(q);
+            let data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
+            if (date) {
+                const start = startOfMonth(date);
+                const end = endOfMonth(date);
+                data = data.filter(c => c.departureTimestamp.toDate() >= start && c.departureTimestamp.toDate() <= end);
+            }
+            data.sort((a, b) => b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis());
+            return data;
         }
-        q = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
-        const snap = await getDocs(q);
-        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
-    } else {
-        q = query(checklistsCollection, where("driverId", "==", user.id));
-        const snap = await getDocs(q);
-        let data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
-        if (date) {
-            const start = startOfMonth(date);
-            const end = endOfMonth(date);
-            data = data.filter(c => c.departureTimestamp.toDate() >= start && c.departureTimestamp.toDate() <= end);
-        }
-        data.sort((a, b) => b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis());
-        return data;
+    } catch (error) {
+        console.error("Erro ao buscar checklists:", error);
+        return [];
     }
 };
 
@@ -111,7 +116,6 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
     if (!userForCreate) throw new Error("Usuário não autenticado.");
     finalData.driverId = userForCreate.id;
     finalData.driverName = userForCreate.name;
-    finalData.type = 'vehicle';
   }
 
   if (finalData.departureTimestamp instanceof Date) finalData.departureTimestamp = Timestamp.fromDate(finalData.departureTimestamp);

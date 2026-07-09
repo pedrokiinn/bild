@@ -71,9 +71,10 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         const resetFn = httpsCallable(functions, 'resetPasswordByAdmin');
         await resetFn({ targetUserId, newPassword });
     } catch (error: any) {
+        console.error("Erro ao redefinir senha:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found' || errorCode === 'internal') {
-            throw new Error("A função administrativa não foi detectada. Execute 'firebase deploy --only functions' no seu terminal para ativar este recurso.");
+            throw new Error("A função administrativa não foi detectada no servidor. Para ativar, você deve executar o comando 'firebase deploy --only functions' no seu computador.");
         }
         throw new Error(error.message || "Falha ao redefinir senha.");
     }
@@ -84,9 +85,10 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         const deleteFn = httpsCallable(functions, 'deleteUserByAdmin');
         await deleteFn({ targetUserId, reason });
     } catch (error: any) {
+        console.error("Erro ao excluir usuário:", error);
         const errorCode = error.code || (error as any).status;
         if (errorCode === 'not-found' || errorCode === 'functions/not-found' || errorCode === 'internal') {
-             throw new Error("A função de exclusão não foi detectada. Execute 'firebase deploy --only functions' no seu terminal para ativar este recurso.");
+             throw new Error("A função de exclusão não foi detectada no servidor. Para ativar, você deve executar o comando 'firebase deploy --only functions' no seu computador.");
         }
         throw new Error(error.message || "Falha ao remover colaborador.");
     }
