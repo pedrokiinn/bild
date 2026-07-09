@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { User } from '@/types';
@@ -23,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/context/UserContext';
 import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
     const [reason, setReason] = useState('');
@@ -62,7 +62,7 @@ function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen:
     );
 }
 
-export default function UsersPage() {
+function UsersContent() {
     const currentUser = useUser();
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -255,5 +255,13 @@ export default function UsersPage() {
             <ResetPasswordDialog isOpen={!!userToReset} onOpenChange={() => setUserToReset(null)} onConfirm={handleResetPassword} user={userToReset} />
             <DeletionDialog isOpen={!!userToDelete} onOpenChange={() => setUserToDelete(null)} onConfirm={handleDeleteUser} isSaving={isSaving} />
         </div>
+    );
+}
+
+export default function UsersPage() {
+    return (
+        <ProtectedRoute requiredRole="admin">
+            <UsersContent />
+        </ProtectedRoute>
     );
 }

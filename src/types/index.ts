@@ -1,4 +1,3 @@
-
 import { Timestamp } from 'firebase/firestore';
 
 export interface Vehicle {
@@ -13,10 +12,12 @@ export interface Vehicle {
 
 export type ChecklistStatus = 'completed' | 'pending_arrival' | 'problem';
 
+export type FuelType = 'gasolina' | 'diesel';
+
 export interface Refueling {
   amount: number;
   liters: number;
-  type: 'gasolina' | 'diesel';
+  type: FuelType;
 }
 
 export interface DailyChecklist {

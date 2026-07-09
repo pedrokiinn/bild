@@ -1,4 +1,3 @@
-
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { db } from './firebase';

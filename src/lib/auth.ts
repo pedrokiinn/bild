@@ -1,4 +1,3 @@
-
 'use server';
 
 import { 
@@ -71,7 +70,10 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         await resetFn({ targetUserId, newPassword });
     } catch (error: any) {
         console.error("Erro ao redefinir senha:", error);
-        throw new Error("A função não foi encontrada. Você precisa rodar o comando 'firebase deploy --only functions' no seu terminal para ativar este recurso.");
+        if (error.code === 'not-found') {
+            throw new Error("A função de senha não foi encontrada. Execute 'firebase deploy --only functions' no terminal.");
+        }
+        throw new Error(error.message || "Falha ao redefinir senha.");
     }
 }
 
@@ -81,6 +83,9 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         await deleteFn({ targetUserId, reason });
     } catch (error: any) {
         console.error("Erro ao excluir usuário:", error);
-        throw new Error("A função de exclusão não foi detectada. Para resolver, execute o comando 'firebase deploy --only functions' no seu terminal.");
+        if (error.code === 'not-found') {
+            throw new Error("A função de exclusão não foi detectada. Execute 'firebase deploy --only functions' no terminal.");
+        }
+        throw new Error(error.message || "Falha na exclusão do usuário.");
     }
 }
