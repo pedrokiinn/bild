@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { DailyChecklist, Vehicle, Refueling, User } from '@/types';
@@ -143,7 +142,6 @@ function HistoryContent() {
             if (isNewArrival) {
                 const hasProblem = Object.values(updatedChecklist.checklistItems!).includes('problem');
                 updatedChecklist.status = hasProblem ? 'problem' : 'completed';
-                // The backend will convert this to a Timestamp
                 (updatedChecklist.arrivalTimestamp as any) = new Date();
                 updatedChecklist.arrivalMileage = arrivalMileage;
             } else {
@@ -154,13 +152,7 @@ function HistoryContent() {
 
             updatedChecklist.refuelings = refuelings;
 
-            // Remove old fields for data hygiene
-            delete (updatedChecklist as any).refuelingAmount;
-            delete (updatedChecklist as any).refuelingLiters;
-            delete (updatedChecklist as any).fuelType;
-
-
-            await saveChecklist(updatedChecklist, null); // Pass null for userForCreate as this is an update
+            await saveChecklist(updatedChecklist, null);
 
             toast({
                 title: "Checklist Atualizado!",
@@ -439,5 +431,3 @@ function HistoryContent() {
 export default function HistoryPage() {
     return <HistoryContent />;
 }
-
-    

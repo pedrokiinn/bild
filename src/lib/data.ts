@@ -11,7 +11,7 @@ export const getUsers = async (): Promise<User[]> => {
         return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
     } catch (error: any) {
         console.error("Erro ao buscar usuários:", error);
-        throw new Error("Erro ao carregar equipe. Verifique suas permissões no Firestore.");
+        throw new Error(error.message || "Erro ao carregar equipe. Verifique suas permissões.");
     }
 };
 

@@ -1,4 +1,3 @@
-
 'use client';
 import { DailyChecklist, Vehicle } from '@/types';
 import { format } from 'date-fns';
