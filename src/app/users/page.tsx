@@ -154,6 +154,16 @@ function UsersContent() {
         );
     }
 
+    if (currentUser?.role !== 'admin') {
+        return (
+            <div className="p-8 text-center bg-slate-50 min-h-screen flex flex-col items-center justify-center">
+                <ShieldCheck className="w-16 h-16 text-slate-300 mb-4" />
+                <h2 className="text-xl font-bold">Acesso restrito</h2>
+                <p className="text-slate-500">Apenas administradores podem gerenciar a equipe.</p>
+            </div>
+        );
+    }
+
     return (
         <ProtectedRoute requiredRole="admin">
             <div className="p-4 md:p-8 bg-slate-50 min-h-screen">

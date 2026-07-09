@@ -59,7 +59,7 @@ const navigationItems = [
         adminOnly: true,
     },
     {
-        title: "Usuários",
+        title: "Equipe",
         url: "/users",
         icon: Users,
         adminOnly: true,

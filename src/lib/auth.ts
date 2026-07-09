@@ -73,8 +73,8 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
     } catch (error: any) {
         console.error("Erro ao redefinir senha:", error);
         const errorCode = error.code || (error as any).status;
-        if (errorCode === 'not-found' || errorCode === 'functions/not-found' || errorCode === 'internal') {
-            throw new Error("A função administrativa não foi detectada no servidor. Para ativar, você deve executar o comando 'firebase deploy --only functions' no seu computador.");
+        if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
+            throw new Error("A função administrativa não foi detectada no servidor. Isso ocorre porque o deploy das Cloud Functions ainda não foi realizado. Para ativar, você deve executar o comando 'firebase deploy --only functions' no seu computador.");
         }
         throw new Error(error.message || "Falha ao redefinir senha.");
     }
@@ -87,8 +87,8 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
     } catch (error: any) {
         console.error("Erro ao excluir usuário:", error);
         const errorCode = error.code || (error as any).status;
-        if (errorCode === 'not-found' || errorCode === 'functions/not-found' || errorCode === 'internal') {
-             throw new Error("A função de exclusão não foi detectada no servidor. Para ativar, você deve executar o comando 'firebase deploy --only functions' no seu computador.");
+        if (errorCode === 'not-found' || errorCode === 'functions/not-found') {
+             throw new Error("A função de exclusão não foi detectada no servidor. Isso ocorre porque o deploy das Cloud Functions ainda não foi realizado. Para ativar, você deve executar o comando 'firebase deploy --only functions' no seu computador.");
         }
         throw new Error(error.message || "Falha ao remover colaborador.");
     }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,15 +6,14 @@ import { Vehicle } from '@/types';
 import { getVehicles, checklistItemsOptions } from '@/lib/data';
 import ChecklistForm from '@/components/checklist/ChecklistForm';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import VehicleSelector from '@/components/checklist/VehicleSelector';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 function ChecklistContent() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [step, setStep] = useState<'select_item' | 'form'>('select_item');
-  const [selectedItem, setSelectedItem] = useState<Vehicle | null>(null);
+  const [step, setStep] = useState<'select' | 'form'>('select');
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,15 +25,15 @@ function ChecklistContent() {
     fetchData();
   }, []);
 
-  if (isLoading) return <Skeleton className="h-64 w-full" />;
+  if (isLoading) return <div className="max-w-4xl mx-auto p-6"><Skeleton className="h-64 w-full" /></div>;
 
-  if (step === 'select_item') {
+  if (step === 'select') {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <VehicleSelector 
           vehicles={vehicles} 
           onSelect={(vehicle) => {
-            setSelectedItem(vehicle);
+            setSelectedVehicle(vehicle);
             setStep('form');
           }} 
         />
@@ -45,9 +45,9 @@ function ChecklistContent() {
     <div className="max-w-4xl mx-auto p-6">
       <ChecklistForm 
         type="vehicle"
-        item={selectedItem!}
+        item={selectedVehicle!}
         checklistItems={checklistItemsOptions}
-        onBack={() => setStep('select_item')}
+        onBack={() => setStep('select')}
       />
     </div>
   );
