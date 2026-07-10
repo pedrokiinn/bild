@@ -1,4 +1,3 @@
-
 'use server';
 
 import { 
@@ -71,10 +70,7 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
         await resetFn({ targetUserId, newPassword });
     } catch (error: any) {
         console.error("Erro ao redefinir senha:", error);
-        if (error.code === 'not-found' || error.message?.includes('not-found')) {
-            throw new Error("A função de senha não foi encontrada no servidor. Verifique se o deploy foi realizado.");
-        }
-        throw new Error(error.message || "Falha ao redefinir senha.");
+        throw error;
     }
 }
 
@@ -84,9 +80,6 @@ export async function deleteUser(targetUserId: string, reason: string): Promise<
         await deleteFn({ targetUserId, reason });
     } catch (error: any) {
         console.error("Erro ao excluir usuário:", error);
-        if (error.code === 'not-found' || error.message?.includes('not-found')) {
-            throw new Error("A função de exclusão não foi encontrada no servidor. Verifique se o deploy foi realizado.");
-        }
-        throw new Error(error.message || "Falha na exclusão do usuário.");
+        throw error;
     }
 }

@@ -88,11 +88,14 @@ function UsersContent() {
     }, []);
 
     useEffect(() => {
-        if (currentUser && currentUser.role === 'admin') {
-            loadData();
-        } else if (currentUser) {
-            setIsLoading(false);
-            setError("Acesso restrito: Apenas administradores podem gerenciar a equipe.");
+        // Garantindo que a lista só tente carregar se tivermos o usuário do contexto
+        if (currentUser) {
+            if (currentUser.role === 'admin') {
+                loadData();
+            } else {
+                setIsLoading(false);
+                setError("Acesso restrito: Apenas administradores podem gerenciar a equipe.");
+            }
         }
     }, [currentUser, loadData]);
 
@@ -119,7 +122,7 @@ function UsersContent() {
             toast({ 
                 title: "Falha na Exclusão", 
                 description: e.message?.includes('not-found') 
-                    ? "A função de exclusão não foi encontrada no servidor. Verifique o deploy." 
+                    ? "A função de exclusão não foi detectada no servidor. Certifique-se de realizar o deploy com 'firebase deploy --only functions'." 
                     : e.message, 
                 variant: "destructive" 
             });
@@ -138,7 +141,7 @@ function UsersContent() {
             toast({ 
                 title: "Falha na Senha", 
                 description: e.message?.includes('not-found') 
-                    ? "A função de senha não foi encontrada no servidor. Verifique o deploy." 
+                    ? "A função de redefinição não foi detectada no servidor. Certifique-se de realizar o deploy com 'firebase deploy --only functions'." 
                     : e.message, 
                 variant: "destructive" 
             });

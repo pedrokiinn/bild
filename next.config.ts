@@ -1,13 +1,12 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
-    // Reabilitando checagem para garantir qualidade
+    // Garantindo que erros de tipo parem o build para evitar bugs em produção
     ignoreBuildErrors: false,
   },
   eslint: {
-    // Reabilitando checagem para evitar problemas de segurança
+    // Garantindo que avisos de segurança e linting sejam respeitados
     ignoreDuringBuilds: false,
   },
   images: {
