@@ -116,7 +116,14 @@ function UsersContent() {
             loadData();
             setUserToDelete(null);
         } catch (e: any) {
-            toast({ title: "Falha na Exclusão", description: e.message, variant: "destructive" });
+            console.error("Erro ao deletar:", e);
+            toast({ 
+                title: "Falha na Exclusão", 
+                description: e.message?.includes('not-found') 
+                    ? "A função de exclusão não foi encontrada no servidor. Verifique o deploy." 
+                    : e.message, 
+                variant: "destructive" 
+            });
         } finally {
             setIsSaving(false);
         }
@@ -129,7 +136,13 @@ function UsersContent() {
             toast({ title: "Sucesso", description: "Senha alterada com sucesso."});
             setUserToReset(null);
         } catch (e: any) {
-            toast({ title: "Falha na Senha", description: e.message, variant: "destructive" });
+            toast({ 
+                title: "Falha na Senha", 
+                description: e.message?.includes('not-found') 
+                    ? "A função de senha não foi encontrada no servidor. Verifique o deploy." 
+                    : e.message, 
+                variant: "destructive" 
+            });
         }
     };
 
