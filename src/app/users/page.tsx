@@ -4,16 +4,8 @@ import { User } from '@/types';
 import { getUsers, updateUserRole } from '@/lib/data';
 import { resetPasswordByAdmin, deleteUser } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Users, Loader2, Search, KeyRound, ShieldAlert, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Trash2, Users, Search, KeyRound, ShieldAlert, RefreshCw, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
@@ -73,8 +65,10 @@ function UsersContent() {
         setIsSaving(true);
         try {
             await deleteUser(userToDelete.id, "Removido via painel administrativo");
-            toast({ title: "Sucesso", description: "Usuário removido do sistema."});
-            loadData();
+            toast({ title: "Sucesso", description: "Usuário removido do sistema permanentemente."});
+            
+            // Remove localmente para resposta imediata, o trigger limpa o resto
+            setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
             setUserToDelete(null);
         } catch (e: any) {
             console.error("Erro ao deletar:", e);

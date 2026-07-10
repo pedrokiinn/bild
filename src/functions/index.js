@@ -7,7 +7,7 @@ const db = admin.firestore();
 
 /**
  * Cloud Function acionada ao deletar um usuário do Auth.
- * Remove o perfil correspondente no Firestore.
+ * Remove o perfil correspondente no Firestore automaticamente.
  */
 exports.onUserDeleted = functions.region('us-central1')
     .auth.user().onDelete(async (user) => {
@@ -55,6 +55,7 @@ exports.resetPasswordByAdmin = functions.region('us-central1').https.onCall(asyn
 
 /**
  * Exclui um usuário (apenas Admins).
+ * Ao deletar do Auth, o gatilho onUserDeleted limpará o Firestore.
  */
 exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (data, context) => {
     if (!context.auth) {
