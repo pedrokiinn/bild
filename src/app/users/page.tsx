@@ -13,54 +13,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Users, Loader2, Search, KeyRound, AlertCircle, RefreshCw, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Trash2, Users, Loader2, Search, KeyRound, ShieldAlert, RefreshCw, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/context/UserContext';
 import { ResetPasswordDialog } from '@/components/auth/ResetPasswordDialog';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-
-function DeletionDialog({ isOpen, onOpenChange, onConfirm, isSaving }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onConfirm: (reason: string) => void, isSaving: boolean }) {
-    const [reason, setReason] = useState('');
-    const handleConfirm = () => {
-        if (!reason.trim()) return;
-        onConfirm(reason);
-        setReason('');
-    };
-    return (
-         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Excluir Usuário</DialogTitle>
-                    <DialogDescription>
-                        Esta ação removerá o usuário permanentemente e será registrada no histórico de exclusões.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                    <Label htmlFor="reason">Justificativa da Exclusão</Label>
-                    <Textarea
-                        id="reason"
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        placeholder="Ex: Colaborador desligado da empresa."
-                        className="mt-2"
-                    />
-                </div>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancelar</Button>
-                    <Button variant="destructive" onClick={handleConfirm} disabled={isSaving || !reason.trim()}>
-                        {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Confirmar Exclusão
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog';
 
 function UsersContent() {
     const currentUser = useUser();
@@ -88,13 +50,11 @@ function UsersContent() {
     }, []);
 
     useEffect(() => {
-        if (currentUser) {
-            if (currentUser.role === 'admin') {
-                loadData();
-            } else {
-                setIsLoading(false);
-                setError("Acesso restrito: Apenas administradores podem gerenciar a equipe.");
-            }
+        if (currentUser && currentUser.role === 'admin') {
+            loadData();
+        } else if (currentUser) {
+            setIsLoading(false);
+            setError("Acesso restrito: Apenas administradores podem gerenciar a equipe.");
         }
     }, [currentUser, loadData]);
 
@@ -108,11 +68,11 @@ function UsersContent() {
         }
     };
 
-    const handleDeleteUser = async (reason: string) => {
+    const handleDeleteUser = async () => {
         if (!userToDelete) return;
         setIsSaving(true);
         try {
-            await deleteUser(userToDelete.id, reason);
+            await deleteUser(userToDelete.id, "Removido via painel administrativo");
             toast({ title: "Sucesso", description: "Usuário removido do sistema."});
             loadData();
             setUserToDelete(null);
@@ -121,7 +81,7 @@ function UsersContent() {
             toast({ 
                 title: "Falha na Exclusão", 
                 description: e.message?.includes('not-found') 
-                    ? "A função de exclusão não foi detectada no servidor. Certifique-se de realizar o deploy com 'firebase deploy --only functions'." 
+                    ? "A função de exclusão não foi detectada. Execute 'firebase deploy --only functions'." 
                     : e.message, 
                 variant: "destructive" 
             });
@@ -140,7 +100,7 @@ function UsersContent() {
             toast({ 
                 title: "Falha na Senha", 
                 description: e.message?.includes('not-found') 
-                    ? "A função de redefinição não foi detectada no servidor. Certifique-se de realizar o deploy com 'firebase deploy --only functions'." 
+                    ? "A função de redefinição não foi detectada. Execute 'firebase deploy --only functions'." 
                     : e.message, 
                 variant: "destructive" 
             });
@@ -266,7 +226,14 @@ function UsersContent() {
                 )}
             </div>
             <ResetPasswordDialog isOpen={!!userToReset} onOpenChange={() => setUserToReset(null)} onConfirm={handleResetPassword} user={userToReset} />
-            <DeletionDialog isOpen={!!userToDelete} onOpenChange={() => setUserToDelete(null)} onConfirm={handleDeleteUser} isSaving={isSaving} />
+            <ConfirmationDialog 
+                isOpen={!!userToDelete} 
+                onOpenChange={() => setUserToDelete(null)} 
+                onConfirm={handleDeleteUser} 
+                title="Excluir Colaborador" 
+                description={`Tem certeza que deseja remover ${userToDelete?.name}? Esta ação não pode ser desfeita.`} 
+                isSaving={isSaving} 
+            />
         </div>
     );
 }

@@ -50,16 +50,6 @@ export interface User {
   role: 'admin' | 'collaborator';
 }
 
-export interface DeletionReport {
-    id: string;
-    deletedUserId: string;
-    deletedUserName: string;
-    adminId: string;
-    adminName: string;
-    reason: string;
-    timestamp: Timestamp;
-}
-
 export interface ChecklistItemOption {
     key: string;
     title: string;

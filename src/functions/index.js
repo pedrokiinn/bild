@@ -54,7 +54,7 @@ exports.resetPasswordByAdmin = functions.region('us-central1').https.onCall(asyn
 });
 
 /**
- * Exclui um usuário e gera relatório (apenas Admins).
+ * Exclui um usuário (apenas Admins).
  */
 exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (data, context) => {
     if (!context.auth) {
@@ -66,15 +66,14 @@ exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (
         throw new functions.https.HttpsError('permission-denied', 'Acesso negado.');
     }
 
-    const { targetUserId, reason } = data;
-    if (!targetUserId || !reason) {
-        throw new functions.https.HttpsError('invalid-argument', 'Justificativa obrigatória.');
+    const { targetUserId } = data;
+    if (!targetUserId) {
+        throw new functions.https.HttpsError('invalid-argument', 'ID do usuário obrigatório.');
     }
     
     const targetUserDoc = await db.collection('users').doc(targetUserId).get();
     if (!targetUserDoc.exists) throw new functions.https.HttpsError('not-found', 'Usuário não encontrado.');
     
-    const targetUserData = targetUserDoc.get('name') || 'N/A';
     const targetUserEmail = targetUserDoc.get('email');
 
     if (targetUserEmail === 'keennlemariem@gmail.com' || targetUserId === adminId) {
@@ -82,15 +81,6 @@ exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (
     }
 
     try {
-        await db.collection('deletionReports').add({
-            deletedUserId: targetUserId,
-            deletedUserName: targetUserData,
-            adminId: adminId,
-            adminName: adminDoc.data().name,
-            reason: reason,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        
         await admin.auth().deleteUser(targetUserId);
         return { success: true };
     } catch (error) {

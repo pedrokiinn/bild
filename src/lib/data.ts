@@ -1,4 +1,4 @@
-import type { DailyChecklist, Vehicle, User, ChecklistItemOption, DeletionReport } from "@/types";
+import type { DailyChecklist, Vehicle, User, ChecklistItemOption } from "@/types";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { db } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, Timestamp, deleteField } from "firebase/firestore";
@@ -22,28 +22,6 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
     }
     const userDoc = doc(db, "users", userId);
     await updateDoc(userDoc, { role: newRole });
-};
-
-// Deletion Report Functions
-export const getDeletionReports = async (): Promise<DeletionReport[]> => {
-    const reportsCollection = collection(db, "deletionReports");
-    const q = query(reportsCollection, orderBy("timestamp", "desc"));
-    const reportSnapshot = await getDocs(q);
-    return reportSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DeletionReport));
-}
-
-export const deleteReport = async (reportId: string): Promise<void> => {
-    const reportDoc = doc(db, "deletionReports", reportId);
-    await deleteDoc(reportDoc);
-}
-
-export const deleteAllReports = async (): Promise<void> => {
-    const reportsCollection = collection(db, "deletionReports");
-    const reportSnapshot = await getDocs(reportsCollection);
-    if (reportSnapshot.empty) return;
-    const batch = writeBatch(db);
-    reportSnapshot.docs.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
 };
 
 // Vehicle Functions
