@@ -10,14 +10,14 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      // Impede escalonamento de privilégios: Usuário só cria o próprio perfil como 'collaborator'
+      allow create: if request.auth != null && request.auth.uid == userId && request.resource.data.role == 'collaborator';
+      // Apenas admins mudam cargos. Usuários mudam o próprio perfil mas não o próprio cargo.
+      allow update: if request.auth != null && (isAdmin() || (request.auth.uid == userId && request.resource.data.role == resource.data.role));
       allow delete: if false; 
     }
     
     match /users {
-      // Permite listagem para qualquer usuário logado para evitar falhas silenciosas, 
-      // mas a lógica de admin é validada no frontend e nas Cloud Functions.
       allow list: if request.auth != null;
     }
 
@@ -28,7 +28,8 @@ service cloud.firestore {
 
     match /checklists/{checklistId} {
         allow read: if request.auth != null;
-        allow create: if request.auth != null;
+        // Valida que o driverId da criação corresponde ao usuário autenticado
+        allow create: if request.auth != null && request.resource.data.driverId == request.auth.uid;
         allow update: if request.auth != null && (isAdmin() || resource.data.driverId == request.auth.uid);
         allow delete: if request.auth != null && isAdmin();
     }

@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Users, Loader2, Search, KeyRound, AlertCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Trash2, Users, Loader2, Search, KeyRound, AlertCircle, RefreshCw, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/hooks/use-toast';
@@ -88,7 +88,6 @@ function UsersContent() {
     }, []);
 
     useEffect(() => {
-        // Garantindo que a lista só tente carregar se tivermos o usuário do contexto
         if (currentUser) {
             if (currentUser.role === 'admin') {
                 loadData();
@@ -179,7 +178,7 @@ function UsersContent() {
         return (
             <div className="p-8 text-center bg-slate-50 min-h-[80vh] flex flex-col items-center justify-center">
                 <div className="bg-white p-12 rounded-3xl shadow-xl border border-slate-100 max-w-md">
-                    <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-6" />
+                    <ShieldAlert className="w-16 h-16 text-red-400 mx-auto mb-6" />
                     <h2 className="text-2xl font-bold text-slate-900 mb-2">Acesso Negado</h2>
                     <p className="text-slate-500 mb-8">{error}</p>
                     <Button onClick={loadData} className="w-full">
