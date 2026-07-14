@@ -17,7 +17,7 @@ import {
     useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Users, Loader2, Eye, EyeOff } from 'lucide-react';
 import { User, login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
 import { Input } from '../ui/input';

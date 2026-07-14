@@ -2,7 +2,7 @@
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption } from "@/types";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { db } from './firebase';
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, deleteField } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, Timestamp, deleteField } from "firebase/firestore";
 
 // User Functions
 export const getUsers = async (): Promise<User[]> => {
@@ -59,7 +59,6 @@ export const deleteVehicle = async (id: string): Promise<void> => {
 export const getChecklists = async (user: User | null, date?: Date): Promise<DailyChecklist[]> => {
     if (!user) return [];
     const checklistsCollection = collection(db, "checklists");
-    let q;
     try {
         const conditions = [];
         if (user.role !== 'admin') {
@@ -73,9 +72,18 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
             conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
         }
 
-        q = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
+        // Removido o orderBy do Firestore para evitar erro de índice composto
+        // A ordenação é feita na memória abaixo.
+        const q = query(checklistsCollection, ...conditions);
         const snap = await getDocs(q);
-        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
+        const results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
+        
+        // Ordenação manual para evitar necessidade de índices complexos no console
+        return results.sort((a, b) => {
+            const timeA = a.departureTimestamp?.toMillis() || 0;
+            const timeB = b.departureTimestamp?.toMillis() || 0;
+            return timeB - timeA;
+        });
     } catch (error) {
         console.error("Erro ao buscar checklists:", error);
         return [];

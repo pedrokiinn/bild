@@ -8,9 +8,5 @@ export default function ReportsPage() {
   useEffect(() => {
     router.replace('/dashboard');
   }, [router]);
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <p className="text-muted-foreground animate-pulse">Redirecionando...</p>
-    </div>
-  );
+  return null;
 }
