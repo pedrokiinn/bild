@@ -3,11 +3,12 @@
     {
       "codebase": "default",
       "source": "src/functions",
-      "runtime": "nodejs18"
+      "runtime": "nodejs20"
     },
     {
       "source": "]JavaScript",
       "codebase": "carcheck-gkeh4",
+      "runtime": "nodejs20",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
         "node_modules",
