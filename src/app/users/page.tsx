@@ -64,19 +64,20 @@ function UsersContent() {
         if (!userToDelete) return;
         setIsSaving(true);
         try {
-            await deleteUser(userToDelete.id, "Removido via painel administrativo");
+            await deleteUser(userToDelete.id);
             toast({ title: "Sucesso", description: "Usuário removido do sistema permanentemente."});
             
-            // Remove localmente para resposta imediata, o trigger limpa o resto
+            // Remove localmente para resposta imediata
             setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
             setUserToDelete(null);
         } catch (e: any) {
             console.error("Erro ao deletar:", e);
+            const isNotFound = e.message?.includes('not-found');
             toast({ 
                 title: "Falha na Exclusão", 
-                description: e.message?.includes('not-found') 
-                    ? "A função de exclusão não foi detectada. Execute 'firebase deploy --only functions'." 
-                    : e.message, 
+                description: isNotFound 
+                    ? "A função de exclusão não foi detectada no servidor. Por favor, execute 'firebase deploy --only functions' no seu terminal." 
+                    : (e.message || "Erro desconhecido ao tentar excluir."), 
                 variant: "destructive" 
             });
         } finally {
@@ -91,19 +92,21 @@ function UsersContent() {
             toast({ title: "Sucesso", description: "Senha alterada com sucesso."});
             setUserToReset(null);
         } catch (e: any) {
+            console.error("Erro ao resetar senha:", e);
+            const isNotFound = e.message?.includes('not-found');
             toast({ 
                 title: "Falha na Senha", 
-                description: e.message?.includes('not-found') 
-                    ? "A função de redefinição não foi detectada. Execute 'firebase deploy --only functions'." 
-                    : e.message, 
+                description: isNotFound 
+                    ? "A função de redefinição não foi detectada no servidor. Por favor, execute 'firebase deploy --only functions' no seu terminal." 
+                    : (e.message || "Erro desconhecido."), 
                 variant: "destructive" 
             });
         }
     };
 
-    const filteredUsers = users.filter(u => 
-        (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredUsers = users.filter(user => 
+        (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+        (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
     if (isLoading) {

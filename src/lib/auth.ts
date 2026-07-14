@@ -74,10 +74,10 @@ export async function resetPasswordByAdmin(targetUserId: string, newPassword: st
     }
 }
 
-export async function deleteUser(targetUserId: string, reason: string): Promise<void> {
+export async function deleteUser(targetUserId: string): Promise<void> {
     try {
         const deleteFn = httpsCallable(functions, 'deleteUserByAdmin');
-        await deleteFn({ targetUserId, reason });
+        await deleteFn({ targetUserId });
     } catch (error: any) {
         console.error("Erro ao excluir usuário:", error);
         throw error;
