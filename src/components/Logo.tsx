@@ -10,7 +10,7 @@ export function Logo({ className }: { className?: string }) {
   return (
     <div className={cn(
       "flex items-center transition-all duration-300",
-      isCollapsed ? "justify-center w-full" : "gap-3 px-2",
+      isCollapsed ? "justify-center w-full px-0" : "gap-3 px-2",
       className
     )}>
         <div className="shrink-0 w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg transition-transform hover:scale-105">

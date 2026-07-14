@@ -3,7 +3,7 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { db } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, Timestamp, deleteField } from "firebase/firestore";
 
-// User Functions
+// Gerenciamento de Equipe
 export const getUsers = async (): Promise<User[]> => {
     try {
         const usersCollection = collection(db, "users");
@@ -11,26 +11,19 @@ export const getUsers = async (): Promise<User[]> => {
         return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
     } catch (error: any) {
         console.error("Erro ao buscar usuários:", error);
-        throw new Error(error.message || "Erro ao carregar equipe.");
+        throw new Error("Falha ao carregar lista de equipe.");
     }
 };
 
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
     const userRef = doc(db, "users", userId);
     const userSnap = await getDoc(userRef);
-    
-    if (!userSnap.exists()) {
-        throw new Error("Usuário não encontrado.");
-    }
-    
-    if (userSnap.data().email === 'keennlemariem@gmail.com') {
-        throw new Error("Não é possível alterar o administrador mestre.");
-    }
-    
+    if (!userSnap.exists()) throw new Error("Usuário inexistente.");
+    if (userSnap.data().email === 'keennlemariem@gmail.com') throw new Error("Admin mestre bloqueado.");
     await updateDoc(userRef, { role: newRole });
 };
 
-// Vehicle Functions
+// Gerenciamento de Veículos
 export const getVehicles = async (): Promise<Vehicle[]> => {
   const vehiclesCollection = collection(db, "vehicles");
   const vehicleSnapshot = await getDocs(vehiclesCollection);
@@ -40,8 +33,6 @@ export const getVehicles = async (): Promise<Vehicle[]> => {
 export const saveVehicle = async (vehicle: Omit<Vehicle, 'id'> & { id?: string }): Promise<Vehicle> => {
   if (vehicle.id) {
     const vehicleDoc = doc(db, "vehicles", vehicle.id);
-    const snap = await getDoc(vehicleDoc);
-    if (!snap.exists()) throw new Error("Veículo não encontrado para atualização.");
     await updateDoc(vehicleDoc, vehicle);
     return vehicle as Vehicle;
   }
@@ -50,11 +41,10 @@ export const saveVehicle = async (vehicle: Omit<Vehicle, 'id'> & { id?: string }
 };
 
 export const deleteVehicle = async (id: string): Promise<void> => {
-    const vehicleDoc = doc(db, "vehicles", id);
-    await deleteDoc(vehicleDoc);
+    await deleteDoc(doc(db, "vehicles", id));
 }
 
-// Checklist Functions
+// Checklists
 export const getChecklists = async (user: User | null, date?: Date): Promise<DailyChecklist[]> => {
     if (!user) return [];
     const checklistsCollection = collection(db, "checklists");
@@ -75,7 +65,7 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
         const snap = await getDocs(q);
         const results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
         
-        // Ordenação manual na memória para evitar a necessidade de índices compostos no Firestore
+        // Ordenação na memória para evitar erros de índice ausente no Firestore
         return results.sort((a, b) => {
             const timeA = a.departureTimestamp?.toMillis() || 0;
             const timeB = b.departureTimestamp?.toMillis() || 0;
@@ -96,7 +86,7 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
   let finalData: Record<string, any> = { ...dataToSave };
 
   if (!id) {
-    if (!userForCreate) throw new Error("Usuário não autenticado.");
+    if (!userForCreate) throw new Error("Não autenticado.");
     finalData.driverId = userForCreate.id;
     finalData.driverName = userForCreate.name;
   }
@@ -106,23 +96,18 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
 
   if (id) {
     const checklistDoc = doc(db, "checklists", id);
-    const snap = await getDoc(checklistDoc);
-    if (!snap.exists()) throw new Error("Checklist não encontrado.");
-
     if (checklistData.arrivalTimestamp === undefined) finalData.arrivalTimestamp = deleteField();
     await updateDoc(checklistDoc, finalData);
     
     if (finalData.arrivalMileage && finalData.vehicleId) {
-        const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
-        await updateDoc(vehicleDoc, { mileage: finalData.arrivalMileage });
+        await updateDoc(doc(db, "vehicles", finalData.vehicleId), { mileage: finalData.arrivalMileage });
     }
     return { id, ...checklistData };
   } 
   
   const docRef = await addDoc(collection(db, "checklists"), finalData);
   if (finalData.departureMileage && finalData.vehicleId) {
-    const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
-    await updateDoc(vehicleDoc, { mileage: finalData.departureMileage });
+    await updateDoc(doc(db, "vehicles", finalData.vehicleId), { mileage: finalData.departureMileage });
   }
   return { id: docRef.id, ...finalData };
 }
@@ -131,36 +116,22 @@ export const checklistItemsOptions: ChecklistItemOption[] = [
     {
         key: "fuel_level",
         title: "Nível de Combustível",
-        description: "Verifique o indicador no painel",
+        description: "Verifique o painel",
         options: [
             { value: "full", label: "Cheio", color: "green" },
-            { value: "three_quarter", label: "3/4", color: "blue" },
             { value: "half", label: "1/2", color: "yellow" },
-            { value: "quarter", label: "1/4", color: "orange" },
             { value: "empty", label: "Vazio", color: "red" },
         ],
-        isProblem: (value: string) => ['empty', 'quarter'].includes(value),
+        isProblem: (value: string) => value === 'empty',
     },
     {
         key: "tire_pressure",
-        title: "Pressão dos Pneus",
-        description: "Verifique visualmente se algum pneu está murcho",
+        title: "Pneus",
+        description: "Estado visual",
         options: [
             { value: "ok", label: "OK", color: "green" },
-            { value: "low", label: "Baixa", color: "orange" },
-            { value: "needs_check", label: "Verificar", color: "red" }
+            { value: "bad", label: "Murcho/Gasto", color: "red" }
         ],
-        isProblem: (value: string) => ['low', 'needs_check'].includes(value),
-    },
-    {
-        key: "lights_status",
-        title: "Luzes e Sinalização",
-        description: "Faróis, lanternas, setas e freio",
-        options: [
-            { value: "all_working", label: "Todas OK", color: "green" },
-            { value: "some_issues", label: "Com Problemas", color: "orange" },
-            { value: "major_issues", label: "Problemas Graves", color: "red" }
-        ],
-        isProblem: (value: string) => ['some_issues', 'major_issues'].includes(value),
+        isProblem: (value: string) => value === 'bad',
     },
 ];

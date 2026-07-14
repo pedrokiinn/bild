@@ -9,27 +9,24 @@ if (admin.apps.length === 0) {
 const db = admin.firestore();
 
 /**
- * Cloud Function acionada ao deletar um usuário do Auth.
- * Remove o perfil correspondente no Firestore automaticamente.
+ * Gatilho automático: remove o perfil do Firestore quando o usuário é deletado da Autenticação.
  */
 exports.onUserDeleted = onUserDeleted(async (user) => {
   const userId = user.uid;
   try {
     await db.collection('users').doc(userId).delete();
-    console.log(`Perfil do usuário ${userId} removido do Firestore.`);
+    console.log(`Perfil do usuário ${userId} removido com sucesso.`);
   } catch (error) {
     console.error(`Erro ao limpar Firestore para ${userId}:`, error);
   }
 });
 
 /**
- * Redefine a senha de um usuário (apenas Admins).
+ * Redefine senha via Admin.
  */
 exports.resetPasswordByAdmin = onCall({ region: 'us-central1' }, async (request) => {
   const { auth } = request;
-  if (!auth) {
-    throw new HttpsError('unauthenticated', 'Autenticação necessária.');
-  }
+  if (!auth) throw new HttpsError('unauthenticated', 'Autenticação necessária.');
 
   const adminDoc = await db.collection('users').doc(auth.uid).get();
   if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
@@ -38,12 +35,12 @@ exports.resetPasswordByAdmin = onCall({ region: 'us-central1' }, async (request)
 
   const { targetUserId, newPassword } = request.data;
   if (!targetUserId || !newPassword || newPassword.length < 6) {
-    throw new HttpsError('invalid-argument', 'Dados inválidos.');
+    throw new HttpsError('invalid-argument', 'Senha muito curta.');
   }
   
   const targetUserDoc = await db.collection('users').doc(targetUserId).get();
   if(targetUserDoc.exists && targetUserDoc.data().email === 'keennlemariem@gmail.com') {
-    throw new HttpsError('permission-denied', 'Proibido alterar o admin principal.');
+    throw new HttpsError('permission-denied', 'Admin mestre não pode ser alterado.');
   }
 
   try {
@@ -55,14 +52,11 @@ exports.resetPasswordByAdmin = onCall({ region: 'us-central1' }, async (request)
 });
 
 /**
- * Exclui um usuário da Autenticação (apenas Admins).
- * O gatilho onUserDeleted cuidará de remover o Firestore.
+ * Exclui usuário via Admin.
  */
 exports.deleteUserByAdmin = onCall({ region: 'us-central1' }, async (request) => {
   const { auth } = request;
-  if (!auth) {
-    throw new HttpsError('unauthenticated', 'Autenticação necessária.');
-  }
+  if (!auth) throw new HttpsError('unauthenticated', 'Autenticação necessária.');
 
   const adminDoc = await db.collection('users').doc(auth.uid).get();
   if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
@@ -70,19 +64,13 @@ exports.deleteUserByAdmin = onCall({ region: 'us-central1' }, async (request) =>
   }
 
   const { targetUserId } = request.data;
-  if (!targetUserId) {
-    throw new HttpsError('invalid-argument', 'ID do usuário obrigatório.');
-  }
+  if (!targetUserId) throw new HttpsError('invalid-argument', 'ID necessário.');
   
   const targetUserDoc = await db.collection('users').doc(targetUserId).get();
-  if (!targetUserDoc.exists) {
-    throw new HttpsError('not-found', 'Perfil do usuário não encontrado no banco.');
-  }
+  if (!targetUserDoc.exists) throw new HttpsError('not-found', 'Usuário não encontrado.');
   
-  const targetUserEmail = targetUserDoc.get('email');
-
-  if (targetUserEmail === 'keennlemariem@gmail.com' || targetUserId === auth.uid) {
-    throw new HttpsError('permission-denied', 'Operação não permitida contra super-usuário.');
+  if (targetUserDoc.data().email === 'keennlemariem@gmail.com' || targetUserId === auth.uid) {
+    throw new HttpsError('permission-denied', 'Operação proibida.');
   }
 
   try {
