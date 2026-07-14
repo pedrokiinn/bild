@@ -1,3 +1,4 @@
+
 'use server';
 
 import { 
@@ -42,14 +43,10 @@ export async function register(name: string, email: string, password_raw: string
         const userCredential = await createUserWithEmailAndPassword(auth, email, password_raw);
         const firebaseUser = userCredential.user;
 
-        const usersRef = collection(db, "users");
-        const allUsersSnapshot = await getDocs(query(usersRef));
-        const isFirstUser = allUsersSnapshot.size <= 1;
-
         const newUser: Omit<User, 'id'> = {
             name: name,
             email: email,
-            role: isFirstUser ? 'admin' : 'collaborator',
+            role: 'collaborator', // Cargo padrão para novos registros
         };
 
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);

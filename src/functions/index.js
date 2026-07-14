@@ -1,3 +1,4 @@
+
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
@@ -56,8 +57,8 @@ exports.resetPasswordByAdmin = functions.region('us-central1').https.onCall(asyn
 });
 
 /**
- * Exclui um usuário (apenas Admins).
- * Ao deletar do Auth, o gatilho onUserDeleted limpará o Firestore.
+ * Exclui um usuário da Autenticação (apenas Admins).
+ * O gatilho onUserDeleted cuidará de remover o Firestore.
  */
 exports.deleteUserByAdmin = functions.region('us-central1').https.onCall(async (data, context) => {
     if (!context.auth) {
