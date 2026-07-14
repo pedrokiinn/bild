@@ -13,6 +13,8 @@ const db = admin.firestore();
  */
 exports.onUserDeleted = onUserDeleted(async (event) => {
   const user = event.data;
+  if (!user) return;
+  
   const userId = user.uid;
   try {
     await db.collection('users').doc(userId).delete();
