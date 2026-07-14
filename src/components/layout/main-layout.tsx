@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -36,33 +37,11 @@ import {
 import { UserProvider } from '@/context/UserContext';
 
 const navigationItems = [
-    {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: BarChart2,
-    },
-    {
-        title: "Novo Checklist",
-        url: "/checklist",
-        icon: ClipboardCheck,
-    },
-    {
-        title: "Histórico",
-        url: "/history",
-        icon: Calendar,
-    },
-    {
-        title: "Veículos",
-        url: "/vehicle",
-        icon: Car,
-        adminOnly: true,
-    },
-    {
-        title: "Equipe",
-        url: "/users",
-        icon: Users,
-        adminOnly: true,
-    }
+    { title: "Dashboard", url: "/dashboard", icon: BarChart2 },
+    { title: "Novo Checklist", url: "/checklist", icon: ClipboardCheck },
+    { title: "Histórico", url: "/history", icon: Calendar },
+    { title: "Veículos", url: "/vehicle", icon: Car, adminOnly: true },
+    { title: "Equipe", url: "/users", icon: Users, adminOnly: true }
 ];
 
 function NavigationMenu({ user }: { user: User | null }) {
@@ -83,9 +62,7 @@ function NavigationMenu({ user }: { user: User | null }) {
                         asChild
                         isActive={pathname.startsWith(item.url)}
                         className={`hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-xl mb-1 ${
-                            pathname.startsWith(item.url)
-                                ? 'bg-primary/10 text-primary font-semibold'
-                                : 'text-slate-600'
+                            pathname.startsWith(item.url) ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-600'
                         }`}
                         onClick={() => isMobile && setOpenMobile(false)}
                     >
@@ -122,40 +99,35 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
 
     return (
         <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 p-4">
-        <Card className="w-full max-w-md p-4 sm:p-6 shadow-2xl border-0">
-            <CardHeader className="text-center">
-                <Logo className="mx-auto mb-6" />
-                <CardTitle className="text-2xl flex items-center justify-center gap-2">
-                    <ArrowRight className="w-6 h-6" />
-                    Acessar sua Conta
-                </CardTitle>
-                <CardDescription>Use seu email e senha para continuar.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="login-email">Email</Label>
-                        <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="login-password">Senha</Label>
-                        <div className="relative">
-                            <Input id="login-password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="pr-10" />
-                            <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
-                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                            </Button>
+            <Card className="w-full max-w-md shadow-2xl border-0">
+                <CardHeader className="text-center">
+                    <Logo className="mx-auto mb-6" />
+                    <CardTitle className="text-2xl flex items-center justify-center gap-2">Acessar Conta</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleLogin} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="login-email">Email</Label>
+                            <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" />
                         </div>
-                    </div>
-                    <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
-                        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Entrar
-                    </Button>
-                </form>
-            </CardContent>
-            <CardFooter className="justify-center">
-                <p className="text-sm text-muted-foreground">Não tem uma conta? <button onClick={onSwitchToRegister} className="text-primary hover:underline font-semibold">Cadastre-se</button></p>
-            </CardFooter>
-        </Card>
+                        <div className="space-y-2">
+                            <Label htmlFor="login-password">Senha</Label>
+                            <div className="relative">
+                                <Input id="login-password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
+                                <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full" onClick={() => setShowPassword(!showPassword)}>
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </Button>
+                            </div>
+                        </div>
+                        <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : 'Entrar'}
+                        </Button>
+                    </form>
+                </CardContent>
+                <CardFooter className="justify-center">
+                    <p className="text-sm text-muted-foreground">Não tem uma conta? <button onClick={onSwitchToRegister} className="text-primary hover:underline font-semibold">Cadastre-se</button></p>
+                </CardFooter>
+            </Card>
         </div>
     );
 }
@@ -188,39 +160,38 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
 
     return (
         <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 p-4">
-        <Card className="w-full max-w-md p-4 sm:p-6 shadow-2xl border-0">
-            <CardHeader className="text-center">
-                <Logo className="mx-auto mb-6" />
-                <CardTitle className="text-2xl">Criar Conta</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleRegister} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="register-name">Nome Completo</Label>
-                        <Input id="register-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Seu nome completo"/>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="register-email">Email</Label>
-                        <Input id="register-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="register-password">Senha</Label>
-                        <Input id="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Mínimo 6 caracteres" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="register-confirm-password">Repetir Senha</Label>
-                        <Input id="register-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-                    </div>
-                    <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
-                        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Cadastrar
-                    </Button>
-                </form>
-            </CardContent>
-            <CardFooter className="justify-center">
-                <p className="text-sm text-muted-foreground">Já tem uma conta? <button onClick={onSwitchToLogin} className="text-primary hover:underline font-semibold">Faça Login</button></p>
-            </CardFooter>
-        </Card>
+            <Card className="w-full max-w-md shadow-2xl border-0">
+                <CardHeader className="text-center">
+                    <Logo className="mx-auto mb-6" />
+                    <CardTitle className="text-2xl">Criar Conta</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleRegister} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="register-name">Nome Completo</Label>
+                            <Input id="register-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Seu nome completo"/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="register-email">Email</Label>
+                            <Input id="register-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="register-password">Senha</Label>
+                            <Input id="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Mínimo 6 caracteres" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="register-confirm-password">Repetir Senha</Label>
+                            <Input id="register-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                        </div>
+                        <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : 'Cadastrar'}
+                        </Button>
+                    </form>
+                </CardContent>
+                <CardFooter className="justify-center">
+                    <p className="text-sm text-muted-foreground">Já tem uma conta? <button onClick={onSwitchToLogin} className="text-primary hover:underline font-semibold">Faça Login</button></p>
+                </CardFooter>
+            </Card>
         </div>
     )
 }
@@ -243,7 +214,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         await logout();
                     }
                 } catch (e) {
-                    console.error("Erro ao recuperar perfil:", e);
                     setUser(null);
                 }
             } else {
@@ -263,10 +233,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="text-center">
-                    <Car className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
-                    <p className="text-slate-600 font-medium">Carregando G3 Checklist...</p>
-                </div>
+                <Car className="w-12 h-12 text-primary animate-pulse" />
             </div>
         )
     }
@@ -279,37 +246,31 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
     return (
         <UserProvider user={user}>
-            <div className="min-h-screen flex w-full">
+            <div className="min-h-screen flex w-full bg-slate-50">
                 <Sidebar>
-                    <SidebarHeader className="p-6 border-b border-slate-200/60 group-data-[state=collapsed]:hidden">
-                        <Logo />
-                    </SidebarHeader>
-                    <SidebarContent className='p-3'>
-                        <NavigationMenu user={user} />
-                    </SidebarContent>
-                    <SidebarFooter className="p-6 border-t border-slate-200/60 group-data-[state=collapsed]:hidden">
+                    <SidebarHeader className="p-6 border-b"><Logo /></SidebarHeader>
+                    <SidebarContent className='p-3'><NavigationMenu user={user} /></SidebarContent>
+                    <SidebarFooter className="p-6 border-t">
                         <div className="space-y-3">
-                            <div className="flex items-center gap-3 p-2 bg-slate-100 rounded-xl">
+                            <div className="flex items-center gap-3 p-2 bg-white rounded-xl shadow-sm">
                                 <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold">
-                                    {user.name?.charAt(0).toUpperCase() || '?'}
+                                    {user.name?.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-semibold text-sm truncate">{user.name}</p>
                                     <p className="text-xs text-slate-500 truncate capitalize">{user.role}</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full text-red-500 hover:text-red-600 hover:bg-red-50">
+                            <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full text-red-500 hover:bg-red-50">
                                 <LogOut className="w-4 h-4 mr-2" /> Sair
                             </Button>
                         </div>
                     </SidebarFooter>
                 </Sidebar>
                 <SidebarInset>
-                    <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between lg:hidden sticky top-0 z-10">
-                        <div className="flex items-center gap-2">
-                            <SidebarTrigger><Menu className="w-5 h-5" /></SidebarTrigger>
-                            <h1 className="font-bold text-lg text-primary">G3 Checklist</h1>
-                        </div>
+                    <header className="bg-white/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between lg:hidden sticky top-0 z-10">
+                        <SidebarTrigger><Menu className="w-5 h-5" /></SidebarTrigger>
+                        <h1 className="font-bold text-lg text-primary">G3 Checklist</h1>
                     </header>
                     <div className="flex-1 overflow-auto">{children}</div>
                 </SidebarInset>
@@ -319,9 +280,5 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
-    return (
-        <SidebarProvider>
-            <LayoutContent>{children}</LayoutContent>
-        </SidebarProvider>
-    )
+    return <SidebarProvider><LayoutContent>{children}</LayoutContent></SidebarProvider>;
 }

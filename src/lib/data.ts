@@ -61,29 +61,21 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
     const checklistsCollection = collection(db, "checklists");
     let q;
     try {
-        if (user.role === 'admin') {
-            const conditions = [];
-            if (date) {
-                const start = startOfMonth(date);
-                const end = endOfMonth(date);
-                conditions.push(where("departureTimestamp", ">=", Timestamp.fromDate(start)));
-                conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
-            }
-            q = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
-            const snap = await getDocs(q);
-            return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
-        } else {
-            q = query(checklistsCollection, where("driverId", "==", user.id));
-            const snap = await getDocs(q);
-            let data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
-            if (date) {
-                const start = startOfMonth(date);
-                const end = endOfMonth(date);
-                data = data.filter(c => c.departureTimestamp.toDate() >= start && c.departureTimestamp.toDate() <= end);
-            }
-            data.sort((a, b) => b.departureTimestamp.toMillis() - a.departureTimestamp.toMillis());
-            return data;
+        const conditions = [];
+        if (user.role !== 'admin') {
+            conditions.push(where("driverId", "==", user.id));
         }
+        
+        if (date) {
+            const start = startOfMonth(date);
+            const end = endOfMonth(date);
+            conditions.push(where("departureTimestamp", ">=", Timestamp.fromDate(start)));
+            conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
+        }
+
+        q = query(checklistsCollection, ...conditions, orderBy("departureTimestamp", "desc"));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
     } catch (error) {
         console.error("Erro ao buscar checklists:", error);
         return [];
@@ -110,17 +102,14 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
   if (id) {
     const checklistDoc = doc(db, "checklists", id);
     const snap = await getDoc(checklistDoc);
-    if (!snap.exists()) throw new Error("Checklist não encontrado para atualização.");
+    if (!snap.exists()) throw new Error("Checklist não encontrado.");
 
     if (checklistData.arrivalTimestamp === undefined) finalData.arrivalTimestamp = deleteField();
     await updateDoc(checklistDoc, finalData);
     
     if (finalData.arrivalMileage && finalData.vehicleId) {
         const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
-        const vSnap = await getDoc(vehicleDoc);
-        if (vSnap.exists()) {
-            await updateDoc(vehicleDoc, { mileage: finalData.arrivalMileage });
-        }
+        await updateDoc(vehicleDoc, { mileage: finalData.arrivalMileage });
     }
     return { id, ...checklistData };
   } 
@@ -128,10 +117,7 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
   const docRef = await addDoc(collection(db, "checklists"), finalData);
   if (finalData.departureMileage && finalData.vehicleId) {
     const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
-    const vSnap = await getDoc(vehicleDoc);
-    if (vSnap.exists()) {
-        await updateDoc(vehicleDoc, { mileage: finalData.departureMileage });
-    }
+    await updateDoc(vehicleDoc, { mileage: finalData.departureMileage });
   }
   return { id: docRef.id, ...finalData };
 }
