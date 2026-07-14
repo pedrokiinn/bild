@@ -44,7 +44,7 @@ export const deleteVehicle = async (id: string): Promise<void> => {
     await deleteDoc(doc(db, "vehicles", id));
 }
 
-// Checklists
+// Checklists - Corrigido para evitar erro de índice no Firestore
 export const getChecklists = async (user: User | null, date?: Date): Promise<DailyChecklist[]> => {
     if (!user) return [];
     const checklistsCollection = collection(db, "checklists");

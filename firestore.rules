@@ -14,7 +14,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated();
-      // Impede escalonamento de privilégios no cadastro: novo usuário sempre entra como 'collaborator'
+      // Impede escalonamento de privilégios: novo usuário sempre entra como 'collaborator'
       allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.role == 'collaborator';
       // Apenas admins mudam cargos. Usuários mudam seu perfil mantendo o cargo atual.
       allow update: if isAuthenticated() && (isAdmin() || (request.auth.uid == userId && request.resource.data.role == resource.data.role));
