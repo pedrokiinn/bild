@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { User } from '@/types';
@@ -66,8 +67,6 @@ function UsersContent() {
         try {
             await deleteUser(userToDelete.id);
             toast({ title: "Sucesso", description: "Usuário removido do sistema permanentemente."});
-            
-            // Remove localmente para resposta imediata
             setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
             setUserToDelete(null);
         } catch (e: any) {
@@ -76,7 +75,7 @@ function UsersContent() {
             toast({ 
                 title: "Falha na Exclusão", 
                 description: isNotFound 
-                    ? "A função de exclusão não foi detectada no servidor. Por favor, execute 'firebase deploy --only functions' no seu terminal." 
+                    ? "A função de exclusão não foi detectada no servidor. Por favor, execute 'firebase deploy --only functions' no seu terminal para ativar este recurso." 
                     : (e.message || "Erro desconhecido ao tentar excluir."), 
                 variant: "destructive" 
             });

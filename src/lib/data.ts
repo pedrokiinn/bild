@@ -17,12 +17,18 @@ export const getUsers = async (): Promise<User[]> => {
 };
 
 export const updateUserRole = async (userId: string, newRole: 'admin' | 'collaborator'): Promise<void> => {
-    const userSnap = await getDoc(doc(db, "users", userId));
-    if (userSnap.exists() && userSnap.data().email === 'keennlemariem@gmail.com') {
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+        throw new Error("Usuário não encontrado.");
+    }
+    
+    if (userSnap.data().email === 'keennlemariem@gmail.com') {
         throw new Error("Não é possível alterar o administrador mestre.");
     }
-    const userDoc = doc(db, "users", userId);
-    await updateDoc(userDoc, { role: newRole });
+    
+    await updateDoc(userRef, { role: newRole });
 };
 
 // Vehicle Functions
@@ -35,6 +41,8 @@ export const getVehicles = async (): Promise<Vehicle[]> => {
 export const saveVehicle = async (vehicle: Omit<Vehicle, 'id'> & { id?: string }): Promise<Vehicle> => {
   if (vehicle.id) {
     const vehicleDoc = doc(db, "vehicles", vehicle.id);
+    const snap = await getDoc(vehicleDoc);
+    if (!snap.exists()) throw new Error("Veículo não encontrado para atualização.");
     await updateDoc(vehicleDoc, vehicle);
     return vehicle as Vehicle;
   }
@@ -101,17 +109,29 @@ export const saveChecklist = async (checklistData: Partial<DailyChecklist> & { i
 
   if (id) {
     const checklistDoc = doc(db, "checklists", id);
+    const snap = await getDoc(checklistDoc);
+    if (!snap.exists()) throw new Error("Checklist não encontrado para atualização.");
+
     if (checklistData.arrivalTimestamp === undefined) finalData.arrivalTimestamp = deleteField();
     await updateDoc(checklistDoc, finalData);
+    
     if (finalData.arrivalMileage && finalData.vehicleId) {
-        await updateDoc(doc(db, "vehicles", finalData.vehicleId), { mileage: finalData.arrivalMileage });
+        const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
+        const vSnap = await getDoc(vehicleDoc);
+        if (vSnap.exists()) {
+            await updateDoc(vehicleDoc, { mileage: finalData.arrivalMileage });
+        }
     }
     return { id, ...checklistData };
   } 
   
   const docRef = await addDoc(collection(db, "checklists"), finalData);
   if (finalData.departureMileage && finalData.vehicleId) {
-    await updateDoc(doc(db, "vehicles", finalData.vehicleId), { mileage: finalData.departureMileage });
+    const vehicleDoc = doc(db, "vehicles", finalData.vehicleId);
+    const vSnap = await getDoc(vehicleDoc);
+    if (vSnap.exists()) {
+        await updateDoc(vehicleDoc, { mileage: finalData.departureMileage });
+    }
   }
   return { id: docRef.id, ...finalData };
 }

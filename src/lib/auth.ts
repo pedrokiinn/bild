@@ -46,7 +46,7 @@ export async function register(name: string, email: string, password_raw: string
         const newUser: Omit<User, 'id'> = {
             name: name,
             email: email,
-            role: 'collaborator', // Cargo padrão para novos registros
+            role: 'collaborator', 
         };
 
         await setDoc(doc(db, "users", firebaseUser.uid), newUser);
