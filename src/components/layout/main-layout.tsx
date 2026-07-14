@@ -17,7 +17,7 @@ import {
     useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Menu, Users, Loader2, Eye, EyeOff } from 'lucide-react';
 import { User, login, logout, register } from '@/lib/auth';
 import { Logo } from '../Logo';
 import { Input } from '../ui/input';
@@ -29,7 +29,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -247,30 +246,38 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     return (
         <UserProvider user={user}>
             <div className="min-h-screen flex w-full bg-slate-50">
-                <Sidebar>
-                    <SidebarHeader className="p-6 border-b"><Logo /></SidebarHeader>
+                <Sidebar collapsible="icon">
+                    <SidebarHeader className="p-4 border-b h-20 flex flex-col justify-center transition-all duration-300">
+                      <Logo />
+                    </SidebarHeader>
                     <SidebarContent className='p-3'><NavigationMenu user={user} /></SidebarContent>
-                    <SidebarFooter className="p-6 border-t">
+                    <SidebarFooter className="p-4 border-t transition-all duration-300">
                         <div className="space-y-3">
-                            <div className="flex items-center gap-3 p-2 bg-white rounded-xl shadow-sm">
-                                <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold">
+                            <div className="flex items-center gap-3 p-2 bg-white rounded-xl shadow-sm overflow-hidden group-data-[state=collapsed]:p-1 group-data-[state=collapsed]:justify-center">
+                                <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold shrink-0">
                                     {user.name?.charAt(0).toUpperCase()}
                                 </div>
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 group-data-[state=collapsed]:hidden animate-in fade-in duration-300">
                                     <p className="font-semibold text-sm truncate">{user.name}</p>
                                     <p className="text-xs text-slate-500 truncate capitalize">{user.role}</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full text-red-500 hover:bg-red-50">
-                                <LogOut className="w-4 h-4 mr-2" /> Sair
+                            <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full text-red-500 hover:bg-red-50 group-data-[state=collapsed]:px-2">
+                                <LogOut className="w-4 h-4 mr-2 group-data-[state=collapsed]:mr-0" /> 
+                                <span className="group-data-[state=collapsed]:hidden">Sair</span>
                             </Button>
                         </div>
                     </SidebarFooter>
                 </Sidebar>
                 <SidebarInset>
-                    <header className="bg-white/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between lg:hidden sticky top-0 z-10">
-                        <SidebarTrigger><Menu className="w-5 h-5" /></SidebarTrigger>
-                        <h1 className="font-bold text-lg text-primary">G3 Checklist</h1>
+                    <header className="bg-white/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10 h-14">
+                        <SidebarTrigger className="hover:bg-primary/10 hover:text-primary transition-colors" />
+                        <h1 className="font-bold text-lg text-primary lg:hidden">G3 Checklist</h1>
+                        <div className="flex items-center gap-4">
+                            <span className="hidden md:block text-sm font-medium text-slate-600">
+                                Olá, {user.name}
+                            </span>
+                        </div>
                     </header>
                     <div className="flex-1 overflow-auto">{children}</div>
                 </SidebarInset>
