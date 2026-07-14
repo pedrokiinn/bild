@@ -1,4 +1,3 @@
-
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onUserDeleted } = require("firebase-functions/v1/auth");
 const admin = require("firebase-admin");

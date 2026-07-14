@@ -1,4 +1,3 @@
-
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption } from "@/types";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { db } from './firebase';
@@ -72,13 +71,11 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
             conditions.push(where("departureTimestamp", "<=", Timestamp.fromDate(end)));
         }
 
-        // Removido o orderBy do Firestore para evitar erro de índice composto
-        // A ordenação é feita na memória abaixo.
         const q = query(checklistsCollection, ...conditions);
         const snap = await getDocs(q);
         const results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
         
-        // Ordenação manual para evitar necessidade de índices complexos no console
+        // Ordenação manual na memória para evitar a necessidade de índices compostos no Firestore
         return results.sort((a, b) => {
             const timeA = a.departureTimestamp?.toMillis() || 0;
             const timeB = b.departureTimestamp?.toMillis() || 0;
