@@ -1,9 +1,9 @@
+
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption } from "@/types";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { db } from './firebase';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, Timestamp, deleteField } from "firebase/firestore";
 
-// Gerenciamento de Equipe
 export const getUsers = async (): Promise<User[]> => {
     try {
         const usersCollection = collection(db, "users");
@@ -19,11 +19,10 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
     const userRef = doc(db, "users", userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) throw new Error("Usuário inexistente.");
-    if (userSnap.data().email === 'keennlemariem@gmail.com') throw new Error("Admin mestre bloqueado.");
+    if (userSnap.data().email === 'keennlemariem@gmail.com') throw new Error("Ação bloqueada para admin mestre.");
     await updateDoc(userRef, { role: newRole });
 };
 
-// Gerenciamento de Veículos
 export const getVehicles = async (): Promise<Vehicle[]> => {
   const vehiclesCollection = collection(db, "vehicles");
   const vehicleSnapshot = await getDocs(vehiclesCollection);
@@ -44,7 +43,6 @@ export const deleteVehicle = async (id: string): Promise<void> => {
     await deleteDoc(doc(db, "vehicles", id));
 }
 
-// Checklists
 export const getChecklists = async (user: User | null, date?: Date): Promise<DailyChecklist[]> => {
     if (!user) return [];
     const checklistsCollection = collection(db, "checklists");

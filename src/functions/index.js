@@ -1,3 +1,4 @@
+
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onUserDeleted } = require("firebase-functions/v2/identity");
 const admin = require("firebase-admin");
@@ -9,7 +10,7 @@ if (admin.apps.length === 0) {
 const db = admin.firestore();
 
 /**
- * Gatilho automático (v2): remove o perfil do Firestore quando o usuário é deletado da Autenticação.
+ * Gatilho automático: remove o perfil do Firestore quando o usuário é deletado da Autenticação.
  */
 exports.onUserDeleted = onUserDeleted(async (event) => {
   const user = event.data;
@@ -25,9 +26,9 @@ exports.onUserDeleted = onUserDeleted(async (event) => {
 });
 
 /**
- * Redefine senha via Admin (v2).
+ * Redefine senha via Admin.
  */
-exports.resetPasswordByAdmin = onCall({ region: 'us-central1' }, async (request) => {
+exports.resetPasswordByAdmin = onCall(async (request) => {
   const { auth } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Autenticação necessária.');
 
@@ -50,9 +51,9 @@ exports.resetPasswordByAdmin = onCall({ region: 'us-central1' }, async (request)
 });
 
 /**
- * Exclui usuário via Admin (v2).
+ * Exclui usuário via Admin.
  */
-exports.deleteUserByAdmin = onCall({ region: 'us-central1' }, async (request) => {
+exports.deleteUserByAdmin = onCall(async (request) => {
   const { auth } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Autenticação necessária.');
 
