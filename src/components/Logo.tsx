@@ -19,7 +19,7 @@ export function Logo({ className }: { className?: string }) {
         {!isCollapsed && (
           <div className="flex flex-col overflow-hidden whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
               <h2 className="font-bold text-foreground text-lg leading-tight">G3 Checklist</h2>
-              <p className="text-xs text-muted-foreground font-medium">Inspeção Diária</p>
+              <p className="text-xs text-muted-foreground font-medium">Veículos Leves</p>
           </div>
         )}
     </div>

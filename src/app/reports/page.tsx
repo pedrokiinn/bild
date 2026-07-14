@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 
 export default function ReportsPage() {
   const router = useRouter();
-  useEffect(() => { router.replace('/dashboard'); }, [router]);
+  useEffect(() => { 
+    router.replace('/dashboard'); 
+  }, [router]);
   return null;
 }

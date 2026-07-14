@@ -41,11 +41,6 @@ exports.resetPasswordByAdmin = onCall({ region: 'us-central1' }, async (request)
     throw new HttpsError('invalid-argument', 'Senha muito curta.');
   }
   
-  const targetUserDoc = await db.collection('users').doc(targetUserId).get();
-  if(targetUserDoc.exists && targetUserDoc.data().email === 'keennlemariem@gmail.com') {
-    throw new HttpsError('permission-denied', 'Admin mestre não pode ser alterado.');
-  }
-
   try {
     await admin.auth().updateUser(targetUserId, { password: newPassword });
     return { success: true };
@@ -69,13 +64,6 @@ exports.deleteUserByAdmin = onCall({ region: 'us-central1' }, async (request) =>
   const { targetUserId } = request.data;
   if (!targetUserId) throw new HttpsError('invalid-argument', 'ID necessário.');
   
-  const targetUserDoc = await db.collection('users').doc(targetUserId).get();
-  if (!targetUserDoc.exists) throw new HttpsError('not-found', 'Usuário não encontrado.');
-  
-  if (targetUserDoc.data().email === 'keennlemariem@gmail.com' || targetUserId === auth.uid) {
-    throw new HttpsError('permission-denied', 'Operação proibida.');
-  }
-
   try {
     await admin.auth().deleteUser(targetUserId);
     return { success: true };

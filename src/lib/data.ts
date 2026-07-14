@@ -44,7 +44,7 @@ export const deleteVehicle = async (id: string): Promise<void> => {
     await deleteDoc(doc(db, "vehicles", id));
 }
 
-// Checklists - Corrigido para evitar erro de índice no Firestore
+// Checklists
 export const getChecklists = async (user: User | null, date?: Date): Promise<DailyChecklist[]> => {
     if (!user) return [];
     const checklistsCollection = collection(db, "checklists");
@@ -65,7 +65,6 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
         const snap = await getDocs(q);
         const results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
         
-        // Ordenação na memória para evitar erros de índice ausente no Firestore
         return results.sort((a, b) => {
             const timeA = a.departureTimestamp?.toMillis() || 0;
             const timeB = b.departureTimestamp?.toMillis() || 0;
