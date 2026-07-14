@@ -8,7 +8,6 @@
     {
       "source": "]JavaScript",
       "codebase": "carcheck-gkeh4",
-      "runtime": "nodejs20",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
         "node_modules",
