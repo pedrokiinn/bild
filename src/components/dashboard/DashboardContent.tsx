@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,16 +11,19 @@ import VehicleStatus from '@/components/dashboard/VehicleStatus';
 import { subDays, format } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useUser } from '@/context/UserContext';
 
-function DashboardContent() {
+export default function DashboardContent() {
     const [data, setData] = useState<{ checklists: (DailyChecklist & { vehicle?: Vehicle })[], vehicles: Vehicle[] }>({ checklists: [], vehicles: [] });
     const [isLoading, setIsLoading] = useState(true);
+    const user = useUser();
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!user) return;
             setIsLoading(true);
             try {
-                const [checklistsData, vehiclesData] = await Promise.all([getChecklists(), getVehicles()]);
+                const [checklistsData, vehiclesData] = await Promise.all([getChecklists(user), getVehicles()]);
                 
                 const checklistsWithVehicleData = checklistsData.map(checklist => {
                     const vehicle = vehiclesData.find(v => v.id === checklist.vehicleId);
@@ -36,7 +40,7 @@ function DashboardContent() {
         };
 
         fetchData();
-    }, []);
+    }, [user]);
 
     const { checklists, vehicles } = data;
 
@@ -81,7 +85,6 @@ function DashboardContent() {
     return (
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
@@ -100,7 +103,6 @@ function DashboardContent() {
                     </Link>
                 </div>
 
-                {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     <StatsCard
                         title="Total de Inspeções"
@@ -136,7 +138,6 @@ function DashboardContent() {
                     />
                 </div>
 
-                {/* Main Content Grid */}
                 <div className="grid lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
                         <RecentChecklists 
@@ -153,7 +154,6 @@ function DashboardContent() {
                             isLoading={isLoading}
                         />
                         
-                        {/* Quick Actions */}
                         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
                             <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-4">Ações Rápidas</h3>
                             <div className="space-y-3">
@@ -182,8 +182,4 @@ function DashboardContent() {
             </div>
         </div>
     );
-}
-
-export default function Dashboard() {
-    return <DashboardContent />;
 }
