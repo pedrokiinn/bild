@@ -1,4 +1,3 @@
-
 'use server';
 
 import { 
@@ -6,9 +5,11 @@ import {
     createUserWithEmailAndPassword, 
     signOut,
     sendPasswordResetEmail,
+    GoogleAuthProvider,
+    signInWithPopup
 } from "firebase/auth";
 import { auth, db, functions } from './firebase';
-import { collection, doc, getDoc, query, getDocs, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { User } from "@/types";
 import { httpsCallable } from "firebase/functions";
 
@@ -31,6 +32,31 @@ export async function login(email: string, password_raw: string): Promise<User> 
             throw new Error("Credenciais inválidas. Verifique seu email e senha.");
         }
         throw new Error(error.message || "Erro de autenticação.");
+    }
+}
+
+export async function signInWithGoogle(): Promise<User> {
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+            const newUser: Omit<User, 'id'> = {
+                name: user.displayName || "Usuário Google",
+                email: user.email || "",
+                role: 'collaborator',
+            };
+            await setDoc(userDocRef, newUser);
+            return { id: user.uid, ...newUser };
+        }
+
+        return { id: userDocSnap.id, ...userDocSnap.data() } as User;
+    } catch (error: any) {
+        throw new Error("Falha no login com Google: " + error.message);
     }
 }
 
