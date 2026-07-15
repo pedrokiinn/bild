@@ -1,5 +1,5 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { onUserDeleted } = require("firebase-functions/v2/identity");
+const { onUserDeleted } = require("firebase-functions/v2/auth"); // Gatilho de Auth v2
 const admin = require("firebase-admin");
 
 if (admin.apps.length === 0) {
@@ -33,7 +33,7 @@ exports.resetPasswordByAdmin = onCall(async (request) => {
 
   const adminDoc = await db.collection('users').doc(auth.uid).get();
   if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
-    throw new HttpsError('permission-denied', 'Acesso negado.');
+    throw new Error('Acesso negado.');
   }
 
   const { targetUserId, newPassword } = request.data;
@@ -58,7 +58,7 @@ exports.deleteUserByAdmin = onCall(async (request) => {
 
   const adminDoc = await db.collection('users').doc(auth.uid).get();
   if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
-    throw new HttpsError('permission-denied', 'Acesso negado.');
+    throw new Error('Acesso negado.');
   }
 
   const { targetUserId } = request.data;

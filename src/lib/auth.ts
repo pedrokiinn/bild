@@ -24,8 +24,14 @@ export async function login(email: string, password_raw: string): Promise<User> 
         if (userDocSnap.exists()) {
             return { id: userDocSnap.id, ...userDocSnap.data() } as User;
         } else {
-            await logout();
-            throw new Error("Perfil de usuário não encontrado no banco de dados.");
+            // Caso o usuário exista no Auth mas não no Firestore, criamos um perfil básico
+            const newUser: Omit<User, 'id'> = {
+                name: user.displayName || email.split('@')[0],
+                email: email,
+                role: 'collaborator',
+            };
+            await setDoc(userDocRef, newUser);
+            return { id: user.uid, ...newUser };
         }
     } catch (error: any) {
         if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-email'].includes(error.code)) {

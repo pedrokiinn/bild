@@ -22,6 +22,7 @@ export default function DashboardContent() {
             if (!user) return;
             setIsLoading(true);
             try {
+                // Correção: Passando o objeto 'user' para a função getChecklists para evitar erro de tipos
                 const [checklistsData, vehiclesData] = await Promise.all([
                     getChecklists(user), 
                     getVehicles()
