@@ -1,4 +1,3 @@
-
 import type { DailyChecklist, Vehicle, User, ChecklistItemOption } from "@/types";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { db } from './firebase';
@@ -19,7 +18,6 @@ export const updateUserRole = async (userId: string, newRole: 'admin' | 'collabo
     const userRef = doc(db, "users", userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) throw new Error("Usuário inexistente.");
-    // Mestre admin fixo
     if (userSnap.data().email === 'keennlemariem@gmail.com') throw new Error("Ação bloqueada para admin mestre.");
     await updateDoc(userRef, { role: newRole });
 };
@@ -64,7 +62,6 @@ export const getChecklists = async (user: User | null, date?: Date): Promise<Dai
         const snap = await getDocs(q);
         const results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyChecklist));
         
-        // Ordenação em memória para evitar erro de índices do Firestore
         return results.sort((a, b) => {
             const timeA = a.departureTimestamp?.toMillis() || 0;
             const timeB = b.departureTimestamp?.toMillis() || 0;

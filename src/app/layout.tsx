@@ -25,8 +25,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased h-full">
-        {/* Envolvemos a aplicação com o Provider do Google usando o ID das suas credenciais */}
-        <GoogleOAuthProvider clientId="886519139268-51t1n7unio8g695g79jch5o53jmjepcl.apps.googleusercontent.com">
+        <GoogleOAuthProvider clientId="886519139268-5lt15qa7j51mrf7e9caec9bjfe3si1vl.apps.googleusercontent.com">
           <MainLayout>{children}</MainLayout>
           <Toaster />
         </GoogleOAuthProvider>

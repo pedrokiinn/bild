@@ -1,16 +1,11 @@
-
 'use client';
-
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function Home() {
   const router = useRouter();
-
   useEffect(() => {
-    // Redireciona para o dashboard, o MainLayout cuidará do login se necessário
     router.replace('/dashboard');
   }, [router]);
-
   return null;
 }

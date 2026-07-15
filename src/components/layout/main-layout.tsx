@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -237,9 +236,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         setUser({ id: snap.id, ...snap.data() } as User);
                     } else {
                         setUser(null);
+                        // Se o perfil não existe, forçamos logout para evitar loops
                         await logout();
                     }
                 } catch (e) {
+                    console.error("Erro ao recuperar perfil:", e);
                     setUser(null);
                 }
             } else {
