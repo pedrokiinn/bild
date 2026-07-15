@@ -252,7 +252,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                     if (snap.exists()) {
                         setUser({ id: snap.id, ...snap.data() } as User);
                     } else {
-                        // Perfil fallback se usuário autenticado mas sem doc
                         setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || "Usuário", email: firebaseUser.email || "", role: 'collaborator' } as User);
                     }
                 } catch (e) {

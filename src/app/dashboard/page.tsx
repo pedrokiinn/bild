@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -95,7 +96,7 @@ function DashboardContent() {
                         </p>
                     </div>
                     
-                    <Link href="/checklist" className="w-full md:auto">
+                    <Link href="/checklist" className="w-full md:w-auto">
                         <Button className="w-full text-primary-foreground font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
                             <Plus className="w-4 h-4 mr-2" />
                             Fazer Checklist
