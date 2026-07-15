@@ -22,7 +22,11 @@ export default function DashboardContent() {
             if (!user) return;
             setIsLoading(true);
             try {
-                const [checklistsData, vehiclesData] = await Promise.all([getChecklists(user), getVehicles()]);
+                // Fix: passing 'user' to getChecklists
+                const [checklistsData, vehiclesData] = await Promise.all([
+                    getChecklists(user), 
+                    getVehicles()
+                ]);
                 
                 const checklistsWithVehicleData = checklistsData.map(checklist => {
                     const vehicle = vehiclesData.find(v => v.id === checklist.vehicleId);

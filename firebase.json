@@ -1,7 +1,6 @@
 {
   "functions": [
     {
-      "codebase": "default",
       "source": "src/functions",
       "runtime": "nodejs20"
     }
