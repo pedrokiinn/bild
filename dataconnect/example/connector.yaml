@@ -1,0 +1,24 @@
+connectorId: example
+generate:
+  adminNodeSdk:
+    - outputDir: ../../src/dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ../..
+    - outputDir: ../../functions/src/dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ../../functions
+    - outputDir: ../../]JavaScript/src/dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ../../]JavaScript
+    - outputDir: ../../carcheck-gkeh4/src/dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ../../carcheck-gkeh4
+    - outputDir: ../../src/functions/src/dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ../../src/functions
+  javascriptSdk:
+    - outputDir: ../../src/dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ../..
+      react: true
+      angular: false

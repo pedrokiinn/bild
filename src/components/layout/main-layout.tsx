@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -100,7 +101,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
             <Card className="w-full max-w-md shadow-2xl border-0">
                 <CardHeader className="text-center">
                     <Logo className="mx-auto mb-6" />
-                    <CardTitle className="text-2xl flex items-center justify-center gap-2">Acessar Conta</CardTitle>
+                    <CardTitle className="text-2xl">Acessar Conta</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-4">
@@ -197,7 +198,7 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
 function LayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     const [authView, setAuthView] = useState<'login' | 'register'>('login');
 
     useEffect(() => {
@@ -217,7 +218,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             } else {
                 setUser(null);
             }
-            setIsLoading(false);
+            setIsLoadingAuth(false);
         });
         return () => unsubscribe();
     }, []);
@@ -228,7 +229,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         router.push('/');
     };
 
-    if (isLoading) {
+    if (isLoadingAuth) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                 <Car className="w-12 h-12 text-primary animate-pulse" />
@@ -246,17 +247,19 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <UserProvider user={user}>
             <div className="min-h-screen flex w-full bg-slate-50">
                 <Sidebar collapsible="icon">
-                    <SidebarHeader className="p-4 border-b h-20 flex flex-col justify-center transition-all duration-300">
+                    <SidebarHeader className="p-4 border-b h-20 flex flex-col justify-center">
                       <Logo />
                     </SidebarHeader>
-                    <SidebarContent className='p-3'><NavigationMenu user={user} /></SidebarContent>
-                    <SidebarFooter className="p-4 border-t transition-all duration-300">
+                    <SidebarContent className='p-3'>
+                        <NavigationMenu user={user} />
+                    </SidebarContent>
+                    <SidebarFooter className="p-4 border-t">
                         <div className="space-y-3">
                             <div className="flex items-center gap-3 p-2 bg-white rounded-xl shadow-sm overflow-hidden group-data-[state=collapsed]:p-1 group-data-[state=collapsed]:justify-center">
                                 <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold shrink-0">
                                     {user.name?.charAt(0).toUpperCase()}
                                 </div>
-                                <div className="flex-1 min-w-0 group-data-[state=collapsed]:hidden animate-in fade-in duration-300">
+                                <div className="flex-1 min-w-0 group-data-[state=collapsed]:hidden">
                                     <p className="font-semibold text-sm truncate">{user.name}</p>
                                     <p className="text-xs text-slate-500 truncate capitalize">{user.role}</p>
                                 </div>
@@ -286,5 +289,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
-    return <SidebarProvider><LayoutContent>{children}</LayoutContent></SidebarProvider>;
+    return (
+        <SidebarProvider>
+            <LayoutContent>{children}</LayoutContent>
+        </SidebarProvider>
+    );
 }

@@ -10,7 +10,7 @@ if (admin.apps.length === 0) {
 const db = admin.firestore();
 
 /**
- * Gatilho automático: remove o perfil do Firestore quando o usuário é deletado da Autenticação.
+ * Gatilho v2: Remove o perfil do Firestore quando o usuário é deletado da Autenticação.
  */
 exports.onUserDeleted = onUserDeleted(async (event) => {
   const user = event.data;
@@ -26,7 +26,7 @@ exports.onUserDeleted = onUserDeleted(async (event) => {
 });
 
 /**
- * Redefine senha via Admin.
+ * Redefine senha via Admin (v2).
  */
 exports.resetPasswordByAdmin = onCall(async (request) => {
   const { auth } = request;
@@ -51,7 +51,7 @@ exports.resetPasswordByAdmin = onCall(async (request) => {
 });
 
 /**
- * Exclui usuário via Admin.
+ * Exclui usuário via Admin (v2).
  */
 exports.deleteUserByAdmin = onCall(async (request) => {
   const { auth } = request;

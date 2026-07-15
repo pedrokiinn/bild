@@ -1,41 +1,9 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      // Impede escalonamento de privilégios: novo usuário sempre entra como 'collaborator'
-      allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.role == 'collaborator';
-      // Apenas admins mudam cargos. Usuários mudam seu perfil mantendo o cargo atual.
-      allow update: if isAuthenticated() && (isAdmin() || (request.auth.uid == userId && request.resource.data.role == resource.data.role));
-      allow delete: if false; 
-    }
-    
-    match /users {
-      allow list: if isAuthenticated();
-    }
-
-    match /vehicles/{vehicleId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    match /checklists/{checklistId} {
-        allow read: if isAuthenticated();
-        // Garante que o checklist seja vinculado ao próprio usuário que está criando
-        allow create: if isAuthenticated() && request.resource.data.driverId == request.auth.uid;
-        allow update: if isAuthenticated() && (isAdmin() || resource.data.driverId == request.auth.uid);
-        allow delete: if isAdmin();
+    match /{document=**} {
+      
+      allow read, write: if true;
     }
   }
 }
