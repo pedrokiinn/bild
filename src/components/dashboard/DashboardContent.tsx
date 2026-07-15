@@ -23,7 +23,7 @@ export default function DashboardContent() {
             if (!user) return;
             setIsLoading(true);
             try {
-                // Correção: Passando o objeto 'user' para a função para evitar erro de tipos no build
+                // Passando o objeto 'user' para a função para evitar erro de tipos no build
                 const [checklistsData, vehiclesData] = await Promise.all([
                     getChecklists(user), 
                     getVehicles()

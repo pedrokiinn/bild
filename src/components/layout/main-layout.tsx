@@ -85,7 +85,10 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isForgotOpen, setIsForgotOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const { toast } = useToast();
+
+    useEffect(() => { setMounted(true); }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -112,12 +115,14 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
         }
     };
 
+    if (!mounted) return null;
+
     return (
         <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 p-4">
             <Card className="w-full max-w-md shadow-2xl border-0">
                 <CardHeader className="text-center">
                     <Logo className="mx-auto mb-6" />
-                    <CardTitle className="text-2xl">Acessar Conta</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Acessar Conta</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <form onSubmit={handleLogin} className="space-y-4">
@@ -200,7 +205,7 @@ function RegisterView({ onRegisterSuccess, onSwitchToLogin }: { onRegisterSucces
             <Card className="w-full max-w-md shadow-2xl border-0">
                 <CardHeader className="text-center">
                     <Logo className="mx-auto mb-6" />
-                    <CardTitle className="text-2xl">Criar Conta</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Criar Conta</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleRegister} className="space-y-4">
@@ -247,7 +252,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                     if (snap.exists()) {
                         setUser({ id: snap.id, ...snap.data() } as User);
                     } else {
-                        setUser(null);
+                        // Perfil fallback se usuário autenticado mas sem doc
+                        setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || "Usuário", email: firebaseUser.email || "", role: 'collaborator' } as User);
                     }
                 } catch (e) {
                     console.error("Erro ao recuperar perfil:", e);
@@ -271,8 +277,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <Car className="w-12 h-12 text-primary animate-pulse" />
-                    <p className="text-slate-500 font-medium animate-pulse">Carregando G3 Checklist...</p>
+                    <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center animate-bounce shadow-xl">
+                        <Car className="w-10 h-10 text-white" />
+                    </div>
+                    <p className="text-slate-500 font-bold animate-pulse">Carregando G3 Checklist...</p>
                 </div>
             </div>
         )
