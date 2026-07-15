@@ -15,8 +15,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Client ID atualizado com base no seu provedor Google
-  const googleClientId = "886519139268-5lt15qa7j51mrf7e9caec9bjfe3si1vl.apps.googleusercontent.com";
+  // Client ID oficial fornecido pelo usuário para evitar erro GSI_LOGGER
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "886519139268-b783lk5e3da35tsan0kc2oem6pnmkc9k.apps.googleusercontent.com";
 
   return (
     <html lang="pt-BR" className="h-full">
