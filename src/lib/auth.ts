@@ -1,3 +1,4 @@
+
 'use server';
 
 import { 
@@ -6,7 +7,7 @@ import {
     signOut,
     sendPasswordResetEmail,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithCredential
 } from "firebase/auth";
 import { auth, db, functions } from './firebase';
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -35,10 +36,10 @@ export async function login(email: string, password_raw: string): Promise<User> 
     }
 }
 
-export async function signInWithGoogle(): Promise<User> {
-    const provider = new GoogleAuthProvider();
+export async function signInWithGoogleCredential(idToken: string): Promise<User> {
+    const credential = GoogleAuthProvider.credential(idToken);
     try {
-        const result = await signInWithPopup(auth, provider);
+        const result = await signInWithCredential(auth, credential);
         const user = result.user;
 
         const userDocRef = doc(db, "users", user.uid);

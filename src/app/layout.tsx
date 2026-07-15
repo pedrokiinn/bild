@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { MainLayout } from '@/components/layout/main-layout';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export const metadata: Metadata = {
   title: 'G3 Checklist',
@@ -24,8 +25,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased h-full">
-        <MainLayout>{children}</MainLayout>
-        <Toaster />
+        {/* Envolvemos a aplicação com o Provider do Google usando o ID das suas credenciais */}
+        <GoogleOAuthProvider clientId="886519139268-51t1n7unio8g695g79jch5o53jmjepcl.apps.googleusercontent.com">
+          <MainLayout>{children}</MainLayout>
+          <Toaster />
+        </GoogleOAuthProvider>
       </body>
     </html>
   );
