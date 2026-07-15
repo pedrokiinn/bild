@@ -236,7 +236,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         setUser({ id: snap.id, ...snap.data() } as User);
                     } else {
                         setUser(null);
-                        // Se o perfil não existe, forçamos logout para evitar loops
                         await logout();
                     }
                 } catch (e) {
@@ -260,7 +259,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (isLoadingAuth) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <Car className="w-12 h-12 text-primary animate-pulse" />
+                <div className="flex flex-col items-center gap-4">
+                    <Car className="w-12 h-12 text-primary animate-pulse" />
+                    <p className="text-slate-500 font-medium animate-pulse">Carregando G3 Checklist...</p>
+                </div>
             </div>
         )
     }
@@ -273,7 +275,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
     return (
         <UserProvider user={user}>
-            <div className="min-h-screen flex w-full bg-slate-50">
+            <div className="min-h-screen flex w-full bg-slate-50 overflow-hidden">
                 <Sidebar collapsible="icon">
                     <SidebarHeader className="p-4 border-b h-20 flex flex-col justify-center">
                       <Logo />
@@ -299,8 +301,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         </div>
                     </SidebarFooter>
                 </Sidebar>
-                <SidebarInset>
-                    <header className="bg-white/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10 h-14">
+                <SidebarInset className="flex flex-col h-screen overflow-hidden">
+                    <header className="bg-white/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10 h-14 shrink-0">
                         <SidebarTrigger className="hover:bg-primary/10 hover:text-primary transition-colors" />
                         <h1 className="font-bold text-lg text-primary lg:hidden">G3 Checklist</h1>
                         <div className="flex items-center gap-4">
@@ -309,7 +311,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                             </span>
                         </div>
                     </header>
-                    <div className="flex-1 overflow-auto">{children}</div>
+                    <main className="flex-1 overflow-y-auto bg-slate-50">
+                        {children}
+                    </main>
                 </SidebarInset>
             </div>
         </UserProvider>
