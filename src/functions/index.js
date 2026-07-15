@@ -1,5 +1,6 @@
+
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { onUserDeleted } = require("firebase-functions/v2/auth"); // Gatilho de Auth v2
+const { onUserDeleted } = require("firebase-functions/v2/auth"); 
 const admin = require("firebase-admin");
 
 if (admin.apps.length === 0) {
@@ -9,7 +10,7 @@ if (admin.apps.length === 0) {
 const db = admin.firestore();
 
 /**
- * Gatilho v2: Remove o perfil do Firestore quando o usuário é deletado da Autenticação.
+ * Remove o perfil do Firestore quando o usuário é deletado da Autenticação.
  */
 exports.onUserDeleted = onUserDeleted(async (event) => {
   const user = event.data;
@@ -25,7 +26,7 @@ exports.onUserDeleted = onUserDeleted(async (event) => {
 });
 
 /**
- * Redefine senha via Admin (v2).
+ * Redefine senha via Admin.
  */
 exports.resetPasswordByAdmin = onCall(async (request) => {
   const { auth } = request;
@@ -33,7 +34,7 @@ exports.resetPasswordByAdmin = onCall(async (request) => {
 
   const adminDoc = await db.collection('users').doc(auth.uid).get();
   if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
-    throw new Error('Acesso negado.');
+    throw new HttpsError('permission-denied', 'Acesso negado.');
   }
 
   const { targetUserId, newPassword } = request.data;
@@ -50,7 +51,7 @@ exports.resetPasswordByAdmin = onCall(async (request) => {
 });
 
 /**
- * Exclui usuário via Admin (v2).
+ * Exclui usuário via Admin.
  */
 exports.deleteUserByAdmin = onCall(async (request) => {
   const { auth } = request;
@@ -58,7 +59,7 @@ exports.deleteUserByAdmin = onCall(async (request) => {
 
   const adminDoc = await db.collection('users').doc(auth.uid).get();
   if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
-    throw new Error('Acesso negado.');
+    throw new HttpsError('permission-denied', 'Acesso negado.');
   }
 
   const { targetUserId } = request.data;

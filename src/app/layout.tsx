@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -14,6 +15,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Client ID atualizado com base no seu provedor Google
+  const googleClientId = "886519139268-5lt15qa7j51mrf7e9caec9bjfe3si1vl.apps.googleusercontent.com";
+
   return (
     <html lang="pt-BR" className="h-full">
       <head>
@@ -25,7 +29,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased h-full">
-        <GoogleOAuthProvider clientId="886519139268-5lt15qa7j51mrf7e9caec9bjfe3si1vl.apps.googleusercontent.com">
+        <GoogleOAuthProvider clientId={googleClientId}>
           <MainLayout>{children}</MainLayout>
           <Toaster />
         </GoogleOAuthProvider>

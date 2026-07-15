@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -22,7 +23,7 @@ export default function DashboardContent() {
             if (!user) return;
             setIsLoading(true);
             try {
-                // Correção: Passando o objeto 'user' para a função getChecklists para evitar erro de tipos
+                // Passando o objeto 'user' para a função getChecklists para evitar erro de tipos no build
                 const [checklistsData, vehiclesData] = await Promise.all([
                     getChecklists(user), 
                     getVehicles()
