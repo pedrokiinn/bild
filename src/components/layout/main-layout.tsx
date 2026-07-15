@@ -145,7 +145,6 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
                             onError={() => toast({ title: "Erro com Google", description: "Falha na autenticação.", variant: 'destructive' })}
-                            useOneTap
                         />
                     </div>
                 </CardContent>
@@ -235,8 +234,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                     if (snap.exists()) {
                         setUser({ id: snap.id, ...snap.data() } as User);
                     } else {
+                        // Se autenticado no Firebase mas sem perfil no Firestore, não desloga imediatamente
+                        // para permitir que o fluxo de cadastro/login social termine de criar o doc.
                         setUser(null);
-                        await logout();
                     }
                 } catch (e) {
                     console.error("Erro ao recuperar perfil:", e);
