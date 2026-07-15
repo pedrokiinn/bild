@@ -1,4 +1,3 @@
-
 'use server';
 
 import { 
@@ -13,6 +12,8 @@ import { auth, db, functions } from './firebase';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { User } from "@/types";
 import { httpsCallable } from "firebase/functions";
+
+export type { User };
 
 export async function login(email: string, password_raw: string): Promise<User> {
     try {
