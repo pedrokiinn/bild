@@ -234,8 +234,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                     if (snap.exists()) {
                         setUser({ id: snap.id, ...snap.data() } as User);
                     } else {
-                        // Se autenticado no Firebase mas sem perfil no Firestore, não desloga imediatamente
-                        // para permitir que o fluxo de cadastro/login social termine de criar o doc.
                         setUser(null);
                     }
                 } catch (e) {

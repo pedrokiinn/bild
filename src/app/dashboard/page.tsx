@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DailyChecklist, Vehicle, User } from '@/types';
+import { DailyChecklist, Vehicle } from '@/types';
 import { getChecklists, getVehicles } from '@/lib/data';
-import { Car, ClipboardCheck, TrendingUp, AlertCircle, Plus, Calendar } from 'lucide-react';
+import { Car, ClipboardCheck, TrendingUp, Plus, Calendar } from 'lucide-react';
 import StatsCard from '@/components/dashboard/StatsCard';
 import RecentChecklists from '@/components/dashboard/RecentChecklists';
 import VehicleStatus from '@/components/dashboard/VehicleStatus';
@@ -47,6 +46,7 @@ function DashboardContent() {
 
     const getWeeklyAverage = () => {
         const lastWeek = checklists.filter(checklist => {
+            if (!checklist.departureTimestamp) return false;
             const checkDate = checklist.departureTimestamp.toDate();
             const weekAgo = subDays(new Date(), 7);
             return checkDate >= weekAgo;
@@ -85,7 +85,6 @@ function DashboardContent() {
     return (
         <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
@@ -96,7 +95,7 @@ function DashboardContent() {
                         </p>
                     </div>
                     
-                    <Link href="/checklist" className="w-full md:w-auto">
+                    <Link href="/checklist" className="w-full md:auto">
                         <Button className="w-full text-primary-foreground font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
                             <Plus className="w-4 h-4 mr-2" />
                             Fazer Checklist
@@ -104,7 +103,6 @@ function DashboardContent() {
                     </Link>
                 </div>
 
-                {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     <StatsCard
                         title="Total de Inspeções"
@@ -118,7 +116,7 @@ function DashboardContent() {
                         title="Média Semanal"
                         value={`${getWeeklyAverage()}%`}
                         icon={TrendingUp}
-                        gradient="from-primary to-orange-400"
+                        gradient="from-emerald-500 to-teal-600"
                         description="Pontuação média"
                         isLoading={isLoading}
                     />
@@ -140,7 +138,6 @@ function DashboardContent() {
                     />
                 </div>
 
-                {/* Main Content Grid */}
                 <div className="grid lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
                         <RecentChecklists 
@@ -156,31 +153,6 @@ function DashboardContent() {
                             checklists={checklists}
                             isLoading={isLoading}
                         />
-                        
-                        {/* Quick Actions */}
-                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
-                            <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-4">Ações Rápidas</h3>
-                            <div className="space-y-3">
-                                <Link href="/checklist" className="block">
-                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all duration-300">
-                                        <ClipboardCheck className="w-4 h-4 mr-3" />
-                                        Novo Checklist
-                                    </Button>
-                                </Link>
-                                <Link href="/vehicle" className="block">
-                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all duration-300">
-                                        <Car className="w-4 h-4 mr-3" />
-                                        Gerenciar Veículo
-                                    </Button>
-                                </Link>
-                                <Link href="/history" className="block">
-                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all duration-300">
-                                        <Calendar className="w-4 h-4 mr-3" />
-                                        Ver Histórico
-                                    </Button>
-                                </Link>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

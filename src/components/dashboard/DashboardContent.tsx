@@ -152,30 +152,6 @@ export default function DashboardContent() {
                             checklists={checklists}
                             isLoading={isLoading}
                         />
-                        
-                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
-                            <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-4">Ações Rápidas</h3>
-                            <div className="space-y-3">
-                                <Link href="/checklist" className="block">
-                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all duration-300">
-                                        <ClipboardCheck className="w-4 h-4 mr-3" />
-                                        Novo Checklist
-                                    </Button>
-                                </Link>
-                                <Link href="/vehicle" className="block">
-                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all duration-300">
-                                        <Car className="w-4 h-4 mr-3" />
-                                        Gerenciar Veículo
-                                    </Button>
-                                </Link>
-                                <Link href="/history" className="block">
-                                    <Button variant="outline" className="w-full justify-start text-sm hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all duration-300">
-                                        <Calendar className="w-4 h-4 mr-3" />
-                                        Ver Histórico
-                                    </Button>
-                                </Link>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
