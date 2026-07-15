@@ -35,6 +35,7 @@ import {
 import { UserProvider } from '@/context/UserContext';
 import { Separator } from '../ui/separator';
 import { GoogleLogin } from '@react-oauth/google';
+import { ForgotPasswordDialog } from '../auth/ForgotPasswordDialog';
 
 const navigationItems = [
     { title: "Dashboard", url: "/dashboard", icon: BarChart2 },
@@ -82,6 +83,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isForgotOpen, setIsForgotOpen] = useState(false);
     const { toast } = useToast();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -123,7 +125,16 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                             <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="login-password">Senha</Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="login-password">Senha</Label>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsForgotOpen(true)}
+                                    className="text-xs text-primary hover:underline font-medium"
+                                >
+                                    Esqueceu a senha?
+                                </button>
+                            </div>
                             <div className="relative">
                                 <Input id="login-password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
                                 <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full" onClick={() => setShowPassword(!showPassword)}>
@@ -152,6 +163,7 @@ function LoginView({ onLoginSuccess, onSwitchToRegister }: { onLoginSuccess: (us
                     <p className="text-sm text-muted-foreground">Não tem uma conta? <button onClick={onSwitchToRegister} className="text-primary hover:underline font-semibold">Cadastre-se</button></p>
                 </CardFooter>
             </Card>
+            <ForgotPasswordDialog isOpen={isForgotOpen} onOpenChange={setIsForgotOpen} />
         </div>
     );
 }
