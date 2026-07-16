@@ -7,7 +7,6 @@ import { getChecklists, getVehicles } from '@/lib/data';
 import { Car, ClipboardCheck, TrendingUp, Plus, Calendar } from 'lucide-react';
 import StatsCard from '@/components/dashboard/StatsCard';
 import RecentChecklists from '@/components/dashboard/RecentChecklists';
-import VehicleStatus from '@/components/dashboard/VehicleStatus';
 import { subDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
@@ -142,22 +141,12 @@ export default function DashboardContent() {
                     />
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2">
-                        <RecentChecklists 
-                            checklists={checklists}
-                            vehicles={vehicles}
-                            isLoading={isLoading}
-                        />
-                    </div>
-
-                    <div className="space-y-8">
-                        <VehicleStatus 
-                            vehicles={vehicles}
-                            checklists={checklists}
-                            isLoading={isLoading}
-                        />
-                    </div>
+                <div className="w-full">
+                    <RecentChecklists 
+                        checklists={checklists}
+                        vehicles={vehicles}
+                        isLoading={isLoading}
+                    />
                 </div>
             </div>
         </div>
