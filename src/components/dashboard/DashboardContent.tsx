@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import StatsCard from '@/components/dashboard/StatsCard';
 import RecentChecklists from '@/components/dashboard/RecentChecklists';
 import VehicleStatus from '@/components/dashboard/VehicleStatus';
 import { subDays, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
@@ -22,7 +24,6 @@ export default function DashboardContent() {
             if (!user) return;
             setIsLoading(true);
             try {
-                // Passando o objeto 'user' para a função para evitar o erro de tipos no build
                 const [checklistsData, vehiclesData] = await Promise.all([
                     getChecklists(user), 
                     getVehicles()
@@ -86,27 +87,27 @@ export default function DashboardContent() {
     };
     
     return (
-        <div className="p-4 md:p-6 bg-gradient-to-br from-slate-50 to-gray-100 min-h-screen">
-            <div className="max-w-7xl mx-auto space-y-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+            <div className="max-w-7xl mx-auto space-y-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
-                            Dashboard
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+                            Página Inicial
                         </h1>
-                        <p className="text-slate-600 text-base">
-                            Bem-vindo! Veja um resumo das atividades.
+                        <p className="text-slate-500 text-lg mt-1 font-medium">
+                            Bem-vindo! Veja um resumo detalhado das atividades da frota.
                         </p>
                     </div>
                     
                     <Link href="/checklist" className="w-full md:w-auto">
-                        <Button className="w-full text-primary-foreground font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
-                            <Plus className="w-4 h-4 mr-2" />
+                        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-6 rounded-2xl shadow-xl shadow-primary/20 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]">
+                            <Plus className="w-5 h-5 mr-2" />
                             Fazer Checklist
                         </Button>
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatsCard
                         title="Total de Inspeções"
                         value={String(checklists.length)}
@@ -120,7 +121,7 @@ export default function DashboardContent() {
                         value={`${getWeeklyAverage()}%`}
                         icon={TrendingUp}
                         gradient="from-emerald-500 to-teal-600"
-                        description="Pontuação média"
+                        description="Pontuação de conformidade"
                         isLoading={isLoading}
                     />
                     <StatsCard
@@ -128,21 +129,21 @@ export default function DashboardContent() {
                         value={String(getConsecutiveDays())}
                         icon={Calendar}
                         gradient="from-purple-500 to-pink-600"
-                        description="Sem faltar checklist"
+                        description="Engajamento contínuo"
                         isLoading={isLoading}
                     />
                     <StatsCard
-                        title="Veículos"
+                        title="Frota Ativa"
                         value={String(vehicles.length)}
                         icon={Car}
-                        gradient="from-orange-500 to-red-600"
-                        description="Cadastrados"
+                        gradient="from-orange-500 to-amber-600"
+                        description="Veículos cadastrados"
                         isLoading={isLoading}
                     />
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6">
+                <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2">
                         <RecentChecklists 
                             checklists={checklists}
                             vehicles={vehicles}
@@ -150,7 +151,7 @@ export default function DashboardContent() {
                         />
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         <VehicleStatus 
                             vehicles={vehicles}
                             checklists={checklists}

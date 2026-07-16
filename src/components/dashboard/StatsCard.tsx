@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,21 +15,18 @@ interface StatsCardProps {
   isLoading?: boolean;
 }
 
-
 export default function StatsCard({ title, value, icon: Icon, gradient, description, isLoading }: StatsCardProps) {
     if (isLoading) {
         return (
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-                 <CardContent className="p-4 md:p-6">
+            <Card className="bg-white border-0 shadow-lg rounded-2xl overflow-hidden">
+                 <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                        <Skeleton className="h-10 w-10 rounded-xl" />
-                        <div className="text-right">
-                            <Skeleton className="h-7 w-12 mb-2" />
-                        </div>
+                        <Skeleton className="h-12 w-12 rounded-2xl" />
+                        <Skeleton className="h-8 w-16" />
                     </div>
-                    <div>
-                        <Skeleton className="h-5 w-3/4 mb-1" />
-                        <Skeleton className="h-4 w-1/2" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
                     </div>
                 </CardContent>
             </Card>
@@ -40,25 +38,26 @@ export default function StatsCard({ title, value, icon: Icon, gradient, descript
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            whileHover={{ y: -4 }}
         >
-            <Card className="relative overflow-hidden bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-                <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${gradient} opacity-10 rounded-full transform translate-x-8 -translate-y-8`} />
+            <Card className="relative overflow-hidden bg-white border-0 shadow-lg shadow-slate-200/50 rounded-2xl transition-all duration-300">
+                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradient} opacity-[0.03] rounded-full transform translate-x-12 -translate-y-12`} />
                 
-                <CardContent className="p-4 md:p-6 relative">
-                    <div className="flex justify-between items-start mb-2">
-                        <div className={`p-2.5 rounded-xl bg-gradient-to-br ${gradient} shadow-lg`}>
-                            <Icon className="w-5 h-5 text-white" />
+                <CardContent className="p-6 relative">
+                    <div className="flex justify-between items-start mb-6">
+                        <div className={`p-3 rounded-2xl bg-gradient-to-br ${gradient} shadow-lg shadow-current/10`}>
+                            <Icon className="w-6 h-6 text-white" />
                         </div>
                         <div className="text-right">
-                            <div className="text-xl md:text-2xl font-bold text-slate-900">
+                            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
                                 {value}
                             </div>
                         </div>
                     </div>
                     
                     <div>
-                        <h3 className="font-semibold text-sm text-slate-900 mb-1">{title}</h3>
-                        <p className="text-xs text-slate-600">{description}</p>
+                        <h3 className="font-bold text-slate-800 text-sm mb-1">{title}</h3>
+                        <p className="text-xs text-slate-500 font-medium">{description}</p>
                     </div>
                 </CardContent>
             </Card>

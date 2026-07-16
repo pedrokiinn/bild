@@ -17,7 +17,7 @@ import {
     useSidebar
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Users, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Car, ClipboardCheck, Calendar, BarChart2, LogOut, Users, Loader2, Eye, EyeOff, Home } from 'lucide-react';
 import { User, login, logout, register, signInWithGoogleCredential } from '@/lib/auth';
 import { Logo } from '../Logo';
 import { Input } from '../ui/input';
@@ -39,7 +39,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { ForgotPasswordDialog } from '../auth/ForgotPasswordDialog';
 
 const navigationItems = [
-    { title: "Dashboard", url: "/dashboard", icon: BarChart2 },
+    { title: "Página Inicial", url: "/dashboard", icon: Home },
     { title: "Novo Checklist", url: "/checklist", icon: ClipboardCheck },
     { title: "Histórico", url: "/history", icon: Calendar },
     { title: "Veículos", url: "/vehicle", icon: Car, adminOnly: true },
