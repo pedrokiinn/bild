@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Perfil do colaborador com controle de acesso.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Nome completo do colaborador."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "E-mail de acesso."
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "admin",
+            "collaborator"
+          ],
+          "description": "Cargo no sistema: administrador ou colaborador."
+        }
+      },
+      "required": [
+        "name",
+        "email",
+        "role"
+      ]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Informações técnicas do veículo da frota.",
+      "type": "object",
+      "properties": {
+        "brand": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "year": {
+          "type": "number"
+        },
+        "license_plate": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "mileage": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "brand",
+        "model",
+        "year",
+        "license_plate"
+      ]
+    },
+    "Checklist": {
+      "title": "Checklist",
+      "description": "Relatório de inspeção diária de saída e chegada.",
+      "type": "object",
+      "properties": {
+        "vehicleId": {
+          "type": "string"
+        },
+        "driverId": {
+          "type": "string"
+        },
+        "driverName": {
+          "type": "string"
+        },
+        "departureTimestamp": {
+          "type": "object"
+        },
+        "arrivalTimestamp": {
+          "type": "object"
+        },
+        "departureMileage": {
+          "type": "number"
+        },
+        "arrivalMileage": {
+          "type": "number"
+        },
+        "checklistItems": {
+          "type": "object"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "pending_arrival",
+            "problem"
+          ]
+        },
+        "date": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "vehicleId",
+        "driverId",
+        "departureTimestamp",
+        "departureMileage",
+        "status",
+        "date"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Perfis de usuários e permissões."
+    },
+    "/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "Cadastro da frota de veículos."
+    },
+    "/checklists/{checklistId}": {
+      "schema": "Checklist",
+      "description": "Registros históricos de inspeção."
+    }
+  }
+}
