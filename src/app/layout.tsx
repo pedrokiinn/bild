@@ -1,9 +1,7 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
-import { Toaster } from '@/components/ui/toaster';
 import { MainLayout } from '@/components/layout/main-layout';
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ClientProviders } from '@/components/providers/client-providers';
 
 export const metadata: Metadata = {
   title: 'G3 Checklist',
@@ -15,9 +13,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Novo Client ID oficial fornecido pelo usuário
-  const googleClientId = "886519139268-gkvfik842emuc2m6to5a2i9t98km3e9d.apps.googleusercontent.com";
-
   return (
     <html lang="pt-BR" className="h-full">
       <head>
@@ -29,10 +24,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased h-full">
-        <GoogleOAuthProvider clientId={googleClientId}>
+        <ClientProviders>
           <MainLayout>{children}</MainLayout>
-          <Toaster />
-        </GoogleOAuthProvider>
+        </ClientProviders>
       </body>
     </html>
   );
