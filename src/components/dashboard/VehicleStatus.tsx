@@ -1,8 +1,8 @@
-
 'use client';
 import { DailyChecklist, Vehicle } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, Clock, Plus, Car } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -50,7 +50,6 @@ export default function VehicleStatus({ vehicles, checklists, isLoading }: Vehic
       <CardContent className="space-y-3 p-0">
         {vehicles.length > 0 ? vehicles.map(vehicle => {
           const todaysChecklistForVehicle = todayChecklists.find(c => c.vehicleId === vehicle.id);
-          const hasProblem = todaysChecklistForVehicle?.status === 'problem';
           const status = todaysChecklistForVehicle?.status;
 
           return (
