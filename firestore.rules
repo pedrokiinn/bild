@@ -4,18 +4,15 @@ service cloud.firestore {
     
     // Função auxiliar para verificar se o usuário é administrador
     function isAdmin() {
-      return request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Regras para a coleção de usuários
-    // Permite que o usuário leia/escreva seu próprio perfil ou que um admin o faça
     match /users/{userId} {
       allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
     // Regras para a coleção de veículos
-    // Todos os usuários autenticados podem ver a frota, mas apenas admins podem alterar
     match /vehicles/{vehicleId} {
       allow read: if request.auth != null;
       allow write: if isAdmin();
