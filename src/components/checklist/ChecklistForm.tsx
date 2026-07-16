@@ -1,7 +1,6 @@
-
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import type { Vehicle, DailyChecklist, FuelType, Refueling } from '@/types';
+import type { Vehicle, DailyChecklist } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -122,8 +121,7 @@ export default function ChecklistForm({ item, checklistItems, onBack }: Checklis
             photos: photos,
             notes: notes,
             status: 'pending_arrival',
-            date: format(new Date(), 'yyyy-MM-dd'),
-            refuelings: []
+            date: format(new Date(), 'yyyy-MM-dd')
         };
 
         await saveChecklist(newChecklist as any, user);

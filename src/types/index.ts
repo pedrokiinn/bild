@@ -12,14 +12,6 @@ export interface Vehicle {
 
 export type ChecklistStatus = 'completed' | 'pending_arrival' | 'problem';
 
-export type FuelType = 'gasolina' | 'diesel';
-
-export interface Refueling {
-  amount: number;
-  liters: number;
-  type: FuelType;
-}
-
 export interface DailyChecklist {
   id: string;
   vehicleId: string;
@@ -40,7 +32,6 @@ export interface DailyChecklist {
   notes?: string;
   status: ChecklistStatus;
   date: string; // YYYY-MM-DD
-  refuelings?: Refueling[];
 }
 
 export interface User {

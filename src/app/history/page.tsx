@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { DailyChecklist, Vehicle, Refueling, User } from '@/types';
+import type { DailyChecklist, Vehicle, User } from '@/types';
 import { getChecklists, getVehicles, saveChecklist } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText, User as UserIcon, Fuel } from 'lucide-react';
+import { Calendar, Car, AlertTriangle, Trash2, Eye, Search, CheckCircle2, Clock, FileText, User as UserIcon } from 'lucide-react';
 import { format, getMonth, getYear, setMonth, setYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -132,7 +132,7 @@ function HistoryContent() {
         setIsArrivalDialogOpen(true);
     };
 
-    const handleArrivalSave = async (arrivalMileage: number, refuelings: Refueling[]) => {
+    const handleArrivalSave = async (arrivalMileage: number) => {
         if (!selectedChecklist) return;
 
         try {
@@ -150,13 +150,11 @@ function HistoryContent() {
                  }
             }
 
-            updatedChecklist.refuelings = refuelings;
-
             await saveChecklist(updatedChecklist, null);
 
             toast({
                 title: "Checklist Atualizado!",
-                description: "As informações de chegada/abastecimento foram salvas com sucesso."
+                description: "As informações de chegada foram salvas com sucesso."
             });
             
             setIsArrivalDialogOpen(false);
@@ -361,11 +359,11 @@ function HistoryContent() {
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button size="icon" variant="ghost" onClick={() => openArrivalDialog(checklist)}>
-                                                            <Fuel className="w-4 h-4" />
+                                                            <Clock className="w-4 h-4" />
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>{isPending ? 'Registrar Chegada' : 'Editar Abastecimento'}</p>
+                                                        <p>{isPending ? 'Registrar Chegada' : 'Editar KM Chegada'}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
